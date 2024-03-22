@@ -1,35 +1,30 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.8)
 project(ocs2_switched_model_msgs)
 
-set(CATKIN_PACKAGE_DEPENDENCIES
+find_package(ament_cmake_auto REQUIRED)
+ament_auto_find_build_dependencies()
+
+set(dependencies
   std_msgs
   ocs2_msgs
 )
 
-find_package(catkin REQUIRED COMPONENTS
-  ${CATKIN_PACKAGE_DEPENDENCIES}
-  message_generation
+set(msg_files
+  "msg/Gait.msg"
+  "msg/GaitSequence.msg"
+  "msg/ScheduledGaitSequence.msg"
 )
 
-# Declare the message files to be built
-add_message_files(DIRECTORY msg FILES
-  gait.msg
-  gait_sequence.msg
-  scheduled_gait_sequence.msg
+set(srv_files
+  "srv/TrajectoryRequest.srv"
 )
 
-# Declare the service files to be built
-add_service_files(DIRECTORY srv FILES
-  trajectory_request.srv
+rosidl_generate_interfaces(${PROJECT_NAME}
+  ${msg_files}
+  ${srv_files}
+  DEPENDENCIES ${dependencies}
+  ADD_LINTER_TESTS
 )
 
-# Actually generate the language-specific message and service files
-generate_messages(DEPENDENCIES
-  ${CATKIN_PACKAGE_DEPENDENCIES}
-)
-
-# Declare that this catkin package's runtime dependencies
-catkin_package(CATKIN_DEPENDS
-  ${CATKIN_PACKAGE_DEPENDENCIES}
-  message_runtime
-)
+ament_export_dependencies(rosidl_default_runtime)
+ament_auto_package()
