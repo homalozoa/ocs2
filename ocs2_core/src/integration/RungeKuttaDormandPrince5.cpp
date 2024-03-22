@@ -1,43 +1,45 @@
-/******************************************************************************
-Copyright (c) 2020, Farbod Farshidian. All rights reserved.
+// Copyright 2020 Farbod Farshidian. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//
+//    * Neither the name of the Farbod nor the names of its
+//      contributors may be used to endorse or promote products derived from
+//      this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-******************************************************************************/
+#include "ocs2_core/integration/RungeKuttaDormandPrince5.hpp"
 
 #include <algorithm>
 #include <limits>
 
-#include <ocs2_core/integration/RungeKuttaDormandPrince5.h>
+namespace ocs2
+{
 
-namespace ocs2 {
-
-namespace {
+namespace
+{
 
 /** Helper less comparison for both positive and negative dt case. */
-bool lessWithSign(scalar_t t1, scalar_t t2, scalar_t dt) {
+bool lessWithSign(scalar_t t1, scalar_t t2, scalar_t dt)
+{
   if (dt > 0) {
     return t2 - t1 > std::numeric_limits<scalar_t>::epsilon();
   } else {
@@ -46,7 +48,8 @@ bool lessWithSign(scalar_t t1, scalar_t t2, scalar_t dt) {
 }
 
 /** Helper to get the min absolute value, t1 and t2 have same sign. */
-scalar_t minAbs(scalar_t t1, scalar_t t2) {
+scalar_t minAbs(scalar_t t1, scalar_t t2)
+{
   if (t1 > 0) {
     return std::min(t1, t2);
   } else {
@@ -55,7 +58,8 @@ scalar_t minAbs(scalar_t t1, scalar_t t2) {
 }
 
 /** Helper to get max absolute value, t1 and t2 have same sign. */
-scalar_t maxAbs(scalar_t t1, scalar_t t2) {
+scalar_t maxAbs(scalar_t t1, scalar_t t2)
+{
   if (t1 > 0) {
     return std::max(t1, t2);
   } else {
@@ -64,8 +68,9 @@ scalar_t maxAbs(scalar_t t1, scalar_t t2) {
 }
 
 /** Runge Kutta Dormand-Prince stepper */
-class Stepper {
- public:
+class Stepper
+{
+public:
   using system_func_t = IntegratorBase::system_func_t;
 
   /**
@@ -81,7 +86,10 @@ class Stepper {
    * @param [in] relTol: The relative tolerance error for ode solver.
    * @return true if the step is taken, false otherwise..
    */
-  bool tryStep(system_func_t& system, vector_t& x, vector_t& dxdt, scalar_t& t, scalar_t& dt, scalar_t absTol, scalar_t relTol) {
+  bool tryStep(
+    system_func_t & system, vector_t & x, vector_t & dxdt, scalar_t & t, scalar_t & dt,
+    scalar_t absTol, scalar_t relTol)
+  {
     constexpr scalar_t c1 = 35.0 / 384;
     // c2 = 0
     constexpr scalar_t c3 = 500.0 / 1113;
@@ -100,7 +108,8 @@ class Stepper {
     doStep(system, x, dxdt, t, dt, x_out, dxdt_out);
 
     // error estimate
-    const vector_t x_err = dt * (dc1 * k1_ + dc3 * k3_ + dc4 * k4_ + dc5 * k5_ + dc6 * k6_ + dc7 * dxdt_out);
+    const vector_t x_err =
+      dt * (dc1 * k1_ + dc3 * k3_ + dc4 * k4_ + dc5 * k5_ + dc6 * k6_ + dc7 * dxdt_out);
 
     const scalar_t error = maxError(x, dxdt, x_err, dt, absTol, relTol);
     if (error > 1.0) {
@@ -127,8 +136,10 @@ class Stepper {
    * @param [out] x_out: next state (can be same reference as x0).
    * @param [out] dxdt_out: derivative at next state (can be same reference as dxdt).
    */
-  void doStep(system_func_t& system, const vector_t& x0, const vector_t& dxdt, scalar_t t, scalar_t dt, vector_t& x_out,
-              vector_t& dxdt_out) {
+  void doStep(
+    system_func_t & system, const vector_t & x0, const vector_t & dxdt, scalar_t t, scalar_t dt,
+    vector_t & x_out, vector_t & dxdt_out)
+  {
     /* Runge Kutta Dormand-Prince Butcher tableau constants.
      * https://en.wikipedia.org/wiki/Dormand%E2%80%93Prince_method */
     constexpr scalar_t a2 = 1.0 / 5;
@@ -179,7 +190,7 @@ class Stepper {
     system(x_out, dxdt_out, t + dt);
   }
 
- private:
+private:
   /**
    * Estimate the maximal error value.
    *
@@ -191,9 +202,13 @@ class Stepper {
    * @param [in] relTol: The relative error tolerance.
    * @return maximal error value.
    */
-  static scalar_t maxError(const vector_t& x_old, const vector_t& dxdt_old, const vector_t& x_err, scalar_t dt, scalar_t absTol,
-                           scalar_t relTol) {
-    const vector_t err = x_err.array() / (absTol + relTol * (x_old.array().abs() + std::abs(dt) * dxdt_old.array().abs()));
+  static scalar_t maxError(
+    const vector_t & x_old, const vector_t & dxdt_old, const vector_t & x_err, scalar_t dt,
+    scalar_t absTol, scalar_t relTol)
+  {
+    const vector_t err =
+      x_err.array() /
+      (absTol + relTol * (x_old.array().abs() + std::abs(dt) * dxdt_old.array().abs()));
     return err.lpNorm<Eigen::Infinity>();
   }
 
@@ -204,7 +219,8 @@ class Stepper {
    * @param [in] error: maximal error.
    * @return new step size dt.
    */
-  static scalar_t decreaseStep(scalar_t dt, scalar_t error) {
+  static scalar_t decreaseStep(scalar_t dt, scalar_t error)
+  {
     constexpr int ERROR_ORDER = 4;
     dt *= std::max(0.9 * std::pow(error, -1.0 / (ERROR_ORDER - 1)), 0.2);
     return dt;
@@ -217,7 +233,8 @@ class Stepper {
    * @param [in] error: maximal error.
    * @return new step size dt.
    */
-  static scalar_t increaseStep(scalar_t dt, scalar_t error) {
+  static scalar_t increaseStep(scalar_t dt, scalar_t error)
+  {
     constexpr int STEPPER_ORDER = 5;
     if (error < 0.5) {
       error = std::max(std::pow(scalar_t(5.0), -STEPPER_ORDER), error);
@@ -232,14 +249,14 @@ class Stepper {
 
 }  // namespace
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void RungeKuttaDormandPrince5::runIntegrateConst(system_func_t system, observer_func_t observer, const vector_t& initialState,
-                                                 scalar_t startTime, scalar_t finalTime, scalar_t dt) {
+void RungeKuttaDormandPrince5::runIntegrateConst(
+  system_func_t system, observer_func_t observer, const vector_t & initialState, scalar_t startTime,
+  scalar_t finalTime, scalar_t dt)
+{
   // TODO(mspieler): This does one redundant system() evaluation at the end.
 
-  // Ensure that finalTime is included by adding a fraction of dt such that: N * dt <= finalTime < (N + 1) * dt.
+  // Ensure that finalTime is included by adding a fraction of dt such that:
+  // N * dt <= finalTime < (N + 1) * dt.
   finalTime += 0.1 * dt;
 
   Stepper stepper;
@@ -257,12 +274,10 @@ void RungeKuttaDormandPrince5::runIntegrateConst(system_func_t system, observer_
   observer(x, t);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void RungeKuttaDormandPrince5::runIntegrateAdaptive(system_func_t system, observer_func_t observer, const vector_t& initialState,
-                                                    scalar_t startTime, scalar_t finalTime, scalar_t dtInitial, scalar_t absTol,
-                                                    scalar_t relTol) {
+void RungeKuttaDormandPrince5::runIntegrateAdaptive(
+  system_func_t system, observer_func_t observer, const vector_t & initialState, scalar_t startTime,
+  scalar_t finalTime, scalar_t dtInitial, scalar_t absTol, scalar_t relTol)
+{
   Stepper stepper;
   scalar_t t = startTime;
   scalar_t dt = dtInitial;
@@ -288,13 +303,12 @@ void RungeKuttaDormandPrince5::runIntegrateAdaptive(system_func_t system, observ
   observer(x, t);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void RungeKuttaDormandPrince5::runIntegrateTimes(system_func_t system, observer_func_t observer, const vector_t& initialState,
-                                                 typename scalar_array_t::const_iterator beginTimeItr,
-                                                 typename scalar_array_t::const_iterator endTimeItr, scalar_t dtInitial, scalar_t absTol,
-                                                 scalar_t relTol) {
+void RungeKuttaDormandPrince5::runIntegrateTimes(
+  system_func_t system, observer_func_t observer, const vector_t & initialState,
+  typename scalar_array_t::const_iterator beginTimeItr,
+  typename scalar_array_t::const_iterator endTimeItr, scalar_t dtInitial, scalar_t absTol,
+  scalar_t relTol)
+{
   Stepper stepper;
   scalar_t dt = dtInitial;
   vector_t x = initialState;
@@ -328,9 +342,6 @@ void RungeKuttaDormandPrince5::runIntegrateTimes(system_func_t system, observer_
   }    // end of while loop
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
 constexpr size_t RungeKuttaDormandPrince5::maxNumStepsRetries_;
 
 }  // namespace ocs2

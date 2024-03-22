@@ -1,35 +1,65 @@
-#include <gtest/gtest.h>
-
-#include <ocs2_core/thread_support/Synchronized.h>
+// Copyright 2020 Ruben Grandia. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//
+//    * Neither the name of the Farbod nor the names of its
+//      contributors may be used to endorse or promote products derived from
+//      this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 #include <functional>
+
+#include "gtest/gtest.h"
+#include "ocs2_core/thread_support/Synchronized.hpp"
 
 enum class ClassId { A, B };
 
 // Base class
-class A {
- public:
+class A
+{
+public:
   A() = default;
   virtual ~A() = default;
-  A(const A&) = delete;
-  A& operator=(const A&) = delete;
+  A(const A &) = delete;
+  A & operator=(const A &) = delete;
   virtual ClassId getId() const { return ClassId::A; }
   virtual int getVal() { return 0; }
-  static void run(const std::function<void()>& f) { f(); }
+  static void run(const std::function<void()> & f) { f(); }
 };
 
 // Derived class
-class B : public A {
- public:
+class B : public A
+{
+public:
   B() = default;
   ~B() override = default;
-  B(const B&) = delete;
-  B& operator=(const B&) = delete;
+  B(const B &) = delete;
+  B & operator=(const B &) = delete;
   ClassId getId() const override { return ClassId::B; }
   int getVal() override { return 1; };
 };
 
-TEST(testLockable, construction) {
+TEST(testLockable, construction)
+{
   // default
   ocs2::Synchronized<double> defaultObj;
   ASSERT_FALSE(defaultObj.lock());
@@ -40,7 +70,8 @@ TEST(testLockable, construction) {
   ASSERT_TRUE(nonDefaultObj.lock());
 }
 
-TEST(testLockable, polymorphic) {
+TEST(testLockable, polymorphic)
+{
   std::unique_ptr<A> objB(new B());
   ocs2::Synchronized<A> synchronized(std::move(objB));
 
@@ -55,7 +86,8 @@ TEST(testLockable, polymorphic) {
   ASSERT_EQ(synchronized->getId(), ClassId::A);
 }
 
-TEST(testLockable, lockedWhileDirectCalling) {
+TEST(testLockable, lockedWhileDirectCalling)
+{
   std::unique_ptr<A> objB(new B());
   ocs2::Synchronized<A> synchronized(std::move(objB));
 
@@ -72,7 +104,8 @@ TEST(testLockable, lockedWhileDirectCalling) {
   });
 }
 
-TEST(testLockable, scopedLocking) {
+TEST(testLockable, scopedLocking)
+{
   std::unique_ptr<A> objB(new B());
   ocs2::Synchronized<A> synchronized(std::move(objB));
 
@@ -89,12 +122,13 @@ TEST(testLockable, scopedLocking) {
   synchronized.getMutex().unlock();
 }
 
-TEST(testLockable, scopedLockingConst) {
+TEST(testLockable, scopedLockingConst)
+{
   std::unique_ptr<A> objB(new B());
   ocs2::Synchronized<A> synchronized(std::move(objB));
 
   // Const ref, as if passed to a function
-  const ocs2::Synchronized<A>& synchronizedRef = synchronized;
+  const ocs2::Synchronized<A> & synchronizedRef = synchronized;
 
   {
     auto lockedConstPtr = synchronizedRef.lock();
@@ -105,7 +139,8 @@ TEST(testLockable, scopedLockingConst) {
   }
 }
 
-TEST(testLockable, resetWhileScopedLocking) {
+TEST(testLockable, resetWhileScopedLocking)
+{
   std::unique_ptr<A> objB(new B());
   ocs2::Synchronized<A> synchronized(std::move(objB));
 
@@ -133,7 +168,8 @@ TEST(testLockable, resetWhileScopedLocking) {
   ASSERT_EQ(synchronized->getId(), ClassId::A);
 }
 
-TEST(testLockable, swap) {
+TEST(testLockable, swap)
+{
   std::unique_ptr<A> objBefore(new A());
   std::unique_ptr<A> objAfter(new B());
 
@@ -149,12 +185,13 @@ TEST(testLockable, swap) {
   ASSERT_EQ(objAfter->getId(), ClassId::A);
 }
 
-TEST(testLockable, lockMultiple) {
+TEST(testLockable, lockMultiple)
+{
   // Mix of types, const, and ref
   ocs2::Synchronized<A> synchronizedA(std::unique_ptr<A>(new A()));
   const ocs2::Synchronized<B> synchronizedB(std::unique_ptr<B>(new B()));
   ocs2::Synchronized<double> synchronizedDouble(std::unique_ptr<double>(new double(0.0)));
-  auto& synchronizedDoubleRef = synchronizedDouble;
+  auto & synchronizedDoubleRef = synchronizedDouble;
 
   {
     auto lockedPtrTuple = synchronizeLock(synchronizedA, synchronizedB, synchronizedDoubleRef);

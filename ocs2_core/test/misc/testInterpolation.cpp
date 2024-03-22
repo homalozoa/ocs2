@@ -1,17 +1,45 @@
-#include <gtest/gtest.h>
+// Copyright 2020 Michael Spieler. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//
+//    * Neither the name of the Farbod nor the names of its
+//      contributors may be used to endorse or promote products derived from
+//      this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 #include <iostream>
 
-#include <ocs2_core/misc/LinearInterpolation.h>
-#include <Eigen/Dense>
+#include "eigen3/Eigen/Dense"
+#include "gtest/gtest.h"
+#include "ocs2_core/misc/LinearInterpolation.hpp"
 
-TEST(testLinearInterpolation, testInterpolation) {
+TEST(testLinearInterpolation, testInterpolation)
+{
   using Data_T = Eigen::Matrix<double, 2, 1>;
 
   // Create data
   std::vector<double> t = {0.0, 1.0, 2.0, 3.0, 3.0, 4.0};
   std::vector<Data_T, Eigen::aligned_allocator<Data_T>> v;
-  for (auto& t_k : t) {
+  for (auto & t_k : t) {
     v.emplace_back(t_k * Data_T::Ones());
   }
 
@@ -26,7 +54,8 @@ TEST(testLinearInterpolation, testInterpolation) {
     const auto v_t = ocs2::LinearInterpolation::interpolate(indexAlpha, v);
     const auto foundIndex = indexAlpha.first;
     const auto alpha = indexAlpha.second;
-    std::cout << "time: " << time << " index: " << foundIndex << " v: " << v_t.transpose() << " alpha: " << alpha << std::endl;
+    std::cout << "time: " << time << " index: " << foundIndex << " v: " << v_t.transpose()
+              << " alpha: " << alpha << std::endl;
     EXPECT_EQ(foundIndex, index);
     EXPECT_DOUBLE_EQ(v_t(0), value);
     ASSERT_TRUE(std::isfinite(alpha));
@@ -54,7 +83,8 @@ TEST(testLinearInterpolation, testInterpolation) {
   test_interpolation(t[5] + 1.0, 4, t[5]);
 }
 
-TEST(testLinearInterpolation, testEventTimeInterpolation) {
+TEST(testLinearInterpolation, testEventTimeInterpolation)
+{
   {  // Only an event
     std::vector<double> time{1.0, 1.0};
     const auto indexAlpha = ocs2::LinearInterpolation::timeSegment(1.0, time);
@@ -78,13 +108,14 @@ TEST(testLinearInterpolation, testEventTimeInterpolation) {
   }
 }
 
-TEST(testLinearInterpolation, testSizeOneTime) {
+TEST(testLinearInterpolation, testSizeOneTime)
+{
   using Data_T = Eigen::Matrix<double, 2, 1>;
 
   // Create data
   std::vector<double> t = {1.0};
   std::vector<Data_T, Eigen::aligned_allocator<Data_T>> v;
-  for (auto& t_k : t) {
+  for (auto & t_k : t) {
     v.emplace_back(t_k * Data_T::Ones());
   }
 
@@ -99,7 +130,8 @@ TEST(testLinearInterpolation, testSizeOneTime) {
     const auto v_t = ocs2::LinearInterpolation::interpolate(indexAlpha, v);
     const auto foundIndex = indexAlpha.first;
     const auto alpha = indexAlpha.second;
-    std::cout << "time: " << time << " index: " << foundIndex << " v: " << v_t.transpose() << " alpha: " << alpha << std::endl;
+    std::cout << "time: " << time << " index: " << foundIndex << " v: " << v_t.transpose()
+              << " alpha: " << alpha << std::endl;
     EXPECT_EQ(foundIndex, index);
     EXPECT_DOUBLE_EQ(v_t(0), value);
     ASSERT_TRUE(std::isfinite(alpha));
@@ -113,10 +145,12 @@ TEST(testLinearInterpolation, testSizeOneTime) {
   test_interpolation(2.0, 0, 1.0);
 }
 
-TEST(testLinearInterpolation, testDifferentEigenSizes) {
+TEST(testLinearInterpolation, testDifferentEigenSizes)
+{
   using Data_T = Eigen::MatrixXd;
   std::vector<double> times = {0.0, 1.0};
-  std::vector<Data_T, Eigen::aligned_allocator<Data_T>> data = {Data_T::Zero(2, 3), Data_T::Ones(4, 4)};
+  std::vector<Data_T, Eigen::aligned_allocator<Data_T>> data = {
+    Data_T::Zero(2, 3), Data_T::Ones(4, 4)};
 
   Data_T result;
 

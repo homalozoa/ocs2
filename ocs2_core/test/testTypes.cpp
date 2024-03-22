@@ -1,40 +1,41 @@
-/******************************************************************************
-Copyright (c) 2020, Farbod Farshidian. All rights reserved.
+// Copyright 2020 Farbod Farshidian. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//
+//    * Neither the name of the Farbod nor the names of its
+//      contributors may be used to endorse or promote products derived from
+//      this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
+#include "gtest/gtest.h"
+#include "ocs2_core/Types.hpp"
 
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
+namespace
+{
+// Tests if the convention for state only quadratic approximation works with
+// the defined operations (addition and scalar multiplication)
 
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-******************************************************************************/
-
-#include <gtest/gtest.h>
-
-#include <ocs2_core/Types.h>
-
-namespace {
-// Tests if the convention for state only quadratic approximation works with the defined operations (addition and scalar multiplication)
-
-void stateOnlyLinearOperationsTest(const ocs2::ScalarFunctionLinearApproximation& value, size_t nx) {
+void stateOnlyLinearOperationsTest(const ocs2::ScalarFunctionLinearApproximation & value, size_t nx)
+{
   // Define state only 'other' value
   const ocs2::ScalarFunctionLinearApproximation other = [=] {
     ocs2::ScalarFunctionLinearApproximation other;
@@ -66,7 +67,9 @@ void stateOnlyLinearOperationsTest(const ocs2::ScalarFunctionLinearApproximation
   }
 }
 
-void stateOnlyQuadraticOperationsTest(const ocs2::ScalarFunctionQuadraticApproximation& value, size_t nx) {
+void stateOnlyQuadraticOperationsTest(
+  const ocs2::ScalarFunctionQuadraticApproximation & value, size_t nx)
+{
   // Define state only 'other' value
   const ocs2::ScalarFunctionQuadraticApproximation other = [=] {
     ocs2::ScalarFunctionQuadraticApproximation other;
@@ -104,7 +107,8 @@ void stateOnlyQuadraticOperationsTest(const ocs2::ScalarFunctionQuadraticApproxi
 
 }  // namespace
 
-TEST(testTypes, stateOnlyLinearOperations_constructor) {
+TEST(testTypes, stateOnlyLinearOperations_constructor)
+{
   const int nx = 2;
   auto constructed = ocs2::ScalarFunctionLinearApproximation(nx);
   // Need to set values after resize.
@@ -113,19 +117,22 @@ TEST(testTypes, stateOnlyLinearOperations_constructor) {
   stateOnlyLinearOperationsTest(constructed, nx);
 }
 
-TEST(testTypes, stateOnlyLinearOperations_zero) {
+TEST(testTypes, stateOnlyLinearOperations_zero)
+{
   const int nx = 2;
   stateOnlyLinearOperationsTest(ocs2::ScalarFunctionLinearApproximation::Zero(nx), nx);
 }
 
-TEST(testTypes, stateOnlyLinearOperations_setZero) {
+TEST(testTypes, stateOnlyLinearOperations_setZero)
+{
   const int nx = 2;
   ocs2::ScalarFunctionLinearApproximation zero;
   zero.setZero(nx);
   stateOnlyLinearOperationsTest(zero, nx);
 }
 
-TEST(testTypes, stateOnlyLinearOperations_resize) {
+TEST(testTypes, stateOnlyLinearOperations_resize)
+{
   const int nx = 2;
   ocs2::ScalarFunctionLinearApproximation resized(nx + 1, 10);
   resized.resize(nx);
@@ -135,7 +142,8 @@ TEST(testTypes, stateOnlyLinearOperations_resize) {
   stateOnlyLinearOperationsTest(resized, nx);
 }
 
-TEST(testTypes, stateOnlyQuadraticOperations_constructor) {
+TEST(testTypes, stateOnlyQuadraticOperations_constructor)
+{
   const int nx = 2;
   auto constructed = ocs2::ScalarFunctionQuadraticApproximation(nx);
   // Need to set values after resize.
@@ -145,19 +153,22 @@ TEST(testTypes, stateOnlyQuadraticOperations_constructor) {
   stateOnlyQuadraticOperationsTest(constructed, nx);
 }
 
-TEST(testTypes, stateOnlyQuadraticOperations_zero) {
+TEST(testTypes, stateOnlyQuadraticOperations_zero)
+{
   const int nx = 2;
   stateOnlyQuadraticOperationsTest(ocs2::ScalarFunctionQuadraticApproximation::Zero(nx), nx);
 }
 
-TEST(testTypes, stateOnlyQuadraticOperations_setZero) {
+TEST(testTypes, stateOnlyQuadraticOperations_setZero)
+{
   const int nx = 2;
   ocs2::ScalarFunctionQuadraticApproximation zero;
   zero.setZero(nx);
   stateOnlyQuadraticOperationsTest(zero, nx);
 }
 
-TEST(testTypes, stateOnlyQuadraticOperations_resize) {
+TEST(testTypes, stateOnlyQuadraticOperations_resize)
+{
   const int nx = 2;
   ocs2::ScalarFunctionQuadraticApproximation resized(nx + 1, 10);
   resized.resize(nx);

@@ -1,41 +1,40 @@
-/******************************************************************************
-Copyright (c) 2020, Farbod Farshidian. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-******************************************************************************/
+// Copyright 2020 Farbod Farshidian. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//
+//    * Neither the name of the Farbod nor the names of its
+//      contributors may be used to endorse or promote products derived from
+//      this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 #include <numeric>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "ocs2_core/constraint/StateConstraintCollection.hpp"
+#include "ocs2_core/constraint/StateInputConstraintCollection.hpp"
+#include "testConstraints.hpp"
 
-#include <ocs2_core/constraint/StateConstraintCollection.h>
-#include <ocs2_core/constraint/StateInputConstraintCollection.h>
-#include "testConstraints.h"
-
-TEST(TestConstraintCollection, add) {
+TEST(TestConstraintCollection, add)
+{
   ocs2::StateInputConstraintCollection constraintCollection;
 
   // Add after construction
@@ -43,7 +42,8 @@ TEST(TestConstraintCollection, add) {
   ASSERT_NO_THROW({ constraintCollection.add("Constraint1", std::move(constraintTerm)); });
 }
 
-TEST(TestConstraintCollection, numberOfConstraints) {
+TEST(TestConstraintCollection, numberOfConstraints)
+{
   ocs2::StateInputConstraintCollection constraintCollection;
 
   // Initially we have zero constraints for all types
@@ -58,7 +58,8 @@ TEST(TestConstraintCollection, numberOfConstraints) {
   EXPECT_EQ(constraintCollection.getNumConstraints(0.0), addedConstraints);
 }
 
-TEST(TestConstraintCollection, termsSize) {
+TEST(TestConstraintCollection, termsSize)
+{
   ocs2::StateInputConstraintCollection constraintCollection;
 
   // Initially we have zero constraints for all types
@@ -70,7 +71,7 @@ TEST(TestConstraintCollection, termsSize) {
   constraintCollection.add("Constraint1", std::make_unique<TestDummyConstraint>());
   constraintCollection.add("Constraint2", std::make_unique<TestDummyConstraint>());
   constraintCollection.add("Constraint3", std::make_unique<TestDummyConstraint>());
-  auto& constraint1 = constraintCollection.get<TestDummyConstraint>("Constraint1");
+  auto & constraint1 = constraintCollection.get<TestDummyConstraint>("Constraint1");
   const size_t constraint1Size = constraint1.getNumConstraints(0.0);
 
   // Check the right constraint size
@@ -89,7 +90,8 @@ TEST(TestConstraintCollection, termsSize) {
   EXPECT_EQ(std::accumulate(termsSize.begin(), termsSize.end(), 0), 2 * constraint1Size);
 }
 
-TEST(TestConstraintCollection, activatingConstraints) {
+TEST(TestConstraintCollection, activatingConstraints)
+{
   ocs2::StateInputConstraintCollection constraintCollection;
 
   // Initially we have zero constraints for all types
@@ -109,7 +111,8 @@ TEST(TestConstraintCollection, activatingConstraints) {
   EXPECT_EQ(constraintCollection.getNumConstraints(0.0), 0);
 }
 
-TEST(TestConstraintCollection, clone) {
+TEST(TestConstraintCollection, clone)
+{
   ocs2::StateInputConstraintCollection constraintCollection;
   auto constraintTerm = std::make_unique<TestDummyConstraint>();
   const size_t addedConstraints = constraintTerm->getNumConstraints(0.0);
@@ -120,7 +123,8 @@ TEST(TestConstraintCollection, clone) {
   EXPECT_EQ(newCollection->getNumConstraints(0.0), addedConstraints);
 }
 
-TEST(TestConstraintCollection, getValue) {
+TEST(TestConstraintCollection, getValue)
+{
   using collection_t = ocs2::StateInputConstraintCollection;
   collection_t constraintCollection;
 
@@ -148,7 +152,8 @@ TEST(TestConstraintCollection, getValue) {
   EXPECT_TRUE(constraintValues[1].isApprox(expectedValue));
 }
 
-TEST(TestConstraintCollection, getLinearApproximation) {
+TEST(TestConstraintCollection, getLinearApproximation)
+{
   using collection_t = ocs2::StateInputConstraintCollection;
   collection_t constraintCollection;
 
@@ -165,7 +170,8 @@ TEST(TestConstraintCollection, getLinearApproximation) {
   constraintCollection.add("Constraint1", std::move(constraintTerm1));
   constraintCollection.add("Constraint2", std::move(constraintTerm2));
 
-  auto linearApproximation = constraintCollection.getLinearApproximation(t, x, u, ocs2::PreComputation());
+  auto linearApproximation =
+    constraintCollection.getLinearApproximation(t, x, u, ocs2::PreComputation());
   ASSERT_EQ(linearApproximation.f.size(), 4);
   EXPECT_EQ(linearApproximation.f(0), 1.0);
   EXPECT_EQ(linearApproximation.f(1), 2.0);
@@ -181,7 +187,8 @@ TEST(TestConstraintCollection, getLinearApproximation) {
   EXPECT_EQ(linearApproximation.dfdu.row(3).sum(), 2);
 }
 
-TEST(TestConstraintCollection, getQuadraticApproximation) {
+TEST(TestConstraintCollection, getQuadraticApproximation)
+{
   using collection_t = ocs2::StateInputConstraintCollection;
   collection_t constraintCollection;
 
@@ -198,7 +205,8 @@ TEST(TestConstraintCollection, getQuadraticApproximation) {
   constraintCollection.add("Constraint1", std::move(constraintTerm1));
   constraintCollection.add("Constraint2", std::move(constraintTerm2));
 
-  auto quadraticApproximation = constraintCollection.getQuadraticApproximation(t, x, u, ocs2::PreComputation());
+  auto quadraticApproximation =
+    constraintCollection.getQuadraticApproximation(t, x, u, ocs2::PreComputation());
   ASSERT_EQ(quadraticApproximation.f.size(), 4);
   EXPECT_EQ(quadraticApproximation.f(0), 1.0);
   EXPECT_EQ(quadraticApproximation.f(1), 2.0);

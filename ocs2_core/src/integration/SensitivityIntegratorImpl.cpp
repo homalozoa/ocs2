@@ -1,50 +1,47 @@
-/******************************************************************************
-Copyright (c) 2020, Farbod Farshidian. All rights reserved.
+// Copyright 2020 Farbod Farshidian. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//
+//    * Neither the name of the Farbod nor the names of its
+//      contributors may be used to endorse or promote products derived from
+//      this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
+#include "ocs2_core/integration/SensitivityIntegratorImpl.hpp"
 
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
+namespace ocs2
+{
 
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-******************************************************************************/
-
-#include "ocs2_core/integration/SensitivityIntegratorImpl.h"
-
-namespace ocs2 {
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-vector_t eulerDiscretization(SystemDynamicsBase& system, scalar_t t, const vector_t& x, const vector_t& u, scalar_t dt) {
+vector_t eulerDiscretization(
+  SystemDynamicsBase & system, scalar_t t, const vector_t & x, const vector_t & u, scalar_t dt)
+{
   vector_t tmp = system.computeFlowMap(t, x, u);
   tmp = x + dt * tmp;
   return tmp;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-VectorFunctionLinearApproximation eulerSensitivityDiscretization(SystemDynamicsBase& system, scalar_t t, const vector_t& x,
-                                                                 const vector_t& u, scalar_t dt) {
+VectorFunctionLinearApproximation eulerSensitivityDiscretization(
+  SystemDynamicsBase & system, scalar_t t, const vector_t & x, const vector_t & u, scalar_t dt)
+{
   // x_{k+1} = A_{k} * dx_{k} + B_{k} * du_{k} + b_{k}
   // A_{k} = Id + dt * dfdx
   // B_{k} = dt * dfdu
@@ -57,10 +54,9 @@ VectorFunctionLinearApproximation eulerSensitivityDiscretization(SystemDynamicsB
   return continuousApproximation;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-vector_t rk2Discretization(SystemDynamicsBase& system, scalar_t t, const vector_t& x, const vector_t& u, scalar_t dt) {
+vector_t rk2Discretization(
+  SystemDynamicsBase & system, scalar_t t, const vector_t & x, const vector_t & u, scalar_t dt)
+{
   const scalar_t dt_halve = dt / 2.0;
 
   // System evaluations
@@ -73,11 +69,9 @@ vector_t rk2Discretization(SystemDynamicsBase& system, scalar_t t, const vector_
   return tmp;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-VectorFunctionLinearApproximation rk2SensitivityDiscretization(SystemDynamicsBase& system, scalar_t t, const vector_t& x, const vector_t& u,
-                                                               scalar_t dt) {
+VectorFunctionLinearApproximation rk2SensitivityDiscretization(
+  SystemDynamicsBase & system, scalar_t t, const vector_t & x, const vector_t & u, scalar_t dt)
+{
   const scalar_t dt_halve = dt / 2.0;
 
   // System evaluations
@@ -103,10 +97,9 @@ VectorFunctionLinearApproximation rk2SensitivityDiscretization(SystemDynamicsBas
   return k1;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-vector_t rk4Discretization(SystemDynamicsBase& system, scalar_t t, const vector_t& x, const vector_t& u, scalar_t dt) {
+vector_t rk4Discretization(
+  SystemDynamicsBase & system, scalar_t t, const vector_t & x, const vector_t & u, scalar_t dt)
+{
   const scalar_t dt_halve = dt / 2.0;
   const scalar_t dt_sixth = dt / 6.0;
   const scalar_t dt_third = dt / 3.0;
@@ -124,11 +117,9 @@ vector_t rk4Discretization(SystemDynamicsBase& system, scalar_t t, const vector_
   return tmp;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-VectorFunctionLinearApproximation rk4SensitivityDiscretization(SystemDynamicsBase& system, scalar_t t, const vector_t& x, const vector_t& u,
-                                                               scalar_t dt) {
+VectorFunctionLinearApproximation rk4SensitivityDiscretization(
+  SystemDynamicsBase & system, scalar_t t, const vector_t & x, const vector_t & u, scalar_t dt)
+{
   const scalar_t dt_halve = dt / 2.0;
   const scalar_t dt_sixth = dt / 6.0;
   const scalar_t dt_third = dt / 3.0;

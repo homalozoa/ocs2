@@ -1,40 +1,43 @@
-/******************************************************************************
-Copyright (c) 2021, Farbod Farshidian. All rights reserved.
+// Copyright 2020 Farbod Farshidian. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//
+//    * Neither the name of the Farbod nor the names of its
+//      contributors may be used to endorse or promote products derived from
+//      this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-******************************************************************************/
-
-#include "ocs2_core/loopshaping/LoopshapingPropertyTree.h"
+#include "ocs2_core/loopshaping/LoopshapingPropertyTree.hpp"
 
 #include <boost/property_tree/info_parser.hpp>
-#include "ocs2_core/misc/LoadData.h"
 
-namespace ocs2 {
-namespace loopshaping_property_tree {
-Filter readSISOFilter(const boost::property_tree::ptree& pt, std::string filterName, bool invert) {
+#include "ocs2_core/misc/LoadData.hpp"
+
+namespace ocs2
+{
+namespace loopshaping_property_tree
+{
+Filter readSISOFilter(const boost::property_tree::ptree & pt, std::string filterName, bool invert)
+{
   // Get Sizes
   const auto numRepeats = pt.get<size_t>(filterName + ".numRepeats", 1);
   const auto numPoles = pt.get<size_t>(filterName + ".numPoles", 0);
@@ -62,7 +65,8 @@ Filter readSISOFilter(const boost::property_tree::ptree& pt, std::string filterN
   }
 
   // Print frequency domain information
-  std::cerr << "Read filter " << filterName << (invert ? " (before inversion)" : "") << ", convention: a0*s^n + a1*s^(n-1) + ... + an \n";
+  std::cerr << "Read filter " << filterName << (invert ? " (before inversion)" : "")
+            << ", convention: a0*s^n + a1*s^(n-1) + ... + an \n";
   std::cerr << "\tnumerator: [" << numerator.transpose() << "]\n";
   std::cerr << "\tdenominator: [" << denominator.transpose() << "]\n";
   std::cerr << "\tDC gain: " << numerator(numZeros) / denominator(numPoles) << "\n";
@@ -102,7 +106,8 @@ Filter readSISOFilter(const boost::property_tree::ptree& pt, std::string filterN
   return Filter(A, B, C, D);
 }
 
-Filter readMIMOFilter(const boost::property_tree::ptree& pt, std::string filterName, bool invert) {
+Filter readMIMOFilter(const boost::property_tree::ptree & pt, std::string filterName, bool invert)
+{
   const auto numFilters = pt.get<size_t>(filterName + ".numFilters", 0);
   if (numFilters > 0) {
     // Read the sisoFilters
@@ -125,7 +130,7 @@ Filter readMIMOFilter(const boost::property_tree::ptree& pt, std::string filterN
     matrix_t C = matrix_t::Zero(numOutputs, numStates);
     matrix_t D = matrix_t::Zero(numOutputs, numInputs);
     size_t statecount(0), inputcount(0), outputcount(0);
-    for (const auto& filt : sisoFilters) {
+    for (const auto & filt : sisoFilters) {
       A.block(statecount, statecount, filt.getNumStates(), filt.getNumStates()) = filt.getA();
       B.block(statecount, inputcount, filt.getNumStates(), filt.getNumInputs()) = filt.getB();
       C.block(outputcount, statecount, filt.getNumOutputs(), filt.getNumStates()) = filt.getC();
@@ -140,7 +145,8 @@ Filter readMIMOFilter(const boost::property_tree::ptree& pt, std::string filterN
   }
 }
 
-std::shared_ptr<LoopshapingDefinition> load(const std::string& settingsFile) {
+std::shared_ptr<LoopshapingDefinition> load(const std::string & settingsFile)
+{
   // Read from settings File
   boost::property_tree::ptree pt;
   boost::property_tree::read_info(settingsFile, pt);
@@ -158,7 +164,8 @@ std::shared_ptr<LoopshapingDefinition> load(const std::string& settingsFile) {
     return std::make_shared<LoopshapingDefinition>(LoopshapingType::eliminatepattern, s_filter);
   }
 
-  throw std::runtime_error("[LoopshapingDefinition] error loading loopshaping definition, no valid filter found");
+  throw std::runtime_error(
+    "[LoopshapingDefinition] error loading loopshaping definition, no valid filter found");
 }
 
 }  // namespace loopshaping_property_tree

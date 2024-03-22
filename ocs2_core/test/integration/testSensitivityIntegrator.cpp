@@ -1,43 +1,42 @@
-/******************************************************************************
-Copyright (c) 2020, Farbod Farshidian. All rights reserved.
+// Copyright 2020 Farbod Farshidian. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//
+//    * Neither the name of the Farbod nor the names of its
+//      contributors may be used to endorse or promote products derived from
+//      this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
+#include "gtest/gtest.h"
+#include "ocs2_core/control/FeedforwardController.hpp"
+#include "ocs2_core/dynamics/LinearSystemDynamics.hpp"
+#include "ocs2_core/dynamics/SystemDynamicsBase.hpp"
+#include "ocs2_core/integration/Integrator.hpp"
+#include "ocs2_core/integration/SensitivityIntegrator.hpp"
 
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-******************************************************************************/
-
-#include <gtest/gtest.h>
-
-#include "ocs2_core/integration/Integrator.h"
-#include "ocs2_core/integration/SensitivityIntegrator.h"
-
-#include <ocs2_core/control/FeedforwardController.h>
-#include <ocs2_core/dynamics/LinearSystemDynamics.h>
-#include <ocs2_core/dynamics/SystemDynamicsBase.h>
-
-namespace {
-std::unique_ptr<ocs2::LinearSystemDynamics> getSystem() {
+namespace
+{
+std::unique_ptr<ocs2::LinearSystemDynamics> getSystem()
+{
   ocs2::matrix_t A(2, 2);
   A << -2, -1,  // clang-format off
         1,  0;  // clang-format on
@@ -47,7 +46,8 @@ std::unique_ptr<ocs2::LinearSystemDynamics> getSystem() {
 }
 }  // namespace
 
-TEST(test_sensitivity_integrator, eulerSensitivity) {
+TEST(test_sensitivity_integrator, eulerSensitivity)
+{
   auto type = ocs2::SensitivityIntegratorType::EULER;
   auto eulerSensitivityDiscretization = ocs2::selectDynamicsSensitivityDiscretization(type);
   auto eulerDiscretization = ocs2::selectDynamicsDiscretization(type);
@@ -63,7 +63,8 @@ TEST(test_sensitivity_integrator, eulerSensitivity) {
     const ocs2::PreComputation preComp;
 
     // System evaluations
-    const ocs2::VectorFunctionLinearApproximation k1 = system->linearApproximation(t, x, u, preComp);
+    const ocs2::VectorFunctionLinearApproximation k1 =
+      system->linearApproximation(t, x, u, preComp);
 
     // State sensitivity \dot{Sx} = dfdx(t) Sx, with Sx(0) = Identity()
     const ocs2::matrix_t dk1dxk = k1.dfdx;
@@ -87,7 +88,8 @@ TEST(test_sensitivity_integrator, eulerSensitivity) {
   ASSERT_TRUE(eulerLinearizedDynamics.dfdu.isApprox(eulerdynamics_check.dfdu));
 }
 
-TEST(test_sensitivity_integrator, rk2Sensitivity) {
+TEST(test_sensitivity_integrator, rk2Sensitivity)
+{
   auto type = ocs2::SensitivityIntegratorType::RK2;
   auto rk2SensitivityDiscretization = ocs2::selectDynamicsSensitivityDiscretization(type);
   auto rk2Discretization = ocs2::selectDynamicsDiscretization(type);
@@ -104,8 +106,10 @@ TEST(test_sensitivity_integrator, rk2Sensitivity) {
     const ocs2::PreComputation preComp;
 
     // System evaluations
-    const ocs2::VectorFunctionLinearApproximation k1 = system->linearApproximation(t, x, u, preComp);
-    const ocs2::VectorFunctionLinearApproximation k2 = system->linearApproximation(t + dt, x + dt * k1.f, u, preComp);
+    const ocs2::VectorFunctionLinearApproximation k1 =
+      system->linearApproximation(t, x, u, preComp);
+    const ocs2::VectorFunctionLinearApproximation k2 =
+      system->linearApproximation(t + dt, x + dt * k1.f, u, preComp);
 
     // State sensitivity \dot{Sx} = dfdx(t) Sx, with Sx(0) = Identity()
     const ocs2::matrix_t dk1dxk = k1.dfdx;
@@ -117,7 +121,8 @@ TEST(test_sensitivity_integrator, rk2Sensitivity) {
 
     // Assemble discrete approximation
     ocs2::VectorFunctionLinearApproximation discreteApproximation;
-    discreteApproximation.dfdx = ocs2::matrix_t::Identity(x.size(), x.size()) + dt_halve * dk1dxk + dt_halve * dk2dxk;
+    discreteApproximation.dfdx =
+      ocs2::matrix_t::Identity(x.size(), x.size()) + dt_halve * dk1dxk + dt_halve * dk2dxk;
     discreteApproximation.dfdu = dt_halve * dk1duk + dt_halve * dk2duk;
     discreteApproximation.f = x + dt_halve * k1.f + dt_halve * k2.f;
     return discreteApproximation;
@@ -131,7 +136,8 @@ TEST(test_sensitivity_integrator, rk2Sensitivity) {
   ASSERT_TRUE(rk2LinearizedDynamics.dfdu.isApprox(rk2dynamics_check.dfdu));
 }
 
-TEST(test_sensitivity_integrator, rk4Sensitivity) {
+TEST(test_sensitivity_integrator, rk4Sensitivity)
+{
   auto type = ocs2::SensitivityIntegratorType::RK4;
   auto rk4SensitivityDiscretization = ocs2::selectDynamicsSensitivityDiscretization(type);
   auto rk4Discretization = ocs2::selectDynamicsDiscretization(type);
@@ -150,10 +156,14 @@ TEST(test_sensitivity_integrator, rk4Sensitivity) {
     const ocs2::PreComputation preComp;
 
     // System evaluations
-    const ocs2::VectorFunctionLinearApproximation k1 = system->linearApproximation(t, x, u, preComp);
-    const ocs2::VectorFunctionLinearApproximation k2 = system->linearApproximation(t + dt_halve, x + dt_halve * k1.f, u, preComp);
-    const ocs2::VectorFunctionLinearApproximation k3 = system->linearApproximation(t + dt_halve, x + dt_halve * k2.f, u, preComp);
-    const ocs2::VectorFunctionLinearApproximation k4 = system->linearApproximation(t + dt, x + dt * k3.f, u, preComp);
+    const ocs2::VectorFunctionLinearApproximation k1 =
+      system->linearApproximation(t, x, u, preComp);
+    const ocs2::VectorFunctionLinearApproximation k2 =
+      system->linearApproximation(t + dt_halve, x + dt_halve * k1.f, u, preComp);
+    const ocs2::VectorFunctionLinearApproximation k3 =
+      system->linearApproximation(t + dt_halve, x + dt_halve * k2.f, u, preComp);
+    const ocs2::VectorFunctionLinearApproximation k4 =
+      system->linearApproximation(t + dt, x + dt * k3.f, u, preComp);
 
     // State sensitivity \dot{Sx} = dfdx(t) Sx, with Sx(0) = Identity()
     const ocs2::matrix_t dk1dxk = k1.dfdx;
@@ -169,10 +179,12 @@ TEST(test_sensitivity_integrator, rk4Sensitivity) {
 
     // Assemble discrete approximation
     ocs2::VectorFunctionLinearApproximation discreteApproximation;
-    discreteApproximation.dfdx =
-        ocs2::matrix_t::Identity(x.size(), x.size()) + dt_sixth * dk1dxk + dt_third * dk2dxk + dt_third * dk3dxk + dt_sixth * dk4dxk;
-    discreteApproximation.dfdu = dt_sixth * dk1duk + dt_third * dk2duk + dt_third * dk3duk + dt_sixth * dk4duk;
-    discreteApproximation.f = x + dt_sixth * k1.f + dt_third * k2.f + dt_third * k3.f + dt_sixth * k4.f;
+    discreteApproximation.dfdx = ocs2::matrix_t::Identity(x.size(), x.size()) + dt_sixth * dk1dxk +
+                                 dt_third * dk2dxk + dt_third * dk3dxk + dt_sixth * dk4dxk;
+    discreteApproximation.dfdu =
+      dt_sixth * dk1duk + dt_third * dk2duk + dt_third * dk3duk + dt_sixth * dk4duk;
+    discreteApproximation.f =
+      x + dt_sixth * k1.f + dt_third * k2.f + dt_third * k3.f + dt_sixth * k4.f;
     return discreteApproximation;
   }();
 
@@ -184,7 +196,8 @@ TEST(test_sensitivity_integrator, rk4Sensitivity) {
   ASSERT_TRUE(rk4LinearizedDynamics.dfdu.isApprox(rk4dynamics_check.dfdu));
 }
 
-TEST(test_sensitivity_integrator, vsBoostRK4) {
+TEST(test_sensitivity_integrator, vsBoostRK4)
+{
   auto system = getSystem();
   ocs2::scalar_t t = 0.5;
   ocs2::vector_t x = ocs2::vector_t::Random(2);

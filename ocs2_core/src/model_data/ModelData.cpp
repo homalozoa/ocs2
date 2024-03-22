@@ -1,43 +1,42 @@
-/******************************************************************************
-Copyright (c) 2020, Farbod Farshidian. All rights reserved.
+// Copyright 2020 Farbod Farshidian. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//
+//    * Neither the name of the Farbod nor the names of its
+//      contributors may be used to endorse or promote products derived from
+//      this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-******************************************************************************/
+#include "ocs2_core/model_data/ModelData.hpp"
 
 #include <iostream>
 
-#include "ocs2_core/misc/LinearAlgebra.h"
-#include "ocs2_core/model_data/ModelData.h"
+#include "ocs2_core/misc/LinearAlgebra.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-std::string checkSize(const ModelData& data, int stateDim, int inputDim) {
+std::string checkSize(const ModelData & data, int stateDim, int inputDim)
+{
   std::stringstream errorDescription;
 
   if (data.stateDim != stateDim) {
@@ -60,19 +59,19 @@ std::string checkSize(const ModelData& data, int stateDim, int inputDim) {
   errorDescription << checkSize(stateDim, inputDim, data.cost, "cost");
 
   // state equality constraints
-  errorDescription << checkSize(data.stateEqConstraint.f.size(), stateDim, 0, data.stateEqConstraint, "stateEqConstraint");
+  errorDescription << checkSize(
+    data.stateEqConstraint.f.size(), stateDim, 0, data.stateEqConstraint, "stateEqConstraint");
 
   // state-input equality constraints
-  errorDescription << checkSize(data.stateInputEqConstraint.f.size(), stateDim, inputDim, data.stateInputEqConstraint,
-                                "stateInputEqConstraint");
+  errorDescription << checkSize(
+    data.stateInputEqConstraint.f.size(), stateDim, inputDim, data.stateInputEqConstraint,
+    "stateInputEqConstraint");
 
   return errorDescription.str();
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-std::string checkCostProperties(const ModelData& data) {
+std::string checkCostProperties(const ModelData & data)
+{
   std::stringstream errorDescription;
 
   errorDescription << checkBeingPSD(data.cost, "cost");
@@ -81,8 +80,9 @@ std::string checkCostProperties(const ModelData& data) {
   if (data.cost.dfduu.size() > 0) {
     const auto rcond = data.cost.dfduu.ldlt().rcond();
     if (rcond < Eigen::NumTraits<scalar_t>::epsilon()) {
-      errorDescription << "Cost second derivative w.r.t. input is not invertible. It's reciprocal condition number is " +
-                              std::to_string(rcond) + ".\n";
+      errorDescription << "Cost second derivative w.r.t. input is not invertible. It's reciprocal "
+                          "condition number is " +
+                            std::to_string(rcond) + ".\n";
     } else {
       // check schur complement of R being PSD
       errorDescription << schurComplementOfCostHessianIsPsd(data.cost);
@@ -92,10 +92,8 @@ std::string checkCostProperties(const ModelData& data) {
   return errorDescription.str();
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-std::string schurComplementOfCostHessianIsPsd(const ScalarFunctionQuadraticApproximation& cost) {
+std::string schurComplementOfCostHessianIsPsd(const ScalarFunctionQuadraticApproximation & cost)
+{
   if (cost.dfdxx.size() > 0 && cost.dfduu.size() > 0) {
     matrix_t UofUUT;
     LinearAlgebra::computeInverseMatrixUUT(cost.dfduu, UofUUT);
@@ -104,17 +102,16 @@ std::string schurComplementOfCostHessianIsPsd(const ScalarFunctionQuadraticAppro
     inputHessianSchurComplement.noalias() -= UT_P.transpose() * UT_P;
 
     // check for being psd
-    return checkBeingPSD(inputHessianSchurComplement, "Schur complement of cost second derivative w.r.t. input");
+    return checkBeingPSD(
+      inputHessianSchurComplement, "Schur complement of cost second derivative w.r.t. input");
 
   } else {
     return "Either cost.dfdxx or cost.dfduu are not set!";
   }
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-std::string checkDynamicsProperties(const ModelData& data) {
+std::string checkDynamicsProperties(const ModelData & data)
+{
   std::stringstream errorDescription;
 
   if (!data.dynamics.f.allFinite()) {
@@ -133,10 +130,8 @@ std::string checkDynamicsProperties(const ModelData& data) {
   return errorDescription.str();
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-std::string checkControllability(const VectorFunctionLinearApproximation& dynamics) {
+std::string checkControllability(const VectorFunctionLinearApproximation & dynamics)
+{
   const size_t stateDim = dynamics.dfdu.rows();
   const size_t inputDim = dynamics.dfdu.cols();
 
@@ -144,7 +139,8 @@ std::string checkControllability(const VectorFunctionLinearApproximation& dynami
   matrix_t ctrlMatrix(stateDim, inputDim * stateDim);
   ctrlMatrix.leftCols(inputDim) = dynamics.dfdu;
   for (size_t i = 1; i < stateDim; i++) {
-    ctrlMatrix.middleCols(i * inputDim, inputDim).noalias() = dynamics.dfdx * ctrlMatrix.middleCols((i - 1) * inputDim, inputDim);
+    ctrlMatrix.middleCols(i * inputDim, inputDim).noalias() =
+      dynamics.dfdx * ctrlMatrix.middleCols((i - 1) * inputDim, inputDim);
   }
 
   // controllability rank
@@ -152,17 +148,15 @@ std::string checkControllability(const VectorFunctionLinearApproximation& dynami
 
   std::stringstream errorDescription;
   if (ctrlMatrixRank < stateDim) {
-    errorDescription << "Uncontrollable system: controllability matrix rank should be " << stateDim << " as opposed to " << ctrlMatrixRank
-                     << "\n";
+    errorDescription << "Uncontrollable system: controllability matrix rank should be " << stateDim
+                     << " as opposed to " << ctrlMatrixRank << "\n";
   }
 
   return errorDescription.str();
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-std::string checkConstraintProperties(const ModelData& data) {
+std::string checkConstraintProperties(const ModelData & data)
+{
   std::stringstream errorDescription;
 
   if (data.stateEqConstraint.f.rows() > 0) {
@@ -188,13 +182,17 @@ std::string checkConstraintProperties(const ModelData& data) {
       errorDescription << "Input-state constraint derivative w.r.t. input is not finite.\n";
     }
     if (numConstraints > inputDim) {
-      errorDescription << "Number of active state-input equality constraints (a.k.a. " + std::to_string(numConstraints) +
-                              ") should be less-equal to the input dimension (a.k.a. " + std::to_string(inputDim) + ").\n";
+      errorDescription << "Number of active state-input equality constraints (a.k.a. " +
+                            std::to_string(numConstraints) +
+                            ") should be less-equal to the input dimension (a.k.a. " +
+                            std::to_string(inputDim) + ").\n";
     }
     const size_t DmRank = LinearAlgebra::rank(data.stateInputEqConstraint.dfdu);
     if (DmRank != numConstraints) {
-      errorDescription << "Input-state constraint derivative w.r.t. input is not full-row rank. It's rank is " + std::to_string(DmRank) +
-                              " while the expected rank is " + std::to_string(numConstraints) + ".\n";
+      errorDescription
+        << "Input-state constraint derivative w.r.t. input is not full-row rank. It's rank is " +
+             std::to_string(DmRank) + " while the expected rank is " +
+             std::to_string(numConstraints) + ".\n";
     }
   }
 
