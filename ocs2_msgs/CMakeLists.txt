@@ -1,39 +1,37 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.8)
 project(ocs2_msgs)
 
-find_package(catkin REQUIRED
-  COMPONENTS
-    std_msgs
-    message_generation
+find_package(ament_cmake_auto REQUIRED)
+ament_auto_find_build_dependencies()
+
+set(dependencies
+  std_msgs
 )
 
-add_message_files(
-  FILES
-    mpc_state.msg
-    mpc_input.msg
-    mode_schedule.msg
-    mpc_observation.msg
-    mpc_performance_indices.msg
-    mpc_target_trajectories.msg
-    controller_data.msg
-    mpc_flattened_controller.msg
-    lagrangian_metrics.msg
-    multiplier.msg
-    constraint.msg
+set(msg_files
+  "msg/Constraint.msg"
+  "msg/ControllerData.msg"
+  "msg/LagrangianMetrics.msg"
+  "msg/ModeSchedule.msg"
+  "msg/MpcFlattenedController.msg"
+  "msg/MpcInput.msg"
+  "msg/MpcObservation.msg"
+  "msg/MpcPerformanceIndices.msg"
+  "msg/MpcState.msg"
+  "msg/MpcTargetTrajectories.msg"
+  "msg/Multiplier.msg"
 )
 
-add_service_files(
-  FILES
-    reset.srv
+set(srv_files
+  "srv/Reset.srv"
 )
 
-generate_messages(
-  DEPENDENCIES
-    std_msgs
+rosidl_generate_interfaces(${PROJECT_NAME}
+  ${msg_files}
+  ${srv_files}
+  DEPENDENCIES ${dependencies}
+  ADD_LINTER_TESTS
 )
 
-catkin_package(
-  CATKIN_DEPENDS
-    std_msgs
-    message_runtime
-)
+ament_export_dependencies(rosidl_default_runtime)
+ament_auto_package()
