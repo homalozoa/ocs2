@@ -29,11 +29,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <ocs2_oc/oc_data/PrimalSolution.h>
+#include "ocs2_mpc/CommandData.hpp"
+#include "ocs2_oc/oc_data/PrimalSolution.hpp"
 
-#include "ocs2_mpc/CommandData.h"
-
-namespace ocs2 {
+namespace ocs2
+{
 
 /**
  * This class allows modification of the MPC solution at two separate points of the MRT process.
@@ -48,16 +48,17 @@ namespace ocs2 {
  *
  * Both filling of the buffer and the update swapping are protected by the same mutex.
  */
-class MrtObserver {
- public:
+class MrtObserver
+{
+public:
   MrtObserver() = default;
   virtual ~MrtObserver() = default;
 
   // Delete copy and move operations
-  MrtObserver(const MrtObserver&) = delete;
-  MrtObserver& operator=(const MrtObserver&) = delete;
-  MrtObserver(MrtObserver&&) = delete;
-  MrtObserver& operator=(MrtObserver&&) = delete;
+  MrtObserver(const MrtObserver &) = delete;
+  MrtObserver & operator=(const MrtObserver &) = delete;
+  MrtObserver(MrtObserver &&) = delete;
+  MrtObserver & operator=(MrtObserver &&) = delete;
 
   /**
    * This method is called as part of MRT_BASE::updatePolicy().
@@ -68,7 +69,7 @@ class MrtObserver {
    *
    * A call to this function is protected by the same mutex as modifyBufferedSolution.
    */
-  virtual void modifyActiveSolution(const CommandData& command, PrimalSolution& primalSolution) {}
+  virtual void modifyActiveSolution(const CommandData & command, PrimalSolution & primalSolution) {}
 
   /**
    * This method is called by the MRT when a new policy is loaded into the buffer.
@@ -78,7 +79,10 @@ class MrtObserver {
    *
    * A call to this function is protected by the same mutex as modifyActiveSolution.
    */
-  virtual void modifyBufferedSolution(const CommandData& commandBuffer, PrimalSolution& primalSolutionBuffer) {}
+  virtual void modifyBufferedSolution(
+    const CommandData & commandBuffer, PrimalSolution & primalSolutionBuffer)
+  {
+  }
 };
 
 }  // namespace ocs2

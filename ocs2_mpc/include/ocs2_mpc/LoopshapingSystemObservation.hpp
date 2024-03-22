@@ -29,11 +29,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <ocs2_core/loopshaping/LoopshapingDefinition.h>
+#include "ocs2_core/loopshaping/LoopshapingDefinition.hpp"
+#include "ocs2_mpc/SystemObservation.hpp"
 
-#include "ocs2_mpc/SystemObservation.h"
-
-namespace ocs2 {
+namespace ocs2
+{
 
 /**
  * Converts a systemObservation obtained for loopshaping wrapped system to the systemObservation of the original system.
@@ -42,6 +42,7 @@ namespace ocs2 {
  * @param loopshapingDefinition : loopshaping filter definition
  * @return SystemObservation of the original system
  */
-SystemObservation loopshapingToSystemObservation(const SystemObservation& observation, const LoopshapingDefinition& loopshapingDefinition);
+SystemObservation loopshapingToSystemObservation(
+  const SystemObservation & observation, const LoopshapingDefinition & loopshapingDefinition);
 
 }  // namespace ocs2

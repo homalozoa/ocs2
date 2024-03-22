@@ -29,20 +29,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <ocs2_core/Types.h>
-#include <ocs2_core/misc/Benchmark.h>
+#include "ocs2_core/Types.hpp"
+#include "ocs2_core/misc/Benchmark.hpp"
+#include "ocs2_mpc/MPC_Settings.hpp"
+#include "ocs2_oc/oc_solver/SolverBase.hpp"
 
-#include <ocs2_oc/oc_solver/SolverBase.h>
-
-#include "ocs2_mpc/MPC_Settings.h"
-
-namespace ocs2 {
+namespace ocs2
+{
 
 /**
  * This class is an interface class for the MPC method.
  */
-class MPC_BASE {
- public:
+class MPC_BASE
+{
+public:
   /**
    * Constructor
    *
@@ -65,21 +65,21 @@ class MPC_BASE {
    * @param [in] currentTime: The given time.
    * @param [in] currentState: The given state.
    */
-  virtual bool run(scalar_t currentTime, const vector_t& currentState);
+  virtual bool run(scalar_t currentTime, const vector_t & currentState);
 
   /** Gets a pointer to the underlying solver used in the MPC. */
-  virtual SolverBase* getSolverPtr() = 0;
+  virtual SolverBase * getSolverPtr() = 0;
 
   /** Gets a const pointer to the underlying solver used in the MPC. */
-  virtual const SolverBase* getSolverPtr() const = 0;
+  virtual const SolverBase * getSolverPtr() const = 0;
 
   /** Returns the time horizon for which the optimizer is called. */
   scalar_t getTimeHorizon() const { return mpcSettings_.timeHorizon_; }
 
   /** Gets the MPC settings. */
-  const mpc::Settings& settings() const { return mpcSettings_; }
+  const mpc::Settings & settings() const { return mpcSettings_; }
 
- protected:
+protected:
   /**
    * Solves the optimal control problem for the given state and time period ([initTime,finalTime]).
    *
@@ -87,12 +87,13 @@ class MPC_BASE {
    * @param [in] initState: Initial state.
    * @param [in] finalTime: Final time. This value can be adjusted by the optimizer.
    */
-  virtual void calculateController(scalar_t initTime, const vector_t& initState, scalar_t finalTime) = 0;
+  virtual void calculateController(
+    scalar_t initTime, const vector_t & initState, scalar_t finalTime) = 0;
 
   /** Whether this is the first iteration of MPC or not. */
   bool isFirstMpcRun() const { return initRun_; }
 
- private:
+private:
   bool initRun_ = true;
   const mpc::Settings mpcSettings_;
 

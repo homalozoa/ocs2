@@ -27,15 +27,19 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_mpc/LoopshapingSystemObservation.h"
+#include "ocs2_mpc/LoopshapingSystemObservation.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
-SystemObservation loopshapingToSystemObservation(const SystemObservation& observation, const LoopshapingDefinition& loopshapingDefinition) {
+SystemObservation loopshapingToSystemObservation(
+  const SystemObservation & observation, const LoopshapingDefinition & loopshapingDefinition)
+{
   SystemObservation systemObservation;
   systemObservation.time = observation.time;
   systemObservation.state = loopshapingDefinition.getSystemState(observation.state);
-  systemObservation.input = loopshapingDefinition.getSystemInput(observation.state, observation.input);
+  systemObservation.input =
+    loopshapingDefinition.getSystemInput(observation.state, observation.input);
   systemObservation.mode = observation.mode;
   return systemObservation;
 }

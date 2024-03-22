@@ -1,5 +1,5 @@
 /******************************************************************************
-Copyright (c) 2017, Farbod Farshidian. All rights reserved.
+Copyright (c) 2020, Farbod Farshidian. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -29,19 +29,28 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <ocs2_core/Types.h>
-#include <ocs2_core/reference/TargetTrajectories.h>
+#include <ostream>
 
-#include "ocs2_mpc/SystemObservation.h"
+#include "ocs2_core/Types.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
 /**
- * This class contains the policy requirements and desired set-point.
+ * This class contains the observation information.
  */
-struct CommandData {
-  SystemObservation mpcInitObservation_;
-  TargetTrajectories mpcTargetTrajectories_;
+struct SystemObservation
+{
+  size_t mode = 0;
+  scalar_t time = 0.0;
+  vector_t state;
+  vector_t input;
+
+  friend void swap(SystemObservation & a, SystemObservation & b) noexcept;
 };
+
+void swap(SystemObservation & a, SystemObservation & b) noexcept;
+
+std::ostream & operator<<(std::ostream & out, const SystemObservation & observation);
 
 }  // namespace ocs2

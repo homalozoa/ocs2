@@ -29,34 +29,34 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <Eigen/Dense>
-
 #include <atomic>
 #include <cstddef>
 #include <memory>
 #include <mutex>
 
-#include <ocs2_core/Types.h>
-#include <ocs2_core/control/ControllerBase.h>
-#include <ocs2_core/misc/LinearInterpolation.h>
-#include <ocs2_core/reference/ModeSchedule.h>
-#include <ocs2_core/reference/TargetTrajectories.h>
-#include <ocs2_oc/oc_data/PerformanceIndex.h>
-#include <ocs2_oc/oc_data/PrimalSolution.h>
-#include <ocs2_oc/rollout/RolloutBase.h>
+#include "eigen3/Eigen/Dense"
+#include "ocs2_core/Types.hpp"
+#include "ocs2_core/control/ControllerBase.hpp"
+#include "ocs2_core/misc/LinearInterpolation.hpp"
+#include "ocs2_core/reference/ModeSchedule.hpp"
+#include "ocs2_core/reference/TargetTrajectories.hpp"
+#include "ocs2_mpc/CommandData.hpp"
+#include "ocs2_mpc/MrtObserver.hpp"
+#include "ocs2_mpc/SystemObservation.hpp"
+#include "ocs2_oc/oc_data/PerformanceIndex.hpp"
+#include "ocs2_oc/oc_data/PrimalSolution.hpp"
+#include "ocs2_oc/rollout/RolloutBase.hpp"
 
-#include "ocs2_mpc/CommandData.h"
-#include "ocs2_mpc/MrtObserver.h"
-#include "ocs2_mpc/SystemObservation.h"
-
-namespace ocs2 {
+namespace ocs2
+{
 
 /**
  * This class implements core MRT (Model Reference Tracking) functionality.
  * The responsibility of filling the buffer variables is left to the deriving classes.
  */
-class MRT_BASE {
- public:
+class MRT_BASE
+{
+public:
   MRT_BASE();
 
   virtual ~MRT_BASE() = default;
@@ -71,7 +71,7 @@ class MRT_BASE {
    *
    * @param [in] initTargetTrajectories: The initial desired cost trajectories.
    */
-  virtual void resetMpcNode(const TargetTrajectories& initTargetTrajectories) = 0;
+  virtual void resetMpcNode(const TargetTrajectories & initTargetTrajectories) = 0;
 
   /**
    * Whether the initial MPC policy has been already received.
@@ -82,7 +82,7 @@ class MRT_BASE {
    * @brief setCurrentObservation notifies MPC of a new state
    * @param observation: the current measurement to send to the MPC
    */
-  virtual void setCurrentObservation(const SystemObservation& observation) = 0;
+  virtual void setCurrentObservation(const SystemObservation & observation) = 0;
 
   /**
    * Gets a reference to the command data corresponding to the current policy.
@@ -90,7 +90,7 @@ class MRT_BASE {
    *
    * @return a constant reference to command data.
    */
-  const CommandData& getCommand() const;
+  const CommandData & getCommand() const;
 
   /**
    * Gets a reference to the performance indices data corresponding to the current policy.
@@ -98,7 +98,7 @@ class MRT_BASE {
    *
    * @return a constant reference to performance indices data.
    */
-  const PerformanceIndex& getPerformanceIndices() const;
+  const PerformanceIndex & getPerformanceIndices() const;
 
   /**
    * Gets a reference to current optimized policy.
@@ -106,13 +106,13 @@ class MRT_BASE {
    *
    * @return constant reference to the policy data.
    */
-  const PrimalSolution& getPolicy() const;
+  const PrimalSolution & getPolicy() const;
 
   /**
    * @brief Initializes rollout class to roll out a feedback policy
    * @param rolloutPtr: The rollout object to be used
    */
-  void initRollout(const RolloutBase* rolloutPtr);
+  void initRollout(const RolloutBase * rolloutPtr);
 
   /**
    * @brief Evaluates the controller
@@ -123,7 +123,9 @@ class MRT_BASE {
    * @param [out] mpcInput: the optimized control input.
    * @param [out] mode: the active mode.
    */
-  void evaluatePolicy(scalar_t currentTime, const vector_t& currentState, vector_t& mpcState, vector_t& mpcInput, size_t& mode);
+  void evaluatePolicy(
+    scalar_t currentTime, const vector_t & currentState, vector_t & mpcState, vector_t & mpcInput,
+    size_t & mode);
 
   /**
    * @brief Rolls out the control policy from the current time and state to get the next state and input using the MPC policy.
@@ -135,8 +137,9 @@ class MRT_BASE {
    * @param [out] mpcInput: the new control input of MPC.
    * @param [out] mode: the active mode.
    */
-  void rolloutPolicy(scalar_t currentTime, const vector_t& currentState, const scalar_t& timeStep, vector_t& mpcState, vector_t& mpcInput,
-                     size_t& mode);
+  void rolloutPolicy(
+    scalar_t currentTime, const vector_t & currentState, const scalar_t & timeStep,
+    vector_t & mpcState, vector_t & mpcInput, size_t & mode);
 
   /**
    * Checks the data buffer for an update of the MPC policy. If a new policy
@@ -156,18 +159,23 @@ class MRT_BASE {
   /**
    * Adds an MRT observer to the policy update process
    */
-  void addMrtObserver(std::shared_ptr<MrtObserver> mrtObserver) { observerPtrArray_.push_back(std::move(mrtObserver)); };
+  void addMrtObserver(std::shared_ptr<MrtObserver> mrtObserver)
+  {
+    observerPtrArray_.push_back(std::move(mrtObserver));
+  };
 
- protected:
-  void moveToBuffer(std::unique_ptr<CommandData> commandDataPtr, std::unique_ptr<PrimalSolution> primalSolutionPtr,
-                    std::unique_ptr<PerformanceIndex> performanceIndicesPtr);
+protected:
+  void moveToBuffer(
+    std::unique_ptr<CommandData> commandDataPtr, std::unique_ptr<PrimalSolution> primalSolutionPtr,
+    std::unique_ptr<PerformanceIndex> performanceIndicesPtr);
 
- private:
+private:
   /** Calls modifyActiveSolution on all mrt observers. This function is called while holding a policyBufferMutex lock */
-  void modifyActiveSolution(const CommandData& command, PrimalSolution& primalSolution);
+  void modifyActiveSolution(const CommandData & command, PrimalSolution & primalSolution);
 
   /** Calls modifyBufferedSolution on all mrt observers. This function is called while holding a policyBufferMutex lock */
-  void modifyBufferedSolution(const CommandData& commandBuffer, PrimalSolution& primalSolutionBuffer);
+  void modifyBufferedSolution(
+    const CommandData & commandBuffer, PrimalSolution & primalSolutionBuffer);
 
   // flags on state of the class
   std::atomic_bool policyReceivedEver_;

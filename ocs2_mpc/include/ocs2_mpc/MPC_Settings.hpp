@@ -32,15 +32,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <string>
 
-#include <ocs2_core/Types.h>
+#include "ocs2_core/Types.hpp"
 
-namespace ocs2 {
-namespace mpc {
+namespace ocs2
+{
+namespace mpc
+{
 
 /**
  * This structure holds all setting parameters for the MPC class.
  */
-struct Settings {
+struct Settings
+{
   /** MPC time horizon length in seconds. */
   scalar_t timeHorizon_ = 1.0;
   /**
@@ -78,7 +81,8 @@ struct Settings {
  * @param [in] verbose: Flag to determine whether to print out the loaded settings or not.
  * @return The MPC settings
  */
-Settings loadSettings(const std::string& filename, const std::string& fieldName = "mpc", bool verbose = true);
+Settings loadSettings(
+  const std::string & filename, const std::string & fieldName = "mpc", bool verbose = true);
 
 }  // namespace mpc
 }  // namespace ocs2

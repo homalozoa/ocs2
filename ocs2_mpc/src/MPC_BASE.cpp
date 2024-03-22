@@ -27,11 +27,12 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+#include "ocs2_mpc/MPC_BASE.hpp"
+
 #include <algorithm>
 
-#include <ocs2_mpc/MPC_BASE.h>
-
-namespace ocs2 {
+namespace ocs2
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
@@ -41,7 +42,8 @@ MPC_BASE::MPC_BASE(mpc::Settings mpcSettings) : mpcSettings_(std::move(mpcSettin
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void MPC_BASE::reset() {
+void MPC_BASE::reset()
+{
   initRun_ = true;
   mpcTimer_.reset();
   getSolverPtr()->reset();
@@ -50,11 +52,13 @@ void MPC_BASE::reset() {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-bool MPC_BASE::run(scalar_t currentTime, const vector_t& currentState) {
+bool MPC_BASE::run(scalar_t currentTime, const vector_t & currentState)
+{
   // check if the current time exceeds the solver final limit
   if (!initRun_ && currentTime >= getSolverPtr()->getFinalTime()) {
     std::cerr << "WARNING: The MPC time-horizon is smaller than the MPC starting time.\n";
-    std::cerr << "currentTime: " << currentTime << "\t Controller finalTime: " << getSolverPtr()->getFinalTime() << '\n';
+    std::cerr << "currentTime: " << currentTime
+              << "\t Controller finalTime: " << getSolverPtr()->getFinalTime() << '\n';
     return false;
   }
 
@@ -83,7 +87,8 @@ bool MPC_BASE::run(scalar_t currentTime, const vector_t& currentState) {
     std::cerr << "\n### MPC Benchmarking";
     std::cerr << "\n###   Maximum : " << mpcTimer_.getMaxIntervalInMilliseconds() << "[ms].";
     std::cerr << "\n###   Average : " << mpcTimer_.getAverageInMilliseconds() << "[ms].";
-    std::cerr << "\n###   Latest  : " << mpcTimer_.getLastIntervalInMilliseconds() << "[ms]." << std::endl;
+    std::cerr << "\n###   Latest  : " << mpcTimer_.getLastIntervalInMilliseconds() << "[ms]."
+              << std::endl;
   }
 
   return true;

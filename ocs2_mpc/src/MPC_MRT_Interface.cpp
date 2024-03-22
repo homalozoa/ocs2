@@ -27,24 +27,24 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_mpc/MPC_MRT_Interface.h"
+#include "ocs2_mpc/MPC_MRT_Interface.hpp"
 
-#include <ocs2_core/control/FeedforwardController.h>
-#include <ocs2_core/control/LinearController.h>
+#include "ocs2_core/control/FeedforwardController.hpp"
+#include "ocs2_core/control/LinearController.hpp"
 
-namespace ocs2 {
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-MPC_MRT_Interface::MPC_MRT_Interface(MPC_BASE& mpc) : mpc_(mpc) {
-  mpcTimer_.reset();
-}
+namespace ocs2
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void MPC_MRT_Interface::resetMpcNode(const TargetTrajectories& initTargetTrajectories) {
+MPC_MRT_Interface::MPC_MRT_Interface(MPC_BASE & mpc) : mpc_(mpc) { mpcTimer_.reset(); }
+
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
+void MPC_MRT_Interface::resetMpcNode(const TargetTrajectories & initTargetTrajectories)
+{
   mpc_.reset();
   mpc_.getSolverPtr()->getReferenceManager().setTargetTrajectories(initTargetTrajectories);
   mpcTimer_.reset();
@@ -53,7 +53,8 @@ void MPC_MRT_Interface::resetMpcNode(const TargetTrajectories& initTargetTraject
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void MPC_MRT_Interface::setCurrentObservation(const SystemObservation& currentObservation) {
+void MPC_MRT_Interface::setCurrentObservation(const SystemObservation & currentObservation)
+{
   std::lock_guard<std::mutex> lock(observationMutex_);
   currentObservation_ = currentObservation;
 }
@@ -61,21 +62,24 @@ void MPC_MRT_Interface::setCurrentObservation(const SystemObservation& currentOb
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-ReferenceManagerInterface& MPC_MRT_Interface::getReferenceManager() {
+ReferenceManagerInterface & MPC_MRT_Interface::getReferenceManager()
+{
   return mpc_.getSolverPtr()->getReferenceManager();
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-const ReferenceManagerInterface& MPC_MRT_Interface::getReferenceManager() const {
+const ReferenceManagerInterface & MPC_MRT_Interface::getReferenceManager() const
+{
   return mpc_.getSolverPtr()->getReferenceManager();
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void MPC_MRT_Interface::advanceMpc() {
+void MPC_MRT_Interface::advanceMpc()
+{
   // measure the delay in running MPC
   mpcTimer_.startTimer();
 
@@ -100,7 +104,8 @@ void MPC_MRT_Interface::advanceMpc() {
     timeWindow = mpc_.getSolverPtr()->getFinalTime() - currentObservation.time;
   }
   if (timeWindow < 2.0 * mpcTimer_.getAverageInMilliseconds() * 1e-3) {
-    std::cerr << "[MPC_MRT_Interface::advanceMpc] WARNING: The solution time window might be shorter than the MPC delay!\n";
+    std::cerr << "[MPC_MRT_Interface::advanceMpc] WARNING: The solution time window might be "
+                 "shorter than the MPC delay!\n";
   }
 
   // measure the delay
@@ -108,40 +113,48 @@ void MPC_MRT_Interface::advanceMpc() {
     std::cerr << "\n### MPC_MRT Benchmarking";
     std::cerr << "\n###   Maximum : " << mpcTimer_.getMaxIntervalInMilliseconds() << "[ms].";
     std::cerr << "\n###   Average : " << mpcTimer_.getAverageInMilliseconds() << "[ms].";
-    std::cerr << "\n###   Latest  : " << mpcTimer_.getLastIntervalInMilliseconds() << "[ms]." << std::endl;
+    std::cerr << "\n###   Latest  : " << mpcTimer_.getLastIntervalInMilliseconds() << "[ms]."
+              << std::endl;
   }
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void MPC_MRT_Interface::copyToBuffer(const SystemObservation& mpcInitObservation) {
+void MPC_MRT_Interface::copyToBuffer(const SystemObservation & mpcInitObservation)
+{
   // policy
   auto primalSolutionPtr = std::make_unique<PrimalSolution>();
   const scalar_t startTime = mpcInitObservation.time;
-  const scalar_t finalTime =
-      (mpc_.settings().solutionTimeWindow_ < 0) ? mpc_.getSolverPtr()->getFinalTime() : startTime + mpc_.settings().solutionTimeWindow_;
+  const scalar_t finalTime = (mpc_.settings().solutionTimeWindow_ < 0)
+                               ? mpc_.getSolverPtr()->getFinalTime()
+                               : startTime + mpc_.settings().solutionTimeWindow_;
   mpc_.getSolverPtr()->getPrimalSolution(finalTime, primalSolutionPtr.get());
 
   // command
   auto commandPtr = std::make_unique<CommandData>();
   commandPtr->mpcInitObservation_ = mpcInitObservation;
-  commandPtr->mpcTargetTrajectories_ = mpc_.getSolverPtr()->getReferenceManager().getTargetTrajectories();
+  commandPtr->mpcTargetTrajectories_ =
+    mpc_.getSolverPtr()->getReferenceManager().getTargetTrajectories();
 
   // performance indices
   auto performanceIndicesPtr = std::make_unique<PerformanceIndex>();
   *performanceIndicesPtr = mpc_.getSolverPtr()->getPerformanceIndeces();
 
-  this->moveToBuffer(std::move(commandPtr), std::move(primalSolutionPtr), std::move(performanceIndicesPtr));
+  this->moveToBuffer(
+    std::move(commandPtr), std::move(primalSolutionPtr), std::move(performanceIndicesPtr));
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-matrix_t MPC_MRT_Interface::getLinearFeedbackGain(scalar_t time) {
-  auto controller = dynamic_cast<LinearController*>(this->getPolicy().controllerPtr_.get());
+matrix_t MPC_MRT_Interface::getLinearFeedbackGain(scalar_t time)
+{
+  auto controller = dynamic_cast<LinearController *>(this->getPolicy().controllerPtr_.get());
   if (controller == nullptr) {
-    throw std::runtime_error("[MPC_MRT_Interface::getLinearFeedbackGain] Feedback gains only available with linear controller!");
+    throw std::runtime_error(
+      "[MPC_MRT_Interface::getLinearFeedbackGain] Feedback gains only available with linear "
+      "controller!");
   }
   matrix_t K;
   controller->getFeedbackGain(time, K);
@@ -151,21 +164,26 @@ matrix_t MPC_MRT_Interface::getLinearFeedbackGain(scalar_t time) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-ScalarFunctionQuadraticApproximation MPC_MRT_Interface::getValueFunction(scalar_t time, const vector_t& state) const {
+ScalarFunctionQuadraticApproximation MPC_MRT_Interface::getValueFunction(
+  scalar_t time, const vector_t & state) const
+{
   return mpc_.getSolverPtr()->getValueFunction(time, state);
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-vector_t MPC_MRT_Interface::getStateInputEqualityConstraintLagrangian(scalar_t time, const vector_t& state) const {
+vector_t MPC_MRT_Interface::getStateInputEqualityConstraintLagrangian(
+  scalar_t time, const vector_t & state) const
+{
   return mpc_.getSolverPtr()->getStateInputEqualityConstraintLagrangian(time, state);
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-MultiplierCollection MPC_MRT_Interface::getIntermediateDualSolution(scalar_t time) const {
+MultiplierCollection MPC_MRT_Interface::getIntermediateDualSolution(scalar_t time) const
+{
   return mpc_.getSolverPtr()->getIntermediateDualSolution(time);
 }
 

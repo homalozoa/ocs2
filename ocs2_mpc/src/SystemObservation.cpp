@@ -27,14 +27,16 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_mpc/SystemObservation.h"
+#include "ocs2_mpc/SystemObservation.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void swap(SystemObservation& a, SystemObservation& b) noexcept {
+void swap(SystemObservation & a, SystemObservation & b) noexcept
+{
   std::swap(a.mode, b.mode);
   std::swap(a.time, b.time);
   a.state.swap(b.state);
@@ -44,7 +46,8 @@ void swap(SystemObservation& a, SystemObservation& b) noexcept {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-std::ostream& operator<<(std::ostream& out, const SystemObservation& observation) {
+std::ostream & operator<<(std::ostream & out, const SystemObservation & observation)
+{
   out << "Observation: \n";
   out << "\t time:      " << observation.time << '\n';
   out << "\t mode:      " << observation.mode << '\n';

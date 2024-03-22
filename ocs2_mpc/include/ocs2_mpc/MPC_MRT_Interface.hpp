@@ -36,36 +36,38 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <thread>
 
-#include <ocs2_core/misc/Benchmark.h>
-#include <ocs2_core/model_data/Multiplier.h>
-#include "ocs2_mpc/MPC_BASE.h"
-#include "ocs2_mpc/MRT_BASE.h"
+#include "ocs2_core/misc/Benchmark.hpp"
+#include "ocs2_core/model_data/Multiplier.hpp"
+#include "ocs2_mpc/MPC_BASE.hpp"
+#include "ocs2_mpc/MRT_BASE.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
 /**
  * A lean ROS independent interface to OCS2. In incorporates the functionality of the MPC and the MRT (trajectory tracking) modules.
  * Please refer to ocs2_double_integrator_example for a minimal example and tests
  */
-class MPC_MRT_Interface final : public MRT_BASE {
- public:
+class MPC_MRT_Interface final : public MRT_BASE
+{
+public:
   /**
    * Constructor
    * @param [in] mpc: The underlying MPC class to be used.
    */
-  explicit MPC_MRT_Interface(MPC_BASE& mpc);
+  explicit MPC_MRT_Interface(MPC_BASE & mpc);
 
   ~MPC_MRT_Interface() override = default;
 
-  void resetMpcNode(const TargetTrajectories& initTargetTrajectories) override;
+  void resetMpcNode(const TargetTrajectories & initTargetTrajectories) override;
 
-  void setCurrentObservation(const SystemObservation& currentObservation) override;
+  void setCurrentObservation(const SystemObservation & currentObservation) override;
 
   /*
    * Gets the ReferenceManager which manages both ModeSchedule and TargetTrajectories.
    */
-  ReferenceManagerInterface& getReferenceManager();
-  const ReferenceManagerInterface& getReferenceManager() const;
+  ReferenceManagerInterface & getReferenceManager();
+  const ReferenceManagerInterface & getReferenceManager() const;
 
   /**
    * Advance the mpc module for one iteration. The evaluation methods can be called while this method is running. They will evaluate the
@@ -92,7 +94,8 @@ class MPC_MRT_Interface final : public MRT_BASE {
    * @param [in] state: query state
    * @return The quadratic approximation of the value function at the requested time and state.
    */
-  ScalarFunctionQuadraticApproximation getValueFunction(scalar_t time, const vector_t& state) const;
+  ScalarFunctionQuadraticApproximation getValueFunction(
+    scalar_t time, const vector_t & state) const;
 
   /**
    * @brief Computes the Lagrange multiplier related to the state-input constraints
@@ -103,7 +106,7 @@ class MPC_MRT_Interface final : public MRT_BASE {
    * @param [in] state: query state
    * @return The Lagrange multiplier at the requested time and state
    */
-  vector_t getStateInputEqualityConstraintLagrangian(scalar_t time, const vector_t& state) const;
+  vector_t getStateInputEqualityConstraintLagrangian(scalar_t time, const vector_t & state) const;
 
   /**
    * @brief Returns the intermediate dual solution at the given time.
@@ -115,15 +118,15 @@ class MPC_MRT_Interface final : public MRT_BASE {
    */
   MultiplierCollection getIntermediateDualSolution(scalar_t time) const;
 
- private:
+private:
   /**
    * Updates the buffer variables from the MPC object. This method is automatically called by advanceMpc()
    *
    * @param [in] mpcInitObservation: The observation used to run the MPC.
    */
-  void copyToBuffer(const SystemObservation& mpcInitObservation);
+  void copyToBuffer(const SystemObservation & mpcInitObservation);
 
-  MPC_BASE& mpc_;
+  MPC_BASE & mpc_;
   benchmark::RepeatedTimer mpcTimer_;
 
   // MPC inputs
