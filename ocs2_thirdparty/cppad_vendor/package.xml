@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>cppad_vendor</name>
-  <version>20190200.5</version>
+  <version>2019.02.5</version>
   <description>Vendor package of cppad.</description>
 
   <maintainer email="nx.tardis@gmail.com">Homalozoa</maintainer>
