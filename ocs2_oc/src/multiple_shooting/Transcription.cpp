@@ -27,27 +27,31 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_oc/multiple_shooting/Transcription.h"
+#include "ocs2_oc/multiple_shooting/Transcription.hpp"
 
-#include <ocs2_core/misc/LinearAlgebra.h>
+#include "ocs2_core/misc/LinearAlgebra.hpp"
+#include "ocs2_oc/approximate_model/ChangeOfInputVariables.hpp"
+#include "ocs2_oc/approximate_model/LinearQuadraticApproximator.hpp"
 
-#include "ocs2_oc/approximate_model/ChangeOfInputVariables.h"
-#include "ocs2_oc/approximate_model/LinearQuadraticApproximator.h"
+namespace ocs2
+{
+namespace multiple_shooting
+{
 
-namespace ocs2 {
-namespace multiple_shooting {
-
-Transcription setupIntermediateNode(OptimalControlProblem& optimalControlProblem, DynamicsSensitivityDiscretizer& sensitivityDiscretizer,
-                                    scalar_t t, scalar_t dt, const vector_t& x, const vector_t& x_next, const vector_t& u) {
+Transcription setupIntermediateNode(
+  OptimalControlProblem & optimalControlProblem,
+  DynamicsSensitivityDiscretizer & sensitivityDiscretizer, scalar_t t, scalar_t dt,
+  const vector_t & x, const vector_t & x_next, const vector_t & u)
+{
   // Results and short-hand notation
   Transcription transcription;
-  auto& cost = transcription.cost;
-  auto& dynamics = transcription.dynamics;
-  auto& constraintsSize = transcription.constraintsSize;
-  auto& stateEqConstraints = transcription.stateEqConstraints;
-  auto& stateInputEqConstraints = transcription.stateInputEqConstraints;
-  auto& stateIneqConstraints = transcription.stateIneqConstraints;
-  auto& stateInputIneqConstraints = transcription.stateInputIneqConstraints;
+  auto & cost = transcription.cost;
+  auto & dynamics = transcription.dynamics;
+  auto & constraintsSize = transcription.constraintsSize;
+  auto & stateEqConstraints = transcription.stateEqConstraints;
+  auto & stateInputEqConstraints = transcription.stateInputEqConstraints;
+  auto & stateIneqConstraints = transcription.stateIneqConstraints;
+  auto & stateInputIneqConstraints = transcription.stateInputIneqConstraints;
 
   // Dynamics
   // Discretization returns x_{k+1} = A_{k} * dx_{k} + B_{k} * du_{k} + b_{k}
@@ -55,7 +59,8 @@ Transcription setupIntermediateNode(OptimalControlProblem& optimalControlProblem
   dynamics.f -= x_next;  // make it dx_{k+1} = ...
 
   // Precomputation for other terms
-  constexpr auto request = Request::Cost + Request::SoftConstraint + Request::Constraint + Request::Approximation;
+  constexpr auto request =
+    Request::Cost + Request::SoftConstraint + Request::Constraint + Request::Approximation;
   optimalControlProblem.preComputationPtr->request(request, t, x, u);
 
   // Costs: Approximate the integral with forward euler
@@ -65,47 +70,51 @@ Transcription setupIntermediateNode(OptimalControlProblem& optimalControlProblem
   // State equality constraints
   if (!optimalControlProblem.stateEqualityConstraintPtr->empty()) {
     constraintsSize.stateEq = optimalControlProblem.stateEqualityConstraintPtr->getTermsSize(t);
-    stateEqConstraints =
-        optimalControlProblem.stateEqualityConstraintPtr->getLinearApproximation(t, x, *optimalControlProblem.preComputationPtr);
+    stateEqConstraints = optimalControlProblem.stateEqualityConstraintPtr->getLinearApproximation(
+      t, x, *optimalControlProblem.preComputationPtr);
   }
 
   // State-input equality constraints
   if (!optimalControlProblem.equalityConstraintPtr->empty()) {
     constraintsSize.stateInputEq = optimalControlProblem.equalityConstraintPtr->getTermsSize(t);
-    stateInputEqConstraints =
-        optimalControlProblem.equalityConstraintPtr->getLinearApproximation(t, x, u, *optimalControlProblem.preComputationPtr);
+    stateInputEqConstraints = optimalControlProblem.equalityConstraintPtr->getLinearApproximation(
+      t, x, u, *optimalControlProblem.preComputationPtr);
   }
 
   // State inequality constraints.
   if (!optimalControlProblem.stateInequalityConstraintPtr->empty()) {
     constraintsSize.stateIneq = optimalControlProblem.stateInequalityConstraintPtr->getTermsSize(t);
     stateIneqConstraints =
-        optimalControlProblem.stateInequalityConstraintPtr->getLinearApproximation(t, x, *optimalControlProblem.preComputationPtr);
+      optimalControlProblem.stateInequalityConstraintPtr->getLinearApproximation(
+        t, x, *optimalControlProblem.preComputationPtr);
   }
 
   // State-input inequality constraints.
   if (!optimalControlProblem.inequalityConstraintPtr->empty()) {
     constraintsSize.stateInputIneq = optimalControlProblem.inequalityConstraintPtr->getTermsSize(t);
     stateInputIneqConstraints =
-        optimalControlProblem.inequalityConstraintPtr->getLinearApproximation(t, x, u, *optimalControlProblem.preComputationPtr);
+      optimalControlProblem.inequalityConstraintPtr->getLinearApproximation(
+        t, x, u, *optimalControlProblem.preComputationPtr);
   }
 
   return transcription;
 }
 
-void projectTranscription(Transcription& transcription, bool extractProjectionMultiplier) {
-  auto& cost = transcription.cost;
-  auto& dynamics = transcription.dynamics;
-  auto& stateInputEqConstraints = transcription.stateInputEqConstraints;
-  auto& stateInputIneqConstraints = transcription.stateInputIneqConstraints;
-  auto& projection = transcription.constraintsProjection;
-  auto& projectionMultiplierCoefficients = transcription.projectionMultiplierCoefficients;
+void projectTranscription(Transcription & transcription, bool extractProjectionMultiplier)
+{
+  auto & cost = transcription.cost;
+  auto & dynamics = transcription.dynamics;
+  auto & stateInputEqConstraints = transcription.stateInputEqConstraints;
+  auto & stateInputIneqConstraints = transcription.stateInputIneqConstraints;
+  auto & projection = transcription.constraintsProjection;
+  auto & projectionMultiplierCoefficients = transcription.projectionMultiplierCoefficients;
 
   if (stateInputEqConstraints.f.size() > 0) {
     // Projection stored instead of constraint, // TODO: benchmark between lu and qr method. LU seems slightly faster.
     if (extractProjectionMultiplier) {
       matrix_t constraintPseudoInverse;
-      std::tie(projection, constraintPseudoInverse) = LinearAlgebra::qrConstraintProjection(stateInputEqConstraints);
+      std::tie(projection, constraintPseudoInverse) =
+        LinearAlgebra::qrConstraintProjection(stateInputEqConstraints);
       projectionMultiplierCoefficients.compute(cost, dynamics, projection, constraintPseudoInverse);
     } else {
       projection = LinearAlgebra::luConstraintProjection(stateInputEqConstraints).first;
@@ -117,18 +126,21 @@ void projectTranscription(Transcription& transcription, bool extractProjectionMu
     changeOfInputVariables(dynamics, projection.dfdu, projection.dfdx, projection.f);
     changeOfInputVariables(cost, projection.dfdu, projection.dfdx, projection.f);
     if (stateInputIneqConstraints.f.size() > 0) {
-      changeOfInputVariables(stateInputIneqConstraints, projection.dfdu, projection.dfdx, projection.f);
+      changeOfInputVariables(
+        stateInputIneqConstraints, projection.dfdu, projection.dfdx, projection.f);
     }
   }
 }
 
-TerminalTranscription setupTerminalNode(OptimalControlProblem& optimalControlProblem, scalar_t t, const vector_t& x) {
+TerminalTranscription setupTerminalNode(
+  OptimalControlProblem & optimalControlProblem, scalar_t t, const vector_t & x)
+{
   // Results and short-hand notation
   TerminalTranscription transcription;
-  auto& cost = transcription.cost;
-  auto& constraintsSize = transcription.constraintsSize;
-  auto& eqConstraints = transcription.eqConstraints;
-  auto& ineqConstraints = transcription.ineqConstraints;
+  auto & cost = transcription.cost;
+  auto & constraintsSize = transcription.constraintsSize;
+  auto & eqConstraints = transcription.eqConstraints;
+  auto & ineqConstraints = transcription.ineqConstraints;
 
   constexpr auto request = Request::Cost + Request::SoftConstraint + Request::Approximation;
   optimalControlProblem.preComputationPtr->requestFinal(request, t, x);
@@ -139,30 +151,34 @@ TerminalTranscription setupTerminalNode(OptimalControlProblem& optimalControlPro
   // State equality constraints.
   if (!optimalControlProblem.finalEqualityConstraintPtr->empty()) {
     constraintsSize.stateEq = optimalControlProblem.finalEqualityConstraintPtr->getTermsSize(t);
-    eqConstraints =
-        optimalControlProblem.finalEqualityConstraintPtr->getLinearApproximation(t, x, *optimalControlProblem.preComputationPtr);
+    eqConstraints = optimalControlProblem.finalEqualityConstraintPtr->getLinearApproximation(
+      t, x, *optimalControlProblem.preComputationPtr);
   }
 
   // State inequality constraints.
   if (!optimalControlProblem.finalInequalityConstraintPtr->empty()) {
     constraintsSize.stateIneq = optimalControlProblem.finalInequalityConstraintPtr->getTermsSize(t);
-    ineqConstraints =
-        optimalControlProblem.finalInequalityConstraintPtr->getLinearApproximation(t, x, *optimalControlProblem.preComputationPtr);
+    ineqConstraints = optimalControlProblem.finalInequalityConstraintPtr->getLinearApproximation(
+      t, x, *optimalControlProblem.preComputationPtr);
   }
 
   return transcription;
 }
 
-EventTranscription setupEventNode(OptimalControlProblem& optimalControlProblem, scalar_t t, const vector_t& x, const vector_t& x_next) {
+EventTranscription setupEventNode(
+  OptimalControlProblem & optimalControlProblem, scalar_t t, const vector_t & x,
+  const vector_t & x_next)
+{
   // Results and short-hand notation
   EventTranscription transcription;
-  auto& cost = transcription.cost;
-  auto& dynamics = transcription.dynamics;
-  auto& constraintsSize = transcription.constraintsSize;
-  auto& eqConstraints = transcription.eqConstraints;
-  auto& ineqConstraints = transcription.ineqConstraints;
+  auto & cost = transcription.cost;
+  auto & dynamics = transcription.dynamics;
+  auto & constraintsSize = transcription.constraintsSize;
+  auto & eqConstraints = transcription.eqConstraints;
+  auto & ineqConstraints = transcription.ineqConstraints;
 
-  constexpr auto request = Request::Cost + Request::SoftConstraint + Request::Dynamics + Request::Approximation;
+  constexpr auto request =
+    Request::Cost + Request::SoftConstraint + Request::Dynamics + Request::Approximation;
   optimalControlProblem.preComputationPtr->requestPreJump(request, t, x);
 
   // Dynamics
@@ -177,15 +193,16 @@ EventTranscription setupEventNode(OptimalControlProblem& optimalControlProblem, 
   // State equality constraints.
   if (!optimalControlProblem.preJumpEqualityConstraintPtr->empty()) {
     constraintsSize.stateEq = optimalControlProblem.preJumpEqualityConstraintPtr->getTermsSize(t);
-    eqConstraints =
-        optimalControlProblem.preJumpEqualityConstraintPtr->getLinearApproximation(t, x, *optimalControlProblem.preComputationPtr);
+    eqConstraints = optimalControlProblem.preJumpEqualityConstraintPtr->getLinearApproximation(
+      t, x, *optimalControlProblem.preComputationPtr);
   }
 
   // State inequality constraints.
   if (!optimalControlProblem.preJumpInequalityConstraintPtr->empty()) {
-    constraintsSize.stateIneq = optimalControlProblem.preJumpInequalityConstraintPtr->getTermsSize(t);
-    ineqConstraints =
-        optimalControlProblem.preJumpInequalityConstraintPtr->getLinearApproximation(t, x, *optimalControlProblem.preComputationPtr);
+    constraintsSize.stateIneq =
+      optimalControlProblem.preJumpInequalityConstraintPtr->getTermsSize(t);
+    ineqConstraints = optimalControlProblem.preJumpInequalityConstraintPtr->getLinearApproximation(
+      t, x, *optimalControlProblem.preComputationPtr);
   }
 
   return transcription;

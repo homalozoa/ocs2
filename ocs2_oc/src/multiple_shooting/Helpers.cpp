@@ -27,16 +27,20 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_oc/multiple_shooting/Helpers.h"
+#include "ocs2_oc/multiple_shooting/Helpers.hpp"
 
-#include <ocs2_core/control/FeedforwardController.h>
-#include <ocs2_core/control/LinearController.h>
+#include "ocs2_core/control/FeedforwardController.hpp"
+#include "ocs2_core/control/LinearController.hpp"
 
-namespace ocs2 {
-namespace multiple_shooting {
+namespace ocs2
+{
+namespace multiple_shooting
+{
 
-void remapProjectedInput(const std::vector<VectorFunctionLinearApproximation>& constraintsProjection, const vector_array_t& deltaXSol,
-                         vector_array_t& deltaUSol) {
+void remapProjectedInput(
+  const std::vector<VectorFunctionLinearApproximation> & constraintsProjection,
+  const vector_array_t & deltaXSol, vector_array_t & deltaUSol)
+{
   vector_t tmp;  // 1 temporary for re-use.
   for (int i = 0; i < deltaUSol.size(); ++i) {
     if (constraintsProjection[i].f.size() > 0) {
@@ -47,7 +51,10 @@ void remapProjectedInput(const std::vector<VectorFunctionLinearApproximation>& c
   }
 }
 
-void remapProjectedGain(const std::vector<VectorFunctionLinearApproximation>& constraintsProjection, matrix_array_t& KMatrices) {
+void remapProjectedGain(
+  const std::vector<VectorFunctionLinearApproximation> & constraintsProjection,
+  matrix_array_t & KMatrices)
+{
   matrix_t tmp;  // 1 temporary for re-use.
   for (int i = 0; i < KMatrices.size(); ++i) {
     if (constraintsProjection[i].f.size() > 0) {
@@ -57,8 +64,10 @@ void remapProjectedGain(const std::vector<VectorFunctionLinearApproximation>& co
   }
 }
 
-PrimalSolution toPrimalSolution(const std::vector<AnnotatedTime>& time, ModeSchedule&& modeSchedule, vector_array_t&& x,
-                                vector_array_t&& u) {
+PrimalSolution toPrimalSolution(
+  const std::vector<AnnotatedTime> & time, ModeSchedule && modeSchedule, vector_array_t && x,
+  vector_array_t && u)
+{
   // Correct for missing inputs at PreEvents and the terminal time
   for (int i = 0; i < u.size(); ++i) {
     if (time[i].event == AnnotatedTime::Event::PreEvent && i > 0) {
@@ -75,12 +84,15 @@ PrimalSolution toPrimalSolution(const std::vector<AnnotatedTime>& time, ModeSche
   primalSolution.stateTrajectory_ = std::move(x);
   primalSolution.inputTrajectory_ = std::move(u);
   primalSolution.modeSchedule_ = std::move(modeSchedule);
-  primalSolution.controllerPtr_.reset(new FeedforwardController(primalSolution.timeTrajectory_, primalSolution.inputTrajectory_));
+  primalSolution.controllerPtr_.reset(
+    new FeedforwardController(primalSolution.timeTrajectory_, primalSolution.inputTrajectory_));
   return primalSolution;
 }
 
-PrimalSolution toPrimalSolution(const std::vector<AnnotatedTime>& time, ModeSchedule&& modeSchedule, vector_array_t&& x, vector_array_t&& u,
-                                matrix_array_t&& KMatrices) {
+PrimalSolution toPrimalSolution(
+  const std::vector<AnnotatedTime> & time, ModeSchedule && modeSchedule, vector_array_t && x,
+  vector_array_t && u, matrix_array_t && KMatrices)
+{
   // Compute feedback, before x and u are moved to primal solution
   // see doc/LQR_full.pdf for detailed derivation for feedback terms
   vector_array_t uff = u;  // Copy and adapt in loop
@@ -115,11 +127,14 @@ PrimalSolution toPrimalSolution(const std::vector<AnnotatedTime>& time, ModeSche
   primalSolution.stateTrajectory_ = std::move(x);
   primalSolution.inputTrajectory_ = std::move(u);
   primalSolution.modeSchedule_ = std::move(modeSchedule);
-  primalSolution.controllerPtr_.reset(new LinearController(primalSolution.timeTrajectory_, std::move(uff), std::move(KMatrices)));
+  primalSolution.controllerPtr_.reset(
+    new LinearController(primalSolution.timeTrajectory_, std::move(uff), std::move(KMatrices)));
   return primalSolution;
 }
 
-ProblemMetrics toProblemMetrics(const std::vector<AnnotatedTime>& time, std::vector<Metrics>&& metrics) {
+ProblemMetrics toProblemMetrics(
+  const std::vector<AnnotatedTime> & time, std::vector<Metrics> && metrics)
+{
   assert(time.size() > 1);
   assert(metrics.size() == time.size());
 

@@ -27,83 +27,87 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <ocs2_oc/oc_problem/OptimalControlProblem.h>
+#include "ocs2_oc/oc_problem/OptimalControlProblem.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
 OptimalControlProblem::OptimalControlProblem()
-    : /* Cost */
-      costPtr(new StateInputCostCollection),
-      stateCostPtr(new StateCostCollection),
-      preJumpCostPtr(new StateCostCollection),
-      finalCostPtr(new StateCostCollection),
-      /* Soft constraints */
-      softConstraintPtr(new StateInputCostCollection),
-      stateSoftConstraintPtr(new StateCostCollection),
-      preJumpSoftConstraintPtr(new StateCostCollection),
-      finalSoftConstraintPtr(new StateCostCollection),
-      /* Equality constraints */
-      equalityConstraintPtr(new StateInputConstraintCollection),
-      stateEqualityConstraintPtr(new StateConstraintCollection),
-      preJumpEqualityConstraintPtr(new StateConstraintCollection),
-      finalEqualityConstraintPtr(new StateConstraintCollection),
-      /* Inequality constraints */
-      inequalityConstraintPtr(new StateInputConstraintCollection),
-      stateInequalityConstraintPtr(new StateConstraintCollection),
-      preJumpInequalityConstraintPtr(new StateConstraintCollection),
-      finalInequalityConstraintPtr(new StateConstraintCollection),
-      /* Lagrangians */
-      equalityLagrangianPtr(new StateInputAugmentedLagrangianCollection),
-      stateEqualityLagrangianPtr(new StateAugmentedLagrangianCollection),
-      inequalityLagrangianPtr(new StateInputAugmentedLagrangianCollection),
-      stateInequalityLagrangianPtr(new StateAugmentedLagrangianCollection),
-      preJumpEqualityLagrangianPtr(new StateAugmentedLagrangianCollection),
-      preJumpInequalityLagrangianPtr(new StateAugmentedLagrangianCollection),
-      finalEqualityLagrangianPtr(new StateAugmentedLagrangianCollection),
-      finalInequalityLagrangianPtr(new StateAugmentedLagrangianCollection),
-      /* Misc. */
-      preComputationPtr(new PreComputation),
-      targetTrajectoriesPtr(nullptr) {}
+: /* Cost */
+  costPtr(new StateInputCostCollection),
+  stateCostPtr(new StateCostCollection),
+  preJumpCostPtr(new StateCostCollection),
+  finalCostPtr(new StateCostCollection),
+  /* Soft constraints */
+  softConstraintPtr(new StateInputCostCollection),
+  stateSoftConstraintPtr(new StateCostCollection),
+  preJumpSoftConstraintPtr(new StateCostCollection),
+  finalSoftConstraintPtr(new StateCostCollection),
+  /* Equality constraints */
+  equalityConstraintPtr(new StateInputConstraintCollection),
+  stateEqualityConstraintPtr(new StateConstraintCollection),
+  preJumpEqualityConstraintPtr(new StateConstraintCollection),
+  finalEqualityConstraintPtr(new StateConstraintCollection),
+  /* Inequality constraints */
+  inequalityConstraintPtr(new StateInputConstraintCollection),
+  stateInequalityConstraintPtr(new StateConstraintCollection),
+  preJumpInequalityConstraintPtr(new StateConstraintCollection),
+  finalInequalityConstraintPtr(new StateConstraintCollection),
+  /* Lagrangians */
+  equalityLagrangianPtr(new StateInputAugmentedLagrangianCollection),
+  stateEqualityLagrangianPtr(new StateAugmentedLagrangianCollection),
+  inequalityLagrangianPtr(new StateInputAugmentedLagrangianCollection),
+  stateInequalityLagrangianPtr(new StateAugmentedLagrangianCollection),
+  preJumpEqualityLagrangianPtr(new StateAugmentedLagrangianCollection),
+  preJumpInequalityLagrangianPtr(new StateAugmentedLagrangianCollection),
+  finalEqualityLagrangianPtr(new StateAugmentedLagrangianCollection),
+  finalInequalityLagrangianPtr(new StateAugmentedLagrangianCollection),
+  /* Misc. */
+  preComputationPtr(new PreComputation),
+  targetTrajectoriesPtr(nullptr)
+{
+}
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-OptimalControlProblem::OptimalControlProblem(const OptimalControlProblem& other)
-    : /* Cost */
-      costPtr(other.costPtr->clone()),
-      stateCostPtr(other.stateCostPtr->clone()),
-      preJumpCostPtr(other.preJumpCostPtr->clone()),
-      finalCostPtr(other.finalCostPtr->clone()),
-      /* Soft constraints */
-      softConstraintPtr(other.softConstraintPtr->clone()),
-      stateSoftConstraintPtr(other.stateSoftConstraintPtr->clone()),
-      preJumpSoftConstraintPtr(other.preJumpSoftConstraintPtr->clone()),
-      finalSoftConstraintPtr(other.finalSoftConstraintPtr->clone()),
-      /* Equality constraints */
-      equalityConstraintPtr(other.equalityConstraintPtr->clone()),
-      stateEqualityConstraintPtr(other.stateEqualityConstraintPtr->clone()),
-      preJumpEqualityConstraintPtr(other.preJumpEqualityConstraintPtr->clone()),
-      finalEqualityConstraintPtr(other.finalEqualityConstraintPtr->clone()),
-      /* Inequality constraints */
-      inequalityConstraintPtr(other.inequalityConstraintPtr->clone()),
-      stateInequalityConstraintPtr(other.stateInequalityConstraintPtr->clone()),
-      preJumpInequalityConstraintPtr(other.preJumpInequalityConstraintPtr->clone()),
-      finalInequalityConstraintPtr(other.finalInequalityConstraintPtr->clone()),
-      /* Lagrangians */
-      equalityLagrangianPtr(other.equalityLagrangianPtr->clone()),
-      stateEqualityLagrangianPtr(other.stateEqualityLagrangianPtr->clone()),
-      inequalityLagrangianPtr(other.inequalityLagrangianPtr->clone()),
-      stateInequalityLagrangianPtr(other.stateInequalityLagrangianPtr->clone()),
-      preJumpEqualityLagrangianPtr(other.preJumpEqualityLagrangianPtr->clone()),
-      preJumpInequalityLagrangianPtr(other.preJumpInequalityLagrangianPtr->clone()),
-      finalEqualityLagrangianPtr(other.finalEqualityLagrangianPtr->clone()),
-      finalInequalityLagrangianPtr(other.finalInequalityLagrangianPtr->clone()),
-      /* Misc. */
-      preComputationPtr(other.preComputationPtr->clone()),
-      targetTrajectoriesPtr(other.targetTrajectoriesPtr) {
+OptimalControlProblem::OptimalControlProblem(const OptimalControlProblem & other)
+: /* Cost */
+  costPtr(other.costPtr->clone()),
+  stateCostPtr(other.stateCostPtr->clone()),
+  preJumpCostPtr(other.preJumpCostPtr->clone()),
+  finalCostPtr(other.finalCostPtr->clone()),
+  /* Soft constraints */
+  softConstraintPtr(other.softConstraintPtr->clone()),
+  stateSoftConstraintPtr(other.stateSoftConstraintPtr->clone()),
+  preJumpSoftConstraintPtr(other.preJumpSoftConstraintPtr->clone()),
+  finalSoftConstraintPtr(other.finalSoftConstraintPtr->clone()),
+  /* Equality constraints */
+  equalityConstraintPtr(other.equalityConstraintPtr->clone()),
+  stateEqualityConstraintPtr(other.stateEqualityConstraintPtr->clone()),
+  preJumpEqualityConstraintPtr(other.preJumpEqualityConstraintPtr->clone()),
+  finalEqualityConstraintPtr(other.finalEqualityConstraintPtr->clone()),
+  /* Inequality constraints */
+  inequalityConstraintPtr(other.inequalityConstraintPtr->clone()),
+  stateInequalityConstraintPtr(other.stateInequalityConstraintPtr->clone()),
+  preJumpInequalityConstraintPtr(other.preJumpInequalityConstraintPtr->clone()),
+  finalInequalityConstraintPtr(other.finalInequalityConstraintPtr->clone()),
+  /* Lagrangians */
+  equalityLagrangianPtr(other.equalityLagrangianPtr->clone()),
+  stateEqualityLagrangianPtr(other.stateEqualityLagrangianPtr->clone()),
+  inequalityLagrangianPtr(other.inequalityLagrangianPtr->clone()),
+  stateInequalityLagrangianPtr(other.stateInequalityLagrangianPtr->clone()),
+  preJumpEqualityLagrangianPtr(other.preJumpEqualityLagrangianPtr->clone()),
+  preJumpInequalityLagrangianPtr(other.preJumpInequalityLagrangianPtr->clone()),
+  finalEqualityLagrangianPtr(other.finalEqualityLagrangianPtr->clone()),
+  finalInequalityLagrangianPtr(other.finalInequalityLagrangianPtr->clone()),
+  /* Misc. */
+  preComputationPtr(other.preComputationPtr->clone()),
+  targetTrajectoriesPtr(other.targetTrajectoriesPtr)
+{
   if (other.dynamicsPtr != nullptr) {
     dynamicsPtr.reset(other.dynamicsPtr->clone());
   }
@@ -112,7 +116,8 @@ OptimalControlProblem::OptimalControlProblem(const OptimalControlProblem& other)
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-OptimalControlProblem& OptimalControlProblem::operator=(const OptimalControlProblem& rhs) {
+OptimalControlProblem & OptimalControlProblem::operator=(const OptimalControlProblem & rhs)
+{
   OptimalControlProblem tmp(rhs);
   swap(tmp);
   return *this;
@@ -121,7 +126,8 @@ OptimalControlProblem& OptimalControlProblem::operator=(const OptimalControlProb
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void OptimalControlProblem::swap(OptimalControlProblem& other) noexcept {
+void OptimalControlProblem::swap(OptimalControlProblem & other) noexcept
+{
   /* Cost */
   costPtr.swap(other.costPtr);
   stateCostPtr.swap(other.stateCostPtr);

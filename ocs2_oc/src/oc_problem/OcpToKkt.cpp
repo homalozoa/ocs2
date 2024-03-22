@@ -27,41 +27,52 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_oc/oc_problem/OcpToKkt.h"
+#include "ocs2_oc/oc_problem/OcpToKkt.hpp"
 
 #include <numeric>
 
-namespace ocs2 {
+namespace ocs2
+{
 // Helper functions
-namespace {
-int getNumDecisionVariables(const OcpSize& ocpSize) {
-  return std::accumulate(ocpSize.numInputs.begin(), ocpSize.numInputs.end(),
-                         std::accumulate(ocpSize.numStates.begin() + 1, ocpSize.numStates.end(), (int)0));
+namespace
+{
+int getNumDecisionVariables(const OcpSize & ocpSize)
+{
+  return std::accumulate(
+    ocpSize.numInputs.begin(), ocpSize.numInputs.end(),
+    std::accumulate(ocpSize.numStates.begin() + 1, ocpSize.numStates.end(), (int)0));
 }
 
-int getNumDynamicsConstraints(const OcpSize& ocpSize) {
+int getNumDynamicsConstraints(const OcpSize & ocpSize)
+{
   return std::accumulate(ocpSize.numStates.begin() + 1, ocpSize.numStates.end(), (int)0);
 }
 
-int getNumGeneralEqualityConstraints(const OcpSize& ocpSize) {
-  return std::accumulate(ocpSize.numIneqConstraints.begin(), ocpSize.numIneqConstraints.end(), (int)0);
+int getNumGeneralEqualityConstraints(const OcpSize & ocpSize)
+{
+  return std::accumulate(
+    ocpSize.numIneqConstraints.begin(), ocpSize.numIneqConstraints.end(), (int)0);
 }
 }  // namespace
 
-void getConstraintMatrix(const OcpSize& ocpSize, const vector_t& x0, const std::vector<VectorFunctionLinearApproximation>& dynamics,
-                         const std::vector<VectorFunctionLinearApproximation>* constraintsPtr, const vector_array_t* scalingVectorsPtr,
-                         VectorFunctionLinearApproximation& res) {
+void getConstraintMatrix(
+  const OcpSize & ocpSize, const vector_t & x0,
+  const std::vector<VectorFunctionLinearApproximation> & dynamics,
+  const std::vector<VectorFunctionLinearApproximation> * constraintsPtr,
+  const vector_array_t * scalingVectorsPtr, VectorFunctionLinearApproximation & res)
+{
   const int N = ocpSize.numStages;
   if (N < 1) {
     throw std::runtime_error("[getConstraintMatrix] The number of stages cannot be less than 1.");
   }
   if (scalingVectorsPtr != nullptr && scalingVectorsPtr->size() != N) {
-    throw std::runtime_error("[getConstraintMatrix] The size of scalingVectors doesn't match the number of stage.");
+    throw std::runtime_error(
+      "[getConstraintMatrix] The size of scalingVectors doesn't match the number of stage.");
   }
 
   // Preallocate full constraint matrix
-  auto& g = res.f;
-  auto& G = res.dfdx;
+  auto & g = res.f;
+  auto & G = res.dfdx;
   if (constraintsPtr == nullptr) {
     g.setZero(getNumDynamicsConstraints(ocpSize));
   } else {
@@ -75,7 +86,8 @@ void getConstraintMatrix(const OcpSize& ocpSize, const vector_t& x0, const std::
   if (scalingVectorsPtr == nullptr) {
     G.topLeftCorner(nx_1, nu_0 + nx_1) << -dynamics.front().dfdu, matrix_t::Identity(nx_1, nx_1);
   } else {
-    G.topLeftCorner(nx_1, nu_0 + nx_1) << -dynamics.front().dfdu, scalingVectorsPtr->front().asDiagonal().toDenseMatrix();
+    G.topLeftCorner(nx_1, nu_0 + nx_1) << -dynamics.front().dfdu,
+      scalingVectorsPtr->front().asDiagonal().toDenseMatrix();
   }
 
   // k = 0. Absorb initial state into dynamics
@@ -91,7 +103,7 @@ void getConstraintMatrix(const OcpSize& ocpSize, const vector_t& x0, const std::
   int currRow = nx_1;
   int currCol = nu_0;
   for (int k = 1; k < N; ++k) {
-    const auto& dynamics_k = dynamics[k];
+    const auto & dynamics_k = dynamics[k];
     // const auto& constraints_k = constraints;
     const int nu_k = ocpSize.numInputs[k];
     const int nx_k = ocpSize.numStates[k];
@@ -99,10 +111,11 @@ void getConstraintMatrix(const OcpSize& ocpSize, const vector_t& x0, const std::
 
     // Add [-A, -B, I(C)]
     if (scalingVectorsPtr == nullptr) {
-      G.block(currRow, currCol, nx_next, nx_k + nu_k + nx_next) << -dynamics_k.dfdx, -dynamics_k.dfdu, matrix_t::Identity(nx_next, nx_next);
+      G.block(currRow, currCol, nx_next, nx_k + nu_k + nx_next) << -dynamics_k.dfdx,
+        -dynamics_k.dfdu, matrix_t::Identity(nx_next, nx_next);
     } else {
-      G.block(currRow, currCol, nx_next, nx_k + nu_k + nx_next) << -dynamics_k.dfdx, -dynamics_k.dfdu,
-          (*scalingVectorsPtr)[k].asDiagonal().toDenseMatrix();
+      G.block(currRow, currCol, nx_next, nx_k + nu_k + nx_next) << -dynamics_k.dfdx,
+        -dynamics_k.dfdu, (*scalingVectorsPtr)[k].asDiagonal().toDenseMatrix();
     }
 
     // Add [b]
@@ -120,7 +133,7 @@ void getConstraintMatrix(const OcpSize& ocpSize, const vector_t& x0, const std::
     // Initial general constraints
     const int nc_0 = ocpSize.numIneqConstraints.front();
     if (nc_0 > 0) {
-      const auto& constraint_0 = (*constraintsPtr).front();
+      const auto & constraint_0 = (*constraintsPtr).front();
       G.block(currRow, 0, nc_0, nu_0) = constraint_0.dfdu;
       g.segment(currRow, nc_0) = -constraint_0.f;
       g.segment(currRow, nc_0) -= constraint_0.dfdx * x0;
@@ -132,7 +145,7 @@ void getConstraintMatrix(const OcpSize& ocpSize, const vector_t& x0, const std::
       const int nu_k = ocpSize.numInputs[k];
       const int nx_k = ocpSize.numStates[k];
       if (nc_k > 0) {
-        const auto& constraints_k = (*constraintsPtr)[k];
+        const auto & constraints_k = (*constraintsPtr)[k];
 
         // Add [C, D, 0]
         G.block(currRow, currCol, nc_k, nx_k + nu_k) << constraints_k.dfdx, constraints_k.dfdu;
@@ -147,22 +160,27 @@ void getConstraintMatrix(const OcpSize& ocpSize, const vector_t& x0, const std::
     // Final general constraint
     const int nc_N = ocpSize.numIneqConstraints[N];
     if (nc_N > 0) {
-      const auto& constraints_N = (*constraintsPtr)[N];
+      const auto & constraints_N = (*constraintsPtr)[N];
       G.bottomRightCorner(nc_N, constraints_N.dfdx.cols()) = constraints_N.dfdx;
       g.tail(nc_N) = -constraints_N.f;
     }
   }  // end of i loop
 }
 
-void getConstraintMatrixSparse(const OcpSize& ocpSize, const vector_t& x0, const std::vector<VectorFunctionLinearApproximation>& dynamics,
-                               const std::vector<VectorFunctionLinearApproximation>* constraintsPtr,
-                               const vector_array_t* scalingVectorsPtr, Eigen::SparseMatrix<scalar_t>& G, vector_t& g) {
+void getConstraintMatrixSparse(
+  const OcpSize & ocpSize, const vector_t & x0,
+  const std::vector<VectorFunctionLinearApproximation> & dynamics,
+  const std::vector<VectorFunctionLinearApproximation> * constraintsPtr,
+  const vector_array_t * scalingVectorsPtr, Eigen::SparseMatrix<scalar_t> & G, vector_t & g)
+{
   const int N = ocpSize.numStages;
   if (N < 1) {
-    throw std::runtime_error("[getConstraintMatrixSparse] The number of stages cannot be less than 1.");
+    throw std::runtime_error(
+      "[getConstraintMatrixSparse] The number of stages cannot be less than 1.");
   }
   if (scalingVectorsPtr != nullptr && scalingVectorsPtr->size() != N) {
-    throw std::runtime_error("[getConstraintMatrixSparse] The size of scalingVectors doesn't match the number of stage.");
+    throw std::runtime_error(
+      "[getConstraintMatrixSparse] The size of scalingVectors doesn't match the number of stage.");
   }
 
   const int nu_0 = ocpSize.numInputs[0];
@@ -193,7 +211,8 @@ void getConstraintMatrixSparse(const OcpSize& ocpSize, const vector_t& x0, const
   std::vector<Eigen::Triplet<scalar_t>> tripletList;
   tripletList.reserve(nnz);
 
-  auto emplaceBackMatrix = [&tripletList](const int startRow, const int startCol, const matrix_t& mat) {
+  auto emplaceBackMatrix = [&tripletList](
+                             const int startRow, const int startCol, const matrix_t & mat) {
     for (int j = 0; j < mat.cols(); j++) {
       for (int i = 0; i < mat.rows(); i++) {
         if (mat(i, j) != 0) {
@@ -231,7 +250,7 @@ void getConstraintMatrixSparse(const OcpSize& ocpSize, const vector_t& x0, const
   int currRow = nx_1;
   int currCol = nu_0;
   for (int k = 1; k < N; ++k) {
-    const auto& dynamics_k = dynamics[k];
+    const auto & dynamics_k = dynamics[k];
     // const auto& constraints_k = constraints;
     const int nx_k = ocpSize.numStates[k];
     const int nu_k = ocpSize.numInputs[k];
@@ -261,7 +280,7 @@ void getConstraintMatrixSparse(const OcpSize& ocpSize, const vector_t& x0, const
     // Initial general constraints
     const int nc_0 = ocpSize.numIneqConstraints.front();
     if (nc_0 > 0) {
-      const auto& constraint_0 = (*constraintsPtr).front();
+      const auto & constraint_0 = (*constraintsPtr).front();
       emplaceBackMatrix(currRow, 0, constraint_0.dfdu);
 
       g.segment(currRow, nc_0) = -constraint_0.f;
@@ -274,7 +293,7 @@ void getConstraintMatrixSparse(const OcpSize& ocpSize, const vector_t& x0, const
       const int nu_k = ocpSize.numInputs[k];
       const int nx_k = ocpSize.numStates[k];
       if (nc_k > 0) {
-        const auto& constraints_k = (*constraintsPtr)[k];
+        const auto & constraints_k = (*constraintsPtr)[k];
 
         // Add [C, D, 0]
         emplaceBackMatrix(currRow, currCol, constraints_k.dfdx);
@@ -290,7 +309,7 @@ void getConstraintMatrixSparse(const OcpSize& ocpSize, const vector_t& x0, const
     // Final general constraint
     const int nc_N = ocpSize.numIneqConstraints[N];
     if (nc_N > 0) {
-      const auto& constraints_N = (*constraintsPtr)[N];
+      const auto & constraints_N = (*constraintsPtr)[N];
       emplaceBackMatrix(currRow, currCol, constraints_N.dfdx);
       g.segment(currRow, nc_N) = -constraints_N.f;
     }
@@ -300,14 +319,17 @@ void getConstraintMatrixSparse(const OcpSize& ocpSize, const vector_t& x0, const
   assert(G.nonZeros() <= nnz);
 }
 
-void getCostMatrix(const OcpSize& ocpSize, const vector_t& x0, const std::vector<ScalarFunctionQuadraticApproximation>& cost,
-                   ScalarFunctionQuadraticApproximation& res) {
+void getCostMatrix(
+  const OcpSize & ocpSize, const vector_t & x0,
+  const std::vector<ScalarFunctionQuadraticApproximation> & cost,
+  ScalarFunctionQuadraticApproximation & res)
+{
   const int N = ocpSize.numStages;
 
   // Preallocate full Cost matrices
-  auto& H = res.dfdxx;
-  auto& h = res.dfdx;
-  auto& c = res.f;
+  auto & H = res.dfdxx;
+  auto & h = res.dfdx;
+  auto & c = res.f;
   H.setZero(getNumDecisionVariables(ocpSize), getNumDecisionVariables(ocpSize));
   h.setZero(H.cols());
   c = 0.0;
@@ -327,7 +349,8 @@ void getCostMatrix(const OcpSize& ocpSize, const vector_t& x0, const std::vector
 
     // Add [ Q, P'
     //       P, Q ]
-    H.block(currRow, currRow, nx_k + nu_k, nx_k + nu_k) << cost[k].dfdxx, cost[k].dfdux.transpose(), cost[k].dfdux, cost[k].dfduu;
+    H.block(currRow, currRow, nx_k + nu_k, nx_k + nu_k) << cost[k].dfdxx, cost[k].dfdux.transpose(),
+      cost[k].dfdux, cost[k].dfduu;
 
     // Add [ q, r]
     h.segment(currRow, nx_k + nu_k) << cost[k].dfdx, cost[k].dfdu;
@@ -344,8 +367,11 @@ void getCostMatrix(const OcpSize& ocpSize, const vector_t& x0, const std::vector
   c += cost[N].f;
 }
 
-void getCostMatrixSparse(const OcpSize& ocpSize, const vector_t& x0, const std::vector<ScalarFunctionQuadraticApproximation>& cost,
-                         Eigen::SparseMatrix<scalar_t>& H, vector_t& h) {
+void getCostMatrixSparse(
+  const OcpSize & ocpSize, const vector_t & x0,
+  const std::vector<ScalarFunctionQuadraticApproximation> & cost, Eigen::SparseMatrix<scalar_t> & H,
+  vector_t & h)
+{
   const int N = ocpSize.numStages;
 
   const int nu_0 = ocpSize.numInputs[0];
@@ -361,7 +387,8 @@ void getCostMatrixSparse(const OcpSize& ocpSize, const vector_t& x0, const std::
   std::vector<Eigen::Triplet<scalar_t>> tripletList;
   tripletList.reserve(nnz);
 
-  auto emplaceBackMatrix = [&tripletList](const int startRow, const int startCol, const matrix_t& mat) {
+  auto emplaceBackMatrix = [&tripletList](
+                             const int startRow, const int startCol, const matrix_t & mat) {
     for (int j = 0; j < mat.cols(); j++) {
       for (int i = 0; i < mat.rows(); i++) {
         if (mat(i, j) != 0) {
@@ -407,8 +434,10 @@ void getCostMatrixSparse(const OcpSize& ocpSize, const vector_t& x0, const std::
   assert(H.nonZeros() <= nnz);
 }
 
-void toOcpSolution(const OcpSize& ocpSize, const vector_t& stackedSolution, const vector_t x0, vector_array_t& xTrajectory,
-                   vector_array_t& uTrajectory) {
+void toOcpSolution(
+  const OcpSize & ocpSize, const vector_t & stackedSolution, const vector_t x0,
+  vector_array_t & xTrajectory, vector_array_t & uTrajectory)
+{
   const int N = ocpSize.numStages;
   xTrajectory.resize(N + 1);
   uTrajectory.resize(N);
@@ -426,7 +455,10 @@ void toOcpSolution(const OcpSize& ocpSize, const vector_t& stackedSolution, cons
   }
 }
 
-void toKktSolution(const vector_array_t& xTrajectory, const vector_array_t& uTrajectory, vector_t& stackedSolution) {
+void toKktSolution(
+  const vector_array_t & xTrajectory, const vector_array_t & uTrajectory,
+  vector_t & stackedSolution)
+{
   int numDecisionVariables = 0;
   for (int i = 1; i < xTrajectory.size(); i++) {
     numDecisionVariables += uTrajectory[i - 1].size() + xTrajectory[i].size();

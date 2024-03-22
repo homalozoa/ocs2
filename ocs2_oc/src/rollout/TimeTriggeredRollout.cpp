@@ -27,39 +27,50 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_oc/rollout/TimeTriggeredRollout.h"
+#include "ocs2_oc/rollout/TimeTriggeredRollout.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-TimeTriggeredRollout::TimeTriggeredRollout(const ControlledSystemBase& systemDynamics, rollout::Settings rolloutSettings)
-    : RolloutBase(std::move(rolloutSettings)), systemDynamicsPtr_(systemDynamics.clone()), systemEventHandlersPtr_(new SystemEventHandler) {
+TimeTriggeredRollout::TimeTriggeredRollout(
+  const ControlledSystemBase & systemDynamics, rollout::Settings rolloutSettings)
+: RolloutBase(std::move(rolloutSettings)),
+  systemDynamicsPtr_(systemDynamics.clone()),
+  systemEventHandlersPtr_(new SystemEventHandler)
+{
   // construct dynamicsIntegratorsPtr
-  dynamicsIntegratorPtr_ = std::move(newIntegrator(this->settings().integratorType, systemEventHandlersPtr_));
+  dynamicsIntegratorPtr_ =
+    std::move(newIntegrator(this->settings().integratorType, systemEventHandlersPtr_));
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-vector_t TimeTriggeredRollout::run(scalar_t initTime, const vector_t& initState, scalar_t finalTime, ControllerBase* controller,
-                                   ModeSchedule& modeSchedule, scalar_array_t& timeTrajectory, size_array_t& postEventIndices,
-                                   vector_array_t& stateTrajectory, vector_array_t& inputTrajectory) {
+vector_t TimeTriggeredRollout::run(
+  scalar_t initTime, const vector_t & initState, scalar_t finalTime, ControllerBase * controller,
+  ModeSchedule & modeSchedule, scalar_array_t & timeTrajectory, size_array_t & postEventIndices,
+  vector_array_t & stateTrajectory, vector_array_t & inputTrajectory)
+{
   if (initTime > finalTime) {
-    throw std::runtime_error("[TimeTriggeredRollout::run] The initial time should be less-equal to the final time!");
+    throw std::runtime_error(
+      "[TimeTriggeredRollout::run] The initial time should be less-equal to the final time!");
   }
   if (controller == nullptr) {
     throw std::runtime_error("[TimeTriggeredRollout::run] Controller is not set!");
   }
 
   // extract sub-systems
-  const auto timeIntervalArray = findActiveModesTimeInterval(initTime, finalTime, modeSchedule.eventTimes);
+  const auto timeIntervalArray =
+    findActiveModesTimeInterval(initTime, finalTime, modeSchedule.eventTimes);
   const int numSubsystems = timeIntervalArray.size();
   const int numEvents = numSubsystems - 1;
 
   // max number of steps for integration
-  const auto maxNumSteps = static_cast<size_t>(this->settings().maxNumStepsPerSecond * std::max(1.0, finalTime - initTime));
+  const auto maxNumSteps = static_cast<size_t>(
+    this->settings().maxNumStepsPerSecond * std::max(1.0, finalTime - initTime));
 
   // clearing the output trajectories
   timeTrajectory.clear();
@@ -86,9 +97,10 @@ vector_t TimeTriggeredRollout::run(scalar_t initTime, const vector_t& initState,
     if (timeIntervalArray[i].first < timeIntervalArray[i].second) {
       Observer observer(&stateTrajectory, &timeTrajectory);  // concatenate trajectory
       // integrate controlled system
-      dynamicsIntegratorPtr_->integrateAdaptive(*systemDynamicsPtr_, observer, beginState, timeIntervalArray[i].first,
-                                                timeIntervalArray[i].second, this->settings().timeStep, this->settings().absTolODE,
-                                                this->settings().relTolODE, maxNumSteps);
+      dynamicsIntegratorPtr_->integrateAdaptive(
+        *systemDynamicsPtr_, observer, beginState, timeIntervalArray[i].first,
+        timeIntervalArray[i].second, this->settings().timeStep, this->settings().absTolODE,
+        this->settings().relTolODE, maxNumSteps);
     } else {
       timeTrajectory.push_back(timeIntervalArray[i].second);
       stateTrajectory.push_back(beginState);
@@ -97,7 +109,8 @@ vector_t TimeTriggeredRollout::run(scalar_t initTime, const vector_t& initState,
     // compute control input trajectory and concatenate to inputTrajectory
     if (this->settings().reconstructInputTrajectory) {
       for (; k_u < timeTrajectory.size(); k_u++) {
-        inputTrajectory.emplace_back(systemDynamicsPtr_->controllerPtr()->computeInput(timeTrajectory[k_u], stateTrajectory[k_u]));
+        inputTrajectory.emplace_back(systemDynamicsPtr_->controllerPtr()->computeInput(
+          timeTrajectory[k_u], stateTrajectory[k_u]));
       }  // end of k_u loop
     }
 
@@ -105,12 +118,14 @@ vector_t TimeTriggeredRollout::run(scalar_t initTime, const vector_t& initState,
     if (i < numEvents) {
       postEventIndices.push_back(stateTrajectory.size());
       // jump map
-      beginState = systemDynamicsPtr_->computeJumpMap(timeTrajectory.back(), stateTrajectory.back());
+      beginState =
+        systemDynamicsPtr_->computeJumpMap(timeTrajectory.back(), stateTrajectory.back());
     }
   }  // end of i loop
 
   // check for the numerical stability
-  this->checkNumericalStability(*controller, timeTrajectory, postEventIndices, stateTrajectory, inputTrajectory);
+  this->checkNumericalStability(
+    *controller, timeTrajectory, postEventIndices, stateTrajectory, inputTrajectory);
 
   return stateTrajectory.back();
 }

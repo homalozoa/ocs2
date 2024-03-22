@@ -27,12 +27,15 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include "ocs2_oc/approximate_model/ChangeOfInputVariables.h"
+#include "ocs2_oc/approximate_model/ChangeOfInputVariables.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
-void changeOfInputVariables(ScalarFunctionQuadraticApproximation& quadraticApproximation, const matrix_t& Pu, const matrix_t& Px,
-                            const vector_t& u0) {
+void changeOfInputVariables(
+  ScalarFunctionQuadraticApproximation & quadraticApproximation, const matrix_t & Pu,
+  const matrix_t & Px, const vector_t & u0)
+{
   /*
    * 3 temporaries are needed in any branch because Pu is non-zero and:
    *  - new P contains a product Pu'*P
@@ -60,13 +63,15 @@ void changeOfInputVariables(ScalarFunctionQuadraticApproximation& quadraticAppro
 
   // Q = Q + P'*Px + Px'*P + Px'*R*Px = Q + P'*Px + Px'*(P + R*Px)
   if (hasPx) {
-    quadraticApproximation.dfdxx.noalias() += quadraticApproximation.dfdux.transpose() * Px;  // Before adapting dfdux!
+    quadraticApproximation.dfdxx.noalias() +=
+      quadraticApproximation.dfdux.transpose() * Px;  // Before adapting dfdux!
     quadraticApproximation.dfdxx.noalias() += Px.transpose() * P_plus_R_Px;
   }  // else Q remains unaltered
 
   // q = q + P' * u0 + Px' (R*u0 + r)
   if (hasu0) {
-    quadraticApproximation.dfdx.noalias() += quadraticApproximation.dfdux.transpose() * u0;  // Before adapting dfdux!
+    quadraticApproximation.dfdx.noalias() +=
+      quadraticApproximation.dfdux.transpose() * u0;  // Before adapting dfdux!
   }
   if (hasPx) {
     quadraticApproximation.dfdx.noalias() += Px.transpose() * r_plus_R_u0;
@@ -74,22 +79,27 @@ void changeOfInputVariables(ScalarFunctionQuadraticApproximation& quadraticAppro
 
   // c = c + r'*u0 + 1/2*u0'*R*u0 = 1/2*u0'((R*u0 + r) + r)
   if (hasu0) {
-    quadraticApproximation.f += 0.5 * u0.dot(r_plus_R_u0 + quadraticApproximation.dfdu);  // Before adapting dfdu!
+    quadraticApproximation.f +=
+      0.5 * u0.dot(r_plus_R_u0 + quadraticApproximation.dfdu);  // Before adapting dfdu!
   }
 
   // P = Pu'*P + Pu'*R*Px = Pu'*(P + R*Px)
   quadraticApproximation.dfdux.noalias() = Pu.transpose() * P_plus_R_Px;
 
   // R = Pu' * R * Pu
-  matrix_t R_Pu = quadraticApproximation.dfduu * Pu;  // make the required temporary explicit, to save it in the second multiplication
+  matrix_t R_Pu =
+    quadraticApproximation.dfduu *
+    Pu;  // make the required temporary explicit, to save it in the second multiplication
   quadraticApproximation.dfduu.noalias() = Pu.transpose() * R_Pu;
 
   // r = Pu' * (R*u0 + r)
   quadraticApproximation.dfdu.noalias() = Pu.transpose() * r_plus_R_u0;
 }
 
-void changeOfInputVariables(VectorFunctionLinearApproximation& linearApproximation, const matrix_t& Pu, const matrix_t& Px,
-                            const vector_t& u0) {
+void changeOfInputVariables(
+  VectorFunctionLinearApproximation & linearApproximation, const matrix_t & Pu, const matrix_t & Px,
+  const vector_t & u0)
+{
   const bool hasPx(Px.size() > 0);
   const bool hasu0(u0.size() > 0);
 

@@ -27,17 +27,20 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_oc/oc_data/TimeDiscretization.h"
+#include "ocs2_oc/oc_data/TimeDiscretization.hpp"
 
-#include <ocs2_core/misc/Lookup.h>
+#include "ocs2_core/misc/Lookup.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
-scalar_t getInterpolationTime(const AnnotatedTime& annotatedTime) {
+scalar_t getInterpolationTime(const AnnotatedTime & annotatedTime)
+{
   return annotatedTime.time + numeric_traits::limitEpsilon<scalar_t>();
 }
 
-scalar_t getIntervalStart(const AnnotatedTime& start) {
+scalar_t getIntervalStart(const AnnotatedTime & start)
+{
   scalar_t adaptedStart = start.time;
   if (start.event == AnnotatedTime::Event::PostEvent) {
     adaptedStart += numeric_traits::weakEpsilon<scalar_t>();
@@ -45,7 +48,8 @@ scalar_t getIntervalStart(const AnnotatedTime& start) {
   return adaptedStart;
 }
 
-scalar_t getIntervalEnd(const AnnotatedTime& end) {
+scalar_t getIntervalEnd(const AnnotatedTime & end)
+{
   scalar_t adaptedEnd = end.time;
   if (end.event == AnnotatedTime::Event::PreEvent) {
     adaptedEnd -= numeric_traits::weakEpsilon<scalar_t>();
@@ -53,12 +57,15 @@ scalar_t getIntervalEnd(const AnnotatedTime& end) {
   return adaptedEnd;
 }
 
-scalar_t getIntervalDuration(const AnnotatedTime& start, const AnnotatedTime& end) {
+scalar_t getIntervalDuration(const AnnotatedTime & start, const AnnotatedTime & end)
+{
   return getIntervalEnd(end) - getIntervalStart(start);
 }
 
-std::vector<AnnotatedTime> timeDiscretizationWithEvents(scalar_t initTime, scalar_t finalTime, scalar_t dt,
-                                                        const scalar_array_t& eventTimes, scalar_t dt_min) {
+std::vector<AnnotatedTime> timeDiscretizationWithEvents(
+  scalar_t initTime, scalar_t finalTime, scalar_t dt, const scalar_array_t & eventTimes,
+  scalar_t dt_min)
+{
   assert(dt > 0);
   assert(finalTime > initTime);
   std::vector<AnnotatedTime> timeDiscretization;
@@ -102,7 +109,7 @@ std::vector<AnnotatedTime> timeDiscretizationWithEvents(scalar_t initTime, scala
   std::vector<AnnotatedTime> timeDiscretizationWithDoubleEvents;
   timeDiscretizationWithDoubleEvents.reserve(2 * timeDiscretization.size());  // upper bound on size
 
-  for (const auto& t : timeDiscretization) {
+  for (const auto & t : timeDiscretization) {
     timeDiscretizationWithDoubleEvents.push_back(t);
     if (t.event == AnnotatedTime::Event::PreEvent) {
       timeDiscretizationWithDoubleEvents.push_back(t);
@@ -113,7 +120,8 @@ std::vector<AnnotatedTime> timeDiscretizationWithEvents(scalar_t initTime, scala
   return timeDiscretizationWithDoubleEvents;
 }
 
-scalar_array_t toTime(const std::vector<AnnotatedTime>& annotatedTime) {
+scalar_array_t toTime(const std::vector<AnnotatedTime> & annotatedTime)
+{
   scalar_array_t timeTrajectory;
   timeTrajectory.reserve(annotatedTime.size());
   for (size_t i = 0; i < annotatedTime.size(); i++) {
@@ -122,7 +130,8 @@ scalar_array_t toTime(const std::vector<AnnotatedTime>& annotatedTime) {
   return timeTrajectory;
 }
 
-scalar_array_t toInterpolationTime(const std::vector<AnnotatedTime>& annotatedTime) {
+scalar_array_t toInterpolationTime(const std::vector<AnnotatedTime> & annotatedTime)
+{
   if (annotatedTime.empty()) {
     return scalar_array_t();
   }
@@ -140,7 +149,8 @@ scalar_array_t toInterpolationTime(const std::vector<AnnotatedTime>& annotatedTi
   return timeTrajectory;
 }
 
-size_array_t toPostEventIndices(const std::vector<AnnotatedTime>& annotatedTime) {
+size_array_t toPostEventIndices(const std::vector<AnnotatedTime> & annotatedTime)
+{
   size_array_t postEventIndices;
   for (size_t i = 0; i < annotatedTime.size(); i++) {
     if (annotatedTime[i].event == AnnotatedTime::Event::PreEvent) {

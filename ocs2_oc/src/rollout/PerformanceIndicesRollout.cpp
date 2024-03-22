@@ -27,18 +27,22 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <ocs2_core/integration/TrapezoidalIntegration.h>
+#include "ocs2_oc/rollout/PerformanceIndicesRollout.hpp"
 
-#include <ocs2_oc/rollout/PerformanceIndicesRollout.h>
+#include "ocs2_core/integration/TrapezoidalIntegration.hpp"
 
-namespace ocs2 {
-namespace PerformanceIndicesRollout {
+namespace ocs2
+{
+namespace PerformanceIndicesRollout
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-scalar_t rolloutCost(cost_wraper_t costWraper, const scalar_array_t& timeTrajectory, const vector_array_t& stateTrajectory,
-                     const vector_array_t& inputTrajectory) {
+scalar_t rolloutCost(
+  cost_wraper_t costWraper, const scalar_array_t & timeTrajectory,
+  const vector_array_t & stateTrajectory, const vector_array_t & inputTrajectory)
+{
   const size_t N = timeTrajectory.size();
   assert(stateTrajectory.size() == N);
   assert(inputTrajectory.size() == N);
@@ -55,8 +59,10 @@ scalar_t rolloutCost(cost_wraper_t costWraper, const scalar_array_t& timeTraject
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-scalar_t rolloutConstraint(constraints_wraper_t constraintWraper, const scalar_array_t& timeTrajectory,
-                           const vector_array_t& stateTrajectory, const vector_array_t& inputTrajectory) {
+scalar_t rolloutConstraint(
+  constraints_wraper_t constraintWraper, const scalar_array_t & timeTrajectory,
+  const vector_array_t & stateTrajectory, const vector_array_t & inputTrajectory)
+{
   const size_t N = timeTrajectory.size();
   assert(stateTrajectory.size() == N);
   assert(inputTrajectory.size() == N);
@@ -64,7 +70,8 @@ scalar_t rolloutConstraint(constraints_wraper_t constraintWraper, const scalar_a
   scalar_array_t constraintTrajectoryISE;
   constraintTrajectoryISE.reserve(N);
   for (size_t i = 0; i < N; i++) {
-    const auto constraint = constraintWraper(timeTrajectory[i], stateTrajectory[i], inputTrajectory[i]);
+    const auto constraint =
+      constraintWraper(timeTrajectory[i], stateTrajectory[i], inputTrajectory[i]);
     constraintTrajectoryISE.push_back(constraint.squaredNorm());
   }
 

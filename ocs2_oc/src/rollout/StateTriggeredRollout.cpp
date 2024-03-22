@@ -27,39 +27,47 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_oc/rollout/StateTriggeredRollout.h"
+#include "ocs2_oc/rollout/StateTriggeredRollout.hpp"
 
-#include <ocs2_core/control/StateBasedLinearController.h>
-#include <ocs2_oc/rollout/RootFinder.h>
+#include "ocs2_core/control/StateBasedLinearController.hpp"
+#include "ocs2_oc/rollout/RootFinder.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-StateTriggeredRollout::StateTriggeredRollout(const ControlledSystemBase& systemDynamics, rollout::Settings rolloutSettings)
-    : RolloutBase(std::move(rolloutSettings)),
-      systemDynamicsPtr_(systemDynamics.clone()),
-      systemEventHandlersPtr_(new StateTriggeredEventHandler(this->settings().timeStep)) {
+StateTriggeredRollout::StateTriggeredRollout(
+  const ControlledSystemBase & systemDynamics, rollout::Settings rolloutSettings)
+: RolloutBase(std::move(rolloutSettings)),
+  systemDynamicsPtr_(systemDynamics.clone()),
+  systemEventHandlersPtr_(new StateTriggeredEventHandler(this->settings().timeStep))
+{
   // construct dynamicsIntegratorsPtr
-  dynamicsIntegratorPtr_ = std::move(newIntegrator(this->settings().integratorType, systemEventHandlersPtr_));
+  dynamicsIntegratorPtr_ =
+    std::move(newIntegrator(this->settings().integratorType, systemEventHandlersPtr_));
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-vector_t StateTriggeredRollout::run(scalar_t initTime, const vector_t& initState, scalar_t finalTime, ControllerBase* controller,
-                                    ModeSchedule& modeSchedule, scalar_array_t& timeTrajectory, size_array_t& postEventIndices,
-                                    vector_array_t& stateTrajectory, vector_array_t& inputTrajectory) {
+vector_t StateTriggeredRollout::run(
+  scalar_t initTime, const vector_t & initState, scalar_t finalTime, ControllerBase * controller,
+  ModeSchedule & modeSchedule, scalar_array_t & timeTrajectory, size_array_t & postEventIndices,
+  vector_array_t & stateTrajectory, vector_array_t & inputTrajectory)
+{
   if (initTime > finalTime) {
-    throw std::runtime_error("[StateTriggeredRollout::run] The initial time should be less-equal to the final time!");
+    throw std::runtime_error(
+      "[StateTriggeredRollout::run] The initial time should be less-equal to the final time!");
   }
   if (controller == nullptr) {
     throw std::runtime_error("[StateTriggeredRollout::run] Controller is not set!");
   }
 
   // max number of steps for integration
-  const auto maxNumSteps = static_cast<size_t>(this->settings().maxNumStepsPerSecond * std::max(1.0, finalTime - initTime));
+  const auto maxNumSteps = static_cast<size_t>(
+    this->settings().maxNumStepsPerSecond * std::max(1.0, finalTime - initTime));
 
   // clearing the output trajectories
   modeSchedule.clear();
@@ -100,13 +108,15 @@ vector_t StateTriggeredRollout::run(scalar_t initTime, const vector_t& initState
   int singleEventIterations = 0;  // iterations for a single event
   int numTotalIterations = 0;     // overall number of iterations
 
-  while (true) {  // keeps looping until end time condition is fulfilled, after which the loop is broken
+  while (
+    true) {  // keeps looping until end time condition is fulfilled, after which the loop is broken
     bool triggered = false;
     try {
       Observer observer(&stateTrajectory, &timeTrajectory);  // concatenate trajectory
-      dynamicsIntegratorPtr_->integrateAdaptive(*systemDynamicsPtr_, observer, x0, t0, t1, this->settings().timeStep,
-                                                this->settings().absTolODE, this->settings().relTolODE, maxNumSteps);
-    } catch (const size_t& e) {
+      dynamicsIntegratorPtr_->integrateAdaptive(
+        *systemDynamicsPtr_, observer, x0, t0, t1, this->settings().timeStep,
+        this->settings().absTolODE, this->settings().relTolODE, maxNumSteps);
+    } catch (const size_t & e) {
       eventID = e;
       triggered = true;
     }
@@ -121,7 +131,8 @@ vector_t StateTriggeredRollout::run(scalar_t initTime, const vector_t& initState
     const bool timeAccuracyCondition = std::fabs(t1 - t0) < this->settings().absTolODE;
     const bool accuracyCondition = guardAccuracyCondition || timeAccuracyCondition;
     // condition to check whether max number of iterations has not been reached, to prevent an infinite loop
-    const bool maxNumIterationsReached = singleEventIterations >= this->settings().maxSingleEventIterations;
+    const bool maxNumIterationsReached =
+      singleEventIterations >= this->settings().maxSingleEventIterations;
 
     // remove the element past the guard surface if the event handler was triggered
     // (Due to checking in EventHandler this can only happen to the last element of the trajectory)
@@ -135,7 +146,8 @@ vector_t StateTriggeredRollout::run(scalar_t initTime, const vector_t& initState
     // compute control input trajectory and concatenate to inputTrajectory
     if (this->settings().reconstructInputTrajectory) {
       for (; k_u < timeTrajectory.size(); k_u++) {
-        inputTrajectory.emplace_back(systemDynamicsPtr_->controllerPtr()->computeInput(timeTrajectory[k_u], stateTrajectory[k_u]));
+        inputTrajectory.emplace_back(systemDynamicsPtr_->controllerPtr()->computeInput(
+          timeTrajectory[k_u], stateTrajectory[k_u]));
       }  // end of k_u loop
     }
 
@@ -171,10 +183,11 @@ vector_t StateTriggeredRollout::run(scalar_t initTime, const vector_t& initState
       if (refining) {  // apply the rules of the root-finding method to continue refining
         rootFinder.updateBracket(queryTime, queryGuard);
       } else {  // properly configure root-finding method to start refining
-        const scalar_t& timeBefore = timeTrajectory.back();
-        const vector_t& stateBefore = stateTrajectory.back();
-        const vector_t guardSurfacesBefore = systemDynamicsPtr_->computeGuardSurfaces(timeBefore, stateBefore);
-        const scalar_t& guardBefore = guardSurfacesBefore[eventID];
+        const scalar_t & timeBefore = timeTrajectory.back();
+        const vector_t & stateBefore = stateTrajectory.back();
+        const vector_t guardSurfacesBefore =
+          systemDynamicsPtr_->computeGuardSurfaces(timeBefore, stateBefore);
+        const scalar_t & guardBefore = guardSurfacesBefore[eventID];
 
         rootFinder.setInitBracket(timeBefore, queryTime, guardBefore, queryGuard);
         refining = true;
@@ -193,7 +206,8 @@ vector_t StateTriggeredRollout::run(scalar_t initTime, const vector_t& initState
   }  // end of while loop
 
   // check for the numerical stability
-  this->checkNumericalStability(*controller, timeTrajectory, postEventIndices, stateTrajectory, inputTrajectory);
+  this->checkNumericalStability(
+    *controller, timeTrajectory, postEventIndices, stateTrajectory, inputTrajectory);
 
   return stateTrajectory.back();
 }

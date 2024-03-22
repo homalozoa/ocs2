@@ -27,37 +27,18 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_oc/multiple_shooting/MetricsComputation.h"
+#include "ocs2_oc/multiple_shooting/MetricsComputation.hpp"
 
-#include "ocs2_oc/approximate_model/LinearQuadraticApproximator.h"
+#include "ocs2_oc/approximate_model/LinearQuadraticApproximator.hpp"
 
-namespace ocs2 {
-namespace multiple_shooting {
+namespace ocs2
+{
+namespace multiple_shooting
+{
 
-Metrics computeMetrics(const Transcription& transcription) {
-  const auto& constraintsSize = transcription.constraintsSize;
-
-  Metrics metrics;
-
-  // Cost
-  metrics.cost = transcription.cost.f;
-
-  // Dynamics
-  metrics.dynamicsViolation = transcription.dynamics.f;
-
-  // Equality constraints
-  metrics.stateEqConstraint = toConstraintArray(constraintsSize.stateEq, transcription.stateEqConstraints.f);
-  metrics.stateInputEqConstraint = toConstraintArray(constraintsSize.stateInputEq, transcription.stateInputEqConstraints.f);
-
-  // Inequality constraints.
-  metrics.stateIneqConstraint = toConstraintArray(constraintsSize.stateIneq, transcription.stateIneqConstraints.f);
-  metrics.stateInputIneqConstraint = toConstraintArray(constraintsSize.stateInputIneq, transcription.stateInputIneqConstraints.f);
-
-  return metrics;
-}
-
-Metrics computeMetrics(const EventTranscription& transcription) {
-  const auto& constraintsSize = transcription.constraintsSize;
+Metrics computeMetrics(const Transcription & transcription)
+{
+  const auto & constraintsSize = transcription.constraintsSize;
 
   Metrics metrics;
 
@@ -68,16 +49,46 @@ Metrics computeMetrics(const EventTranscription& transcription) {
   metrics.dynamicsViolation = transcription.dynamics.f;
 
   // Equality constraints
-  metrics.stateEqConstraint = toConstraintArray(constraintsSize.stateEq, transcription.eqConstraints.f);
+  metrics.stateEqConstraint =
+    toConstraintArray(constraintsSize.stateEq, transcription.stateEqConstraints.f);
+  metrics.stateInputEqConstraint =
+    toConstraintArray(constraintsSize.stateInputEq, transcription.stateInputEqConstraints.f);
 
   // Inequality constraints.
-  metrics.stateIneqConstraint = toConstraintArray(constraintsSize.stateIneq, transcription.ineqConstraints.f);
+  metrics.stateIneqConstraint =
+    toConstraintArray(constraintsSize.stateIneq, transcription.stateIneqConstraints.f);
+  metrics.stateInputIneqConstraint =
+    toConstraintArray(constraintsSize.stateInputIneq, transcription.stateInputIneqConstraints.f);
 
   return metrics;
 }
 
-Metrics computeMetrics(const TerminalTranscription& transcription) {
-  const auto& constraintsSize = transcription.constraintsSize;
+Metrics computeMetrics(const EventTranscription & transcription)
+{
+  const auto & constraintsSize = transcription.constraintsSize;
+
+  Metrics metrics;
+
+  // Cost
+  metrics.cost = transcription.cost.f;
+
+  // Dynamics
+  metrics.dynamicsViolation = transcription.dynamics.f;
+
+  // Equality constraints
+  metrics.stateEqConstraint =
+    toConstraintArray(constraintsSize.stateEq, transcription.eqConstraints.f);
+
+  // Inequality constraints.
+  metrics.stateIneqConstraint =
+    toConstraintArray(constraintsSize.stateIneq, transcription.ineqConstraints.f);
+
+  return metrics;
+}
+
+Metrics computeMetrics(const TerminalTranscription & transcription)
+{
+  const auto & constraintsSize = transcription.constraintsSize;
 
   Metrics metrics;
 
@@ -85,16 +96,20 @@ Metrics computeMetrics(const TerminalTranscription& transcription) {
   metrics.cost = transcription.cost.f;
 
   // Equality constraints
-  metrics.stateEqConstraint = toConstraintArray(constraintsSize.stateEq, transcription.eqConstraints.f);
+  metrics.stateEqConstraint =
+    toConstraintArray(constraintsSize.stateEq, transcription.eqConstraints.f);
 
   // Inequality constraints.
-  metrics.stateIneqConstraint = toConstraintArray(constraintsSize.stateIneq, transcription.ineqConstraints.f);
+  metrics.stateIneqConstraint =
+    toConstraintArray(constraintsSize.stateIneq, transcription.ineqConstraints.f);
 
   return metrics;
 }
 
-Metrics computeIntermediateMetrics(OptimalControlProblem& optimalControlProblem, DynamicsDiscretizer& discretizer, scalar_t t, scalar_t dt,
-                                   const vector_t& x, const vector_t& x_next, const vector_t& u) {
+Metrics computeIntermediateMetrics(
+  OptimalControlProblem & optimalControlProblem, DynamicsDiscretizer & discretizer, scalar_t t,
+  scalar_t dt, const vector_t & x, const vector_t & x_next, const vector_t & u)
+{
   // Dynamics
   auto dynamicsViolation = discretizer(*optimalControlProblem.dynamicsPtr, t, x, u, dt);
   dynamicsViolation -= x_next;
@@ -104,13 +119,16 @@ Metrics computeIntermediateMetrics(OptimalControlProblem& optimalControlProblem,
   optimalControlProblem.preComputationPtr->request(request, t, x, u);
 
   // Compute metrics
-  auto metrics = computeIntermediateMetrics(optimalControlProblem, t, x, u, std::move(dynamicsViolation));
+  auto metrics =
+    computeIntermediateMetrics(optimalControlProblem, t, x, u, std::move(dynamicsViolation));
   metrics.cost *= dt;  // consider dt
 
   return metrics;
 }
 
-Metrics computeTerminalMetrics(OptimalControlProblem& optimalControlProblem, scalar_t t, const vector_t& x) {
+Metrics computeTerminalMetrics(
+  OptimalControlProblem & optimalControlProblem, scalar_t t, const vector_t & x)
+{
   // Precomputation
   constexpr auto request = Request::Cost + Request::SoftConstraint + Request::Constraint;
   optimalControlProblem.preComputationPtr->requestFinal(request, t, x);
@@ -118,9 +136,13 @@ Metrics computeTerminalMetrics(OptimalControlProblem& optimalControlProblem, sca
   return computeFinalMetrics(optimalControlProblem, t, x);
 }
 
-Metrics computeEventMetrics(OptimalControlProblem& optimalControlProblem, scalar_t t, const vector_t& x, const vector_t& x_next) {
+Metrics computeEventMetrics(
+  OptimalControlProblem & optimalControlProblem, scalar_t t, const vector_t & x,
+  const vector_t & x_next)
+{
   // Precomputation
-  constexpr auto request = Request::Cost + Request::SoftConstraint + Request::Constraint + Request::Dynamics;
+  constexpr auto request =
+    Request::Cost + Request::SoftConstraint + Request::Constraint + Request::Dynamics;
   optimalControlProblem.preComputationPtr->requestPreJump(request, t, x);
 
   // Dynamics

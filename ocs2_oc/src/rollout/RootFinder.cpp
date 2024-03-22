@@ -27,14 +27,16 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <ocs2_oc/rollout/RootFinder.h>
+#include "ocs2_oc/rollout/RootFinder.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void RootFinder::setInitBracket(pair_t timeInt, pair_t guardInt) {
+void RootFinder::setInitBracket(pair_t timeInt, pair_t guardInt)
+{
   if (guardInt.first * guardInt.second > 0) {
     throw std::runtime_error("Bracket function values should have opposite signs!");
   }
@@ -45,7 +47,8 @@ void RootFinder::setInitBracket(pair_t timeInt, pair_t guardInt) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void RootFinder::updateBracket(const scalar_t& query, const scalar_t& fQuery) {
+void RootFinder::updateBracket(const scalar_t & query, const scalar_t & fQuery)
+{
   if (fQuery * guardInt_.first < 0) {
     guardInt_.second = guardInt_.first;
     timeInt_.second = timeInt_.first;
@@ -76,9 +79,11 @@ void RootFinder::updateBracket(const scalar_t& query, const scalar_t& fQuery) {
         break;
       }
       default: {
-        throw std::runtime_error("Root finding algorithm of type " +
-                                 std::to_string(static_cast<std::underlying_type<RootFinderType>::type>(rootFindingAlgorithm_)) +
-                                 " is not supported.");
+        throw std::runtime_error(
+          "Root finding algorithm of type " +
+          std::to_string(
+            static_cast<std::underlying_type<RootFinderType>::type>(rootFindingAlgorithm_)) +
+          " is not supported.");
       }
     }
 
@@ -92,7 +97,8 @@ void RootFinder::updateBracket(const scalar_t& query, const scalar_t& fQuery) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void RootFinder::display() {
+void RootFinder::display()
+{
   std::cerr << "Root Finding Information\n";
   std::cerr << "Time Bracket:  [" << timeInt_.first << ";" << timeInt_.second << "]\n";
   std::cerr << "Value Bracket: [" << guardInt_.first << ";" << guardInt_.second << "]\n";

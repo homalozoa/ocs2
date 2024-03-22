@@ -27,11 +27,14 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_oc/oc_data/LoopshapingPrimalSolution.h"
+#include "ocs2_oc/oc_data/LoopshapingPrimalSolution.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
-PrimalSolution loopshapingToSystemPrimalSolution(const PrimalSolution& primalSolution, const LoopshapingDefinition& loopshapingDefinition) {
+PrimalSolution loopshapingToSystemPrimalSolution(
+  const PrimalSolution & primalSolution, const LoopshapingDefinition & loopshapingDefinition)
+{
   PrimalSolution systemPrimalSolution;
   systemPrimalSolution.controllerPtr_ = nullptr;
   systemPrimalSolution.timeTrajectory_ = primalSolution.timeTrajectory_;
@@ -39,9 +42,10 @@ PrimalSolution loopshapingToSystemPrimalSolution(const PrimalSolution& primalSol
   systemPrimalSolution.stateTrajectory_.reserve(primalSolution.stateTrajectory_.size());
   systemPrimalSolution.inputTrajectory_.reserve(primalSolution.inputTrajectory_.size());
   for (size_t k = 0; k < primalSolution.stateTrajectory_.size(); ++k) {
-    systemPrimalSolution.stateTrajectory_.push_back(loopshapingDefinition.getSystemState(primalSolution.stateTrajectory_[k]));
-    systemPrimalSolution.inputTrajectory_.push_back(
-        loopshapingDefinition.getSystemInput(primalSolution.stateTrajectory_[k], primalSolution.inputTrajectory_[k]));
+    systemPrimalSolution.stateTrajectory_.push_back(
+      loopshapingDefinition.getSystemState(primalSolution.stateTrajectory_[k]));
+    systemPrimalSolution.inputTrajectory_.push_back(loopshapingDefinition.getSystemInput(
+      primalSolution.stateTrajectory_[k], primalSolution.inputTrajectory_[k]));
   }
   return systemPrimalSolution;
 }

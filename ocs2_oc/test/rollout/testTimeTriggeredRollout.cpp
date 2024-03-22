@@ -32,16 +32,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <memory>
 
-#include <gtest/gtest.h>
-
-#include <ocs2_core/Types.h>
-#include <ocs2_core/control/LinearController.h>
-#include <ocs2_core/dynamics/LinearSystemDynamics.h>
-#include <ocs2_oc/rollout/TimeTriggeredRollout.h>
+#include "gtest/gtest.h"
+#include "ocs2_core/Types.hpp"
+#include "ocs2_core/control/LinearController.hpp"
+#include "ocs2_core/dynamics/LinearSystemDynamics.hpp"
+#include "ocs2_oc/rollout/TimeTriggeredRollout.hpp"
 
 using namespace ocs2;
 
-TEST(time_rollout_test, time_rollout_test) {
+TEST(time_rollout_test, time_rollout_test)
+{
   constexpr size_t nx = 2;
   constexpr size_t nu = 1;
   const scalar_t initTime = 0.0;
@@ -78,7 +78,9 @@ TEST(time_rollout_test, time_rollout_test) {
   size_array_t postEventIndices;
   vector_array_t stateTrajectory;
   vector_array_t inputTrajectory;
-  rolloutPtr->run(initTime, initState, finalTime, &controller, modeSchedule, timeTrajectory, postEventIndices, stateTrajectory, inputTrajectory);
+  rolloutPtr->run(
+    initTime, initState, finalTime, &controller, modeSchedule, timeTrajectory, postEventIndices,
+    stateTrajectory, inputTrajectory);
 
   // check sizes
   const auto totalSize = timeTrajectory.size();

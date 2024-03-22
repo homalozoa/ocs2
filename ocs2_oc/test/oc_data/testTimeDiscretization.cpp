@@ -27,13 +27,13 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
-
-#include "ocs2_oc/oc_data/TimeDiscretization.h"
+#include "gtest/gtest.h"
+#include "ocs2_oc/oc_data/TimeDiscretization.hpp"
 
 using namespace ocs2;
 
-TEST(test_time_discretization, noEvents_plusEps) {
+TEST(test_time_discretization, noEvents_plusEps)
+{
   scalar_t initTime = 0.1;
   scalar_t finalTime = 0.3 + std::numeric_limits<scalar_t>::epsilon();
   scalar_t dt = 0.1;
@@ -51,7 +51,8 @@ TEST(test_time_discretization, noEvents_plusEps) {
   ASSERT_EQ(time.size(), 3);
 }
 
-TEST(test_time_discretization, noEvents_minEps) {
+TEST(test_time_discretization, noEvents_minEps)
+{
   scalar_t initTime = 0.1;
   scalar_t finalTime = 0.3 - std::numeric_limits<scalar_t>::epsilon();
   scalar_t dt = 0.1;
@@ -69,7 +70,8 @@ TEST(test_time_discretization, noEvents_minEps) {
   ASSERT_EQ(time.size(), 3);
 }
 
-TEST(test_time_discretization, eventAtBeginning) {
+TEST(test_time_discretization, eventAtBeginning)
+{
   scalar_t initTime = 0.1;
   scalar_t finalTime = 0.3;
   scalar_t dt = 0.1;
@@ -87,7 +89,8 @@ TEST(test_time_discretization, eventAtBeginning) {
   ASSERT_EQ(time.size(), 3);
 }
 
-TEST(test_time_discretization, withEvents) {
+TEST(test_time_discretization, withEvents)
+{
   scalar_t initTime = 3.0;
   scalar_t finalTime = 4.0;
   scalar_t dt = 0.1;

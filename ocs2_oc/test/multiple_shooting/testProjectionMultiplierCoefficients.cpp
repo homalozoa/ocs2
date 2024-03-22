@@ -27,16 +27,15 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
-
-#include <ocs2_core/misc/LinearAlgebra.h>
-#include <ocs2_oc/multiple_shooting/ProjectionMultiplierCoefficients.h>
-
-#include "ocs2_oc/test/testProblemsGeneration.h"
+#include "gtest/gtest.h"
+#include "ocs2_core/misc/LinearAlgebra.hpp"
+#include "ocs2_oc/multiple_shooting/ProjectionMultiplierCoefficients.hpp"
+#include "ocs2_oc/test/testProblemsGeneration.hpp"
 
 using namespace ocs2;
 
-TEST(testMultipleShootingHelpers, testProjectionMultiplierCoefficients) {
+TEST(testMultipleShootingHelpers, testProjectionMultiplierCoefficients)
+{
   constexpr size_t stateDim = 30;
   constexpr size_t inputDim = 20;
   constexpr size_t constraintDim = 10;

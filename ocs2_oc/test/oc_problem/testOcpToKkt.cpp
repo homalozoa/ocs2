@@ -27,15 +27,14 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "ocs2_oc/oc_problem/OcpSize.hpp"
+#include "ocs2_oc/oc_problem/OcpToKkt.hpp"
+#include "ocs2_oc/test/testProblemsGeneration.hpp"
 
-#include "ocs2_oc/oc_problem/OcpSize.h"
-#include "ocs2_oc/oc_problem/OcpToKkt.h"
-
-#include "ocs2_oc/test/testProblemsGeneration.h"
-
-class OcpToKktTest : public testing::Test {
- protected:
+class OcpToKktTest : public testing::Test
+{
+protected:
   // x_0, x_1, ... x_{N - 1}, X_{N}
   static constexpr size_t N_ = 10;  // numStages
   static constexpr size_t nx_ = 4;
@@ -44,7 +43,8 @@ class OcpToKktTest : public testing::Test {
   static constexpr size_t numDecisionVariables = N_ * (nx_ + nu_);
   static constexpr size_t numConstraints = N_ * (nx_ + nc_);
 
-  OcpToKktTest() {
+  OcpToKktTest()
+  {
     srand(0);
 
     x0 = ocs2::vector_t::Random(nx_);
@@ -66,22 +66,26 @@ class OcpToKktTest : public testing::Test {
   std::vector<ocs2::VectorFunctionLinearApproximation> constraintsArray;
 };
 
-TEST_F(OcpToKktTest, sparseConstraintsApproximation) {
+TEST_F(OcpToKktTest, sparseConstraintsApproximation)
+{
   Eigen::SparseMatrix<ocs2::scalar_t> G;
   ocs2::vector_t g;
   ocs2::vector_array_t scalingVectors(N_);
-  for (auto& v : scalingVectors) {
+  for (auto & v : scalingVectors) {
     v = ocs2::vector_t::Random(nx_);
   }
   ocs2::VectorFunctionLinearApproximation constraintsApproximation;
-  ocs2::getConstraintMatrix(ocpSize_, x0, dynamicsArray, &constraintsArray, &scalingVectors, constraintsApproximation);
-  ocs2::getConstraintMatrixSparse(ocpSize_, x0, dynamicsArray, &constraintsArray, &scalingVectors, G, g);
+  ocs2::getConstraintMatrix(
+    ocpSize_, x0, dynamicsArray, &constraintsArray, &scalingVectors, constraintsApproximation);
+  ocs2::getConstraintMatrixSparse(
+    ocpSize_, x0, dynamicsArray, &constraintsArray, &scalingVectors, G, g);
 
   EXPECT_TRUE(constraintsApproximation.dfdx.isApprox(G.toDense()));
   EXPECT_TRUE(constraintsApproximation.f.isApprox(g));
 }
 
-TEST_F(OcpToKktTest, sparseCostApproximation) {
+TEST_F(OcpToKktTest, sparseCostApproximation)
+{
   Eigen::SparseMatrix<ocs2::scalar_t> H;
   ocs2::vector_t h;
 

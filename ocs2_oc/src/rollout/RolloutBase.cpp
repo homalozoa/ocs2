@@ -27,36 +27,41 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_oc/rollout/RolloutBase.h"
+#include "ocs2_oc/rollout/RolloutBase.hpp"
 
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
 
-#include <ocs2_core/NumericTraits.h>
-#include <ocs2_core/misc/Numerics.h>
+#include "ocs2_core/NumericTraits.hpp"
+#include "ocs2_core/misc/Numerics.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-std::vector<std::pair<scalar_t, scalar_t>> RolloutBase::findActiveModesTimeInterval(scalar_t initTime, scalar_t finalTime,
-                                                                                    const scalar_array_t& eventTimes) const {
+std::vector<std::pair<scalar_t, scalar_t>> RolloutBase::findActiveModesTimeInterval(
+  scalar_t initTime, scalar_t finalTime, const scalar_array_t & eventTimes) const
+{
   // switching times
-  const auto firstIndex = std::upper_bound(eventTimes.cbegin(), eventTimes.cend(), initTime);  // no event at initial time
-  const auto lastIndex = std::upper_bound(eventTimes.cbegin(), eventTimes.cend(), finalTime);  // can be an event at final time
+  const auto firstIndex =
+    std::upper_bound(eventTimes.cbegin(), eventTimes.cend(), initTime);  // no event at initial time
+  const auto lastIndex = std::upper_bound(
+    eventTimes.cbegin(), eventTimes.cend(), finalTime);  // can be an event at final time
   scalar_array_t switchingTimes;
   switchingTimes.push_back(initTime);
   switchingTimes.insert(switchingTimes.end(), firstIndex, lastIndex);
   switchingTimes.push_back(finalTime);
 
   // constructing the rollout time intervals
-  const int numSubsystems = switchingTimes.size() - 1;  // switchingTimes contains at least two elements
+  const int numSubsystems =
+    switchingTimes.size() - 1;  // switchingTimes contains at least two elements
   std::vector<std::pair<scalar_t, scalar_t>> timeIntervalArray(numSubsystems);
   for (int i = 0; i < numSubsystems; i++) {
-    const auto& beginTime = switchingTimes[i];
-    const auto& endTime = switchingTimes[i + 1];
+    const auto & beginTime = switchingTimes[i];
+    const auto & endTime = switchingTimes[i + 1];
     timeIntervalArray[i] = std::make_pair(beginTime, endTime);
 
     // adjusting the start time to correct for subsystem recognition
@@ -70,8 +75,10 @@ std::vector<std::pair<scalar_t, scalar_t>> RolloutBase::findActiveModesTimeInter
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void RolloutBase::display(const scalar_array_t& timeTrajectory, const size_array_t& postEventIndices, const vector_array_t& stateTrajectory,
-                          const vector_array_t* const inputTrajectory) {
+void RolloutBase::display(
+  const scalar_array_t & timeTrajectory, const size_array_t & postEventIndices,
+  const vector_array_t & stateTrajectory, const vector_array_t * const inputTrajectory)
+{
   std::cerr << "Trajectory length:      " << timeTrajectory.size() << '\n';
   std::cerr << "Total number of events: " << postEventIndices.size() << '\n';
   if (!postEventIndices.empty()) {
@@ -106,9 +113,11 @@ void RolloutBase::display(const scalar_array_t& timeTrajectory, const size_array
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void RolloutBase::checkNumericalStability(const ControllerBase& controller, const scalar_array_t& timeTrajectory,
-                                          const size_array_t& postEventIndices, const vector_array_t& stateTrajectory,
-                                          const vector_array_t& inputTrajectory) const {
+void RolloutBase::checkNumericalStability(
+  const ControllerBase & controller, const scalar_array_t & timeTrajectory,
+  const size_array_t & postEventIndices, const vector_array_t & stateTrajectory,
+  const vector_array_t & inputTrajectory) const
+{
   if (!rolloutSettings_.checkNumericalStability) {
     return;
   }
@@ -121,8 +130,9 @@ void RolloutBase::checkNumericalStability(const ControllerBase& controller, cons
       if (rolloutSettings_.reconstructInputTrajectory && !inputTrajectory[i].allFinite()) {
         throw std::runtime_error("Rollout: input is not finite");
       }
-    } catch (const std::exception& error) {
-      std::cerr << "what(): " << error.what() << " at time " + std::to_string(timeTrajectory[i]) + " [sec]." << '\n';
+    } catch (const std::exception & error) {
+      std::cerr << "what(): " << error.what()
+                << " at time " + std::to_string(timeTrajectory[i]) + " [sec]." << '\n';
 
       // truncate trajectories
       scalar_array_t timeTrajectoryTemp;
@@ -137,7 +147,8 @@ void RolloutBase::checkNumericalStability(const ControllerBase& controller, cons
       }
 
       // display
-      const vector_array_t* const inputTrajectoryTempPtr = rolloutSettings_.reconstructInputTrajectory ? &inputTrajectoryTemp : nullptr;
+      const vector_array_t * const inputTrajectoryTempPtr =
+        rolloutSettings_.reconstructInputTrajectory ? &inputTrajectoryTemp : nullptr;
       display(timeTrajectoryTemp, postEventIndices, stateTrajectoryTemp, inputTrajectoryTempPtr);
 
       controller.display();

@@ -27,15 +27,18 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_oc/multiple_shooting/ProjectionMultiplierCoefficients.h"
+#include "ocs2_oc/multiple_shooting/ProjectionMultiplierCoefficients.hpp"
 
-namespace ocs2 {
-namespace multiple_shooting {
+namespace ocs2
+{
+namespace multiple_shooting
+{
 
-void ProjectionMultiplierCoefficients::compute(const ScalarFunctionQuadraticApproximation& cost,
-                                               const VectorFunctionLinearApproximation& dynamics,
-                                               const VectorFunctionLinearApproximation& constraintProjection,
-                                               const matrix_t& pseudoInverse) {
+void ProjectionMultiplierCoefficients::compute(
+  const ScalarFunctionQuadraticApproximation & cost,
+  const VectorFunctionLinearApproximation & dynamics,
+  const VectorFunctionLinearApproximation & constraintProjection, const matrix_t & pseudoInverse)
+{
   vector_t semiprojectedCost_dfdu = cost.dfdu;
   semiprojectedCost_dfdu.noalias() += cost.dfduu * constraintProjection.f;
 

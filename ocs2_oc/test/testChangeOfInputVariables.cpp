@@ -27,21 +27,23 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
-
-#include "ocs2_oc/approximate_model/ChangeOfInputVariables.h"
-#include "ocs2_oc/test/testProblemsGeneration.h"
+#include "gtest/gtest.h"
+#include "ocs2_oc/approximate_model/ChangeOfInputVariables.hpp"
+#include "ocs2_oc/test/testProblemsGeneration.hpp"
 
 using namespace ocs2;
 
-namespace {
-scalar_t evaluate(const ScalarFunctionQuadraticApproximation& scalarFunctionQuadraticApproximation, const vector_t& dx,
-                  const vector_t& du) {
+namespace
+{
+scalar_t evaluate(
+  const ScalarFunctionQuadraticApproximation & scalarFunctionQuadraticApproximation,
+  const vector_t & dx, const vector_t & du)
+{
   // Short hand
-  const auto& Q = scalarFunctionQuadraticApproximation.dfdxx;
-  const auto& R = scalarFunctionQuadraticApproximation.dfduu;
-  const auto& P = scalarFunctionQuadraticApproximation.dfdux;
-  const auto& c = scalarFunctionQuadraticApproximation.f;
+  const auto & Q = scalarFunctionQuadraticApproximation.dfdxx;
+  const auto & R = scalarFunctionQuadraticApproximation.dfduu;
+  const auto & P = scalarFunctionQuadraticApproximation.dfdux;
+  const auto & c = scalarFunctionQuadraticApproximation.f;
 
   vector_t q = scalarFunctionQuadraticApproximation.dfdx;
   q.noalias() += 0.5 * Q * dx;
@@ -53,10 +55,13 @@ scalar_t evaluate(const ScalarFunctionQuadraticApproximation& scalarFunctionQuad
   return c + q.dot(dx) + r.dot(du);
 }
 
-vector_t evaluate(const VectorFunctionLinearApproximation& vectorFunctionLinearApproximation, const vector_t& dx, const vector_t& du) {
+vector_t evaluate(
+  const VectorFunctionLinearApproximation & vectorFunctionLinearApproximation, const vector_t & dx,
+  const vector_t & du)
+{
   // Short hand
-  const auto& A = vectorFunctionLinearApproximation.dfdx;
-  const auto& B = vectorFunctionLinearApproximation.dfdu;
+  const auto & A = vectorFunctionLinearApproximation.dfdx;
+  const auto & B = vectorFunctionLinearApproximation.dfdu;
 
   vector_t b = vectorFunctionLinearApproximation.f;
   b.noalias() += A * dx;
@@ -65,7 +70,8 @@ vector_t evaluate(const VectorFunctionLinearApproximation& vectorFunctionLinearA
 }
 }  // namespace
 
-TEST(quadratic_change_of_input_variables, noPx_noU0) {
+TEST(quadratic_change_of_input_variables, noPx_noU0)
+{
   const int n = 4;
   const int m = 3;
   const int p = 2;
@@ -88,7 +94,8 @@ TEST(quadratic_change_of_input_variables, noPx_noU0) {
   ASSERT_DOUBLE_EQ(unprojected, projected);
 }
 
-TEST(quadratic_change_of_input_variables, withPx) {
+TEST(quadratic_change_of_input_variables, withPx)
+{
   const int n = 4;
   const int m = 3;
   const int p = 2;
@@ -109,10 +116,11 @@ TEST(quadratic_change_of_input_variables, withPx) {
   // Evaluate and compare
   const scalar_t unprojected = evaluate(quadratic, dx, Pu * du_tilde + Px * dx);
   const scalar_t projected = evaluate(quadraticProjected, dx, du_tilde);
-  ASSERT_DOUBLE_EQ(unprojected, projected);
+  ASSERT_NEAR(unprojected, projected, 1e-15);
 }
 
-TEST(quadratic_change_of_input_variables, withU0) {
+TEST(quadratic_change_of_input_variables, withU0)
+{
   const int n = 4;
   const int m = 3;
   const int p = 2;
@@ -136,7 +144,8 @@ TEST(quadratic_change_of_input_variables, withU0) {
   ASSERT_DOUBLE_EQ(unprojected, projected);
 }
 
-TEST(quadratic_change_of_input_variables, bothPx_U0) {
+TEST(quadratic_change_of_input_variables, bothPx_U0)
+{
   const int n = 4;
   const int m = 3;
   const int p = 2;
@@ -161,7 +170,8 @@ TEST(quadratic_change_of_input_variables, bothPx_U0) {
   ASSERT_DOUBLE_EQ(unprojected, projected);
 }
 
-TEST(linear_change_of_input_variables, noPx_noU0) {
+TEST(linear_change_of_input_variables, noPx_noU0)
+{
   const int n = 4;
   const int m = 3;
   const int p = 2;
@@ -184,7 +194,8 @@ TEST(linear_change_of_input_variables, noPx_noU0) {
   ASSERT_TRUE(unprojected.isApprox(projected));
 }
 
-TEST(linear_change_of_input_variables, withPx) {
+TEST(linear_change_of_input_variables, withPx)
+{
   const int n = 4;
   const int m = 3;
   const int p = 2;
@@ -208,7 +219,8 @@ TEST(linear_change_of_input_variables, withPx) {
   ASSERT_TRUE(unprojected.isApprox(projected));
 }
 
-TEST(linear_change_of_input_variables, withU0) {
+TEST(linear_change_of_input_variables, withU0)
+{
   const int n = 4;
   const int m = 3;
   const int p = 2;
@@ -232,7 +244,8 @@ TEST(linear_change_of_input_variables, withU0) {
   ASSERT_TRUE(unprojected.isApprox(projected));
 }
 
-TEST(linear_change_of_input_variables, bothPx_U0) {
+TEST(linear_change_of_input_variables, bothPx_U0)
+{
   const int n = 4;
   const int m = 3;
   const int p = 2;

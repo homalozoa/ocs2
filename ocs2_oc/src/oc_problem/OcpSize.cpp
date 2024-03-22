@@ -27,10 +27,12 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_oc/oc_problem/OcpSize.h"
+#include "ocs2_oc/oc_problem/OcpSize.hpp"
 
-namespace ocs2 {
-bool operator==(const OcpSize& lhs, const OcpSize& rhs) noexcept {
+namespace ocs2
+{
+bool operator==(const OcpSize & lhs, const OcpSize & rhs) noexcept
+{
   // use && instead of &= to enable short-circuit evaluation
   bool same = lhs.numStages == rhs.numStages;
   same = same && (lhs.numInputs == rhs.numInputs);
@@ -44,9 +46,11 @@ bool operator==(const OcpSize& lhs, const OcpSize& rhs) noexcept {
   return same;
 }
 
-OcpSize extractSizesFromProblem(const std::vector<VectorFunctionLinearApproximation>& dynamics,
-                                const std::vector<ScalarFunctionQuadraticApproximation>& cost,
-                                const std::vector<VectorFunctionLinearApproximation>* constraints) {
+OcpSize extractSizesFromProblem(
+  const std::vector<VectorFunctionLinearApproximation> & dynamics,
+  const std::vector<ScalarFunctionQuadraticApproximation> & cost,
+  const std::vector<VectorFunctionLinearApproximation> * constraints)
+{
   const int numStages = dynamics.size();
 
   OcpSize problemSize(dynamics.size());

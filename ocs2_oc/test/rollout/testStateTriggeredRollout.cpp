@@ -27,16 +27,14 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
-
-#include <ocs2_core/Types.h>
-#include <ocs2_core/control/LinearController.h>
-#include <ocs2_oc/rollout/RolloutSettings.h>
-#include <ocs2_oc/rollout/StateTriggeredRollout.h>
-
-#include "ocs2_oc/test/ball_dynamics_staterollout.h"
-#include "ocs2_oc/test/dynamics_hybrid_slq_test.h"
-#include "ocs2_oc/test/pendulum_dynamics_staterollout.h"
+#include "gtest/gtest.h"
+#include "ocs2_core/Types.hpp"
+#include "ocs2_core/control/LinearController.hpp"
+#include "ocs2_oc/rollout/RolloutSettings.hpp"
+#include "ocs2_oc/rollout/StateTriggeredRollout.hpp"
+#include "ocs2_oc/test/ball_dynamics_staterollout.hpp"
+#include "ocs2_oc/test/dynamics_hybrid_slq_test.hpp"
+#include "ocs2_oc/test/pendulum_dynamics_staterollout.hpp"
 
 using scalar_t = ocs2::scalar_t;
 using vector_t = ocs2::vector_t;
@@ -60,7 +58,8 @@ using time_interval_array_t = std::vector<time_interval_t>;
  *       - Conservation of energy in between jumps.
  *       - Event times compared to accurate run of rollout.
  */
-TEST(StateRolloutTests, rolloutTestBallDynamics) {
+TEST(StateRolloutTests, rolloutTestBallDynamics)
+{
   const size_t nx = 2;
   const size_t nu = 1;
 
@@ -99,15 +98,18 @@ TEST(StateRolloutTests, rolloutTestBallDynamics) {
   // Output State
   vector_t finalState;
   // Run
-  finalState =
-      rollout.run(t0, initState, t1, &control, modeSchedule, timeTrajectory, eventsPastTheEndIndeces, stateTrajectory, inputTrajectory);
+  finalState = rollout.run(
+    t0, initState, t1, &control, modeSchedule, timeTrajectory, eventsPastTheEndIndeces,
+    stateTrajectory, inputTrajectory);
 
-  scalar_t energyLast = 9.81 * stateTrajectory[0][0] + +0.5 * stateTrajectory[0][1] * stateTrajectory[0][1];
+  scalar_t energyLast =
+    9.81 * stateTrajectory[0][0] + +0.5 * stateTrajectory[0][1] * stateTrajectory[0][1];
   size_t eventCounter = 0;
 
   for (int i = 0; i < timeTrajectory.size(); i++) {
     // Test 1: Energy Conservation
-    scalar_t energy = 9.81 * stateTrajectory[i][0] + 0.5 * stateTrajectory[i][1] * stateTrajectory[i][1];
+    scalar_t energy =
+      9.81 * stateTrajectory[i][0] + 0.5 * stateTrajectory[i][1] * stateTrajectory[i][1];
     if (i != eventsPastTheEndIndeces[eventCounter]) {
       EXPECT_NEAR(energy, energyLast, 1e-5);
     } else {
@@ -122,10 +124,11 @@ TEST(StateRolloutTests, rolloutTestBallDynamics) {
     }
   }
   // Test 3: Event times (due to high number of actual event times)
-  const scalar_array_t eventTestTimes{0.451523642, 0.594011465, 0.74139258,  0.901399703, 1.06631179,  1.24745334,  1.433332390,
-                                      2.130901210, 2.79359158,  3.423147440, 4.02122550,  4.58939966,  5.129165110, 5.641942290,
-                                      6.12908061,  6.591862020, 7.03150435,  7.44916457,  7.845941770, 8.222880120, 8.58097155,
-                                      8.921158410, 9.24433592,  9.55135456,  9.84302227};
+  const scalar_array_t eventTestTimes{
+    0.451523642, 0.594011465, 0.74139258,  0.901399703, 1.06631179,  1.24745334,  1.433332390,
+    2.130901210, 2.79359158,  3.423147440, 4.02122550,  4.58939966,  5.129165110, 5.641942290,
+    6.12908061,  6.591862020, 7.03150435,  7.44916457,  7.845941770, 8.222880120, 8.58097155,
+    8.921158410, 9.24433592,  9.55135456,  9.84302227};
 
   ASSERT_EQ(eventTestTimes.size(), eventsPastTheEndIndeces.size());
   for (int i = 0; i < eventsPastTheEndIndeces.size(); i++) {
@@ -151,7 +154,8 @@ TEST(StateRolloutTests, rolloutTestBallDynamics) {
  * 		- 	Conservation of energy in between jumps
  * 		- 	Eventtimes compared to accurate run of rollout
  */
-TEST(StateRolloutTests, rolloutTestPendulumDynamics) {
+TEST(StateRolloutTests, rolloutTestPendulumDynamics)
+{
   const size_t nx = 2;
   const size_t nu = 1;
 
@@ -188,8 +192,9 @@ TEST(StateRolloutTests, rolloutTestPendulumDynamics) {
   // Output State
   vector_t finalState;
   // Run
-  finalState =
-      rollout.run(t0, initState, t1, &control, modeSchedule, timeTrajectory, eventsPastTheEndIndeces, stateTrajectory, inputTrajectory);
+  finalState = rollout.run(
+    t0, initState, t1, &control, modeSchedule, timeTrajectory, eventsPastTheEndIndeces,
+    stateTrajectory, inputTrajectory);
 
   scalar_t energyPrevious = 9.81 * 2;  // Initial energy (pendulum in upright position h = 2*L)
   size_t eventCounter = 0;
@@ -199,7 +204,7 @@ TEST(StateRolloutTests, rolloutTestPendulumDynamics) {
     // Test 1: No Significant penetration of Guard Surface
     EXPECT_GT(stateTrajectory[i][0], -1e-6);
     // Test 2: No Significant loss of energy along trajectory (apart from due to damping during bounce)
-    scalar_t h = 1 - std::cos(stateTrajectory[i][0]);                       // height at time i (since length = 1)
+    scalar_t h = 1 - std::cos(stateTrajectory[i][0]);  // height at time i (since length = 1)
     scalar_t vx = stateTrajectory[i][1] * std::cos(stateTrajectory[i][0]);  // x component velocity
     scalar_t vy = stateTrajectory[i][1] * std::sin(stateTrajectory[i][0]);  // y component velocity
     scalar_t vsq = std::pow(vx, 2) + std::pow(vy, 2);                       // squared velocity
@@ -240,7 +245,8 @@ TEST(StateRolloutTests, rolloutTestPendulumDynamics) {
  * 		-	No penetration of Guard Surface
  * 		- 	Eventtimes compared to accurate run of rollout
  */
-TEST(StateRolloutTests, runHybridDynamics) {
+TEST(StateRolloutTests, runHybridDynamics)
+{
   const size_t nx = 3;
   const size_t nu = 1;
 
@@ -275,8 +281,9 @@ TEST(StateRolloutTests, runHybridDynamics) {
   // Output State
   vector_t finalState;
   // Run
-  finalState =
-      rollout.run(t0, initState, t1, &control, modeSchedule, timeTrajectory, eventsPastTheEndIndeces, stateTrajectory, inputTrajectory);
+  finalState = rollout.run(
+    t0, initState, t1, &control, modeSchedule, timeTrajectory, eventsPastTheEndIndeces,
+    stateTrajectory, inputTrajectory);
 
   // Test (and display statetrajectory)
   for (int i = 0; i < timeTrajectory.size(); i++) {

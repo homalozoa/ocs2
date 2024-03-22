@@ -27,13 +27,15 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_oc/search_strategy/FilterLinesearch.h"
+#include "ocs2_oc/search_strategy/FilterLinesearch.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
-std::pair<bool, FilterLinesearch::StepType> FilterLinesearch::acceptStep(const PerformanceIndex& baselinePerformance,
-                                                                         const PerformanceIndex& stepPerformance,
-                                                                         scalar_t armijoDescentMetric) const {
+std::pair<bool, FilterLinesearch::StepType> FilterLinesearch::acceptStep(
+  const PerformanceIndex & baselinePerformance, const PerformanceIndex & stepPerformance,
+  scalar_t armijoDescentMetric) const
+{
   const scalar_t baselineConstraintViolation = totalConstraintViolation(baselinePerformance);
   const scalar_t stepConstraintViolation = totalConstraintViolation(stepPerformance);
 
@@ -43,20 +45,25 @@ std::pair<bool, FilterLinesearch::StepType> FilterLinesearch::acceptStep(const P
     const bool accepted = stepConstraintViolation < ((1.0 - gamma_c) * baselineConstraintViolation);
     return std::make_pair(accepted, StepType::CONSTRAINT);
 
-  } else if (stepConstraintViolation < g_min && baselineConstraintViolation < g_min && armijoDescentMetric < 0.0) {
+  } else if (
+    stepConstraintViolation < g_min && baselineConstraintViolation < g_min &&
+    armijoDescentMetric < 0.0) {
     // With low violation and having a descent direction, require the armijo condition.
-    const bool accepted = stepPerformance.merit < (baselinePerformance.merit + armijoFactor * armijoDescentMetric);
+    const bool accepted =
+      stepPerformance.merit < (baselinePerformance.merit + armijoFactor * armijoDescentMetric);
     return std::make_pair(accepted, StepType::COST);
 
   } else {
     // Medium violation: either merit or constraints decrease (with small gamma_c mixing of old constraints)
-    const bool accepted = stepPerformance.merit < (baselinePerformance.merit - gamma_c * baselineConstraintViolation) ||
-                          stepConstraintViolation < ((1.0 - gamma_c) * baselineConstraintViolation);
+    const bool accepted =
+      stepPerformance.merit < (baselinePerformance.merit - gamma_c * baselineConstraintViolation) ||
+      stepConstraintViolation < ((1.0 - gamma_c) * baselineConstraintViolation);
     return std::make_pair(accepted, StepType::DUAL);
   }
 }
 
-std::string toString(const FilterLinesearch::StepType& stepType) {
+std::string toString(const FilterLinesearch::StepType & stepType)
+{
   using StepType = FilterLinesearch::StepType;
   switch (stepType) {
     case StepType::COST:
@@ -73,8 +80,10 @@ std::string toString(const FilterLinesearch::StepType& stepType) {
   }
 }
 
-scalar_t armijoDescentMetric(const std::vector<ScalarFunctionQuadraticApproximation>& cost, const vector_array_t& deltaXSol,
-                             const vector_array_t& deltaUSol) {
+scalar_t armijoDescentMetric(
+  const std::vector<ScalarFunctionQuadraticApproximation> & cost, const vector_array_t & deltaXSol,
+  const vector_array_t & deltaUSol)
+{
   // To determine if the solution is a descent direction for the cost: compute gradient(cost)' * [dx; du]
   scalar_t metric = 0.0;
   for (int i = 0; i < cost.size(); i++) {

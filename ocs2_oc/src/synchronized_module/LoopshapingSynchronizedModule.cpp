@@ -27,33 +27,40 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_oc/synchronized_module/LoopshapingSynchronizedModule.h"
+#include "ocs2_oc/synchronized_module/LoopshapingSynchronizedModule.hpp"
 
-#include "ocs2_oc/oc_data/LoopshapingPrimalSolution.h"
+#include "ocs2_oc/oc_data/LoopshapingPrimalSolution.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
 LoopshapingSynchronizedModule::LoopshapingSynchronizedModule(
-    std::shared_ptr<LoopshapingDefinition> loopshapingDefinitionPtr,
-    std::vector<std::shared_ptr<SolverSynchronizedModule>> synchronizedModulesPtrArray)
-    : loopshapingDefinitionPtr_(std::move(loopshapingDefinitionPtr)),
-      synchronizedModulesPtrArray_(std::move(synchronizedModulesPtrArray)) {}
+  std::shared_ptr<LoopshapingDefinition> loopshapingDefinitionPtr,
+  std::vector<std::shared_ptr<SolverSynchronizedModule>> synchronizedModulesPtrArray)
+: loopshapingDefinitionPtr_(std::move(loopshapingDefinitionPtr)),
+  synchronizedModulesPtrArray_(std::move(synchronizedModulesPtrArray))
+{
+}
 
-void LoopshapingSynchronizedModule::preSolverRun(scalar_t initTime, scalar_t finalTime, const vector_t& initState,
-                                                 const ReferenceManagerInterface& referenceManager) {
+void LoopshapingSynchronizedModule::preSolverRun(
+  scalar_t initTime, scalar_t finalTime, const vector_t & initState,
+  const ReferenceManagerInterface & referenceManager)
+{
   if (!synchronizedModulesPtrArray_.empty()) {
     const auto systemState = loopshapingDefinitionPtr_->getSystemState(initState);
-    for (auto& module : synchronizedModulesPtrArray_) {
+    for (auto & module : synchronizedModulesPtrArray_) {
       module->preSolverRun(initTime, finalTime, systemState, referenceManager);
     }
   }
 }
 
-void LoopshapingSynchronizedModule::postSolverRun(const PrimalSolution& primalSolution) {
+void LoopshapingSynchronizedModule::postSolverRun(const PrimalSolution & primalSolution)
+{
   if (!synchronizedModulesPtrArray_.empty()) {
-    const auto systemPrimalSolution = loopshapingToSystemPrimalSolution(primalSolution, *loopshapingDefinitionPtr_);
+    const auto systemPrimalSolution =
+      loopshapingToSystemPrimalSolution(primalSolution, *loopshapingDefinitionPtr_);
 
-    for (auto& module : synchronizedModulesPtrArray_) {
+    for (auto & module : synchronizedModulesPtrArray_) {
       module->postSolverRun(systemPrimalSolution);
     }
   }

@@ -27,16 +27,15 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "ocs2_core/thread_support/ThreadPool.hpp"
+#include "ocs2_oc/oc_problem/OcpToKkt.hpp"
+#include "ocs2_oc/precondition/Ruzi.hpp"
+#include "ocs2_oc/test/testProblemsGeneration.hpp"
 
-#include <ocs2_core/thread_support/ThreadPool.h>
-
-#include "ocs2_oc/oc_problem/OcpToKkt.h"
-#include "ocs2_oc/precondition/Ruzi.h"
-#include "ocs2_oc/test/testProblemsGeneration.h"
-
-class PreconditionTest : public testing::Test {
- protected:
+class PreconditionTest : public testing::Test
+{
+protected:
   // x_0, x_1, ... x_{N - 1}, X_{N}
   static constexpr size_t N_ = 10;  // numStages
   static constexpr size_t nx_ = 4;
@@ -44,7 +43,8 @@ class PreconditionTest : public testing::Test {
   static constexpr size_t numDecisionVariables_ = N_ * (nx_ + nu_);
   static constexpr size_t numConstraints_ = N_ * nx_;
 
-  PreconditionTest() {
+  PreconditionTest()
+  {
     srand(0);
 
     x0 = ocs2::vector_t::Random(nx_);
@@ -69,7 +69,8 @@ constexpr size_t PreconditionTest::nu_;
 constexpr size_t PreconditionTest::numDecisionVariables_;
 constexpr size_t PreconditionTest::numConstraints_;
 
-TEST_F(PreconditionTest, kktMatrixInPlace) {
+TEST_F(PreconditionTest, kktMatrixInPlace)
+{
   ocs2::vector_t D, E;
   ocs2::scalar_t c;
 
@@ -103,22 +104,26 @@ TEST_F(PreconditionTest, kktMatrixInPlace) {
   ASSERT_TRUE(g_ref.isApprox(g));                                                    // g
 
   // Normalized the inf-Norm of both rows and cols of KKT matrix should be closer to 1
-  const ocs2::matrix_t KKT = (ocs2::matrix_t(H_src.rows() + G_src.rows(), H_src.rows() + G_src.rows()) << H_src.toDense(),
-                              G_src.transpose().toDense(), G_src.toDense(), ocs2::matrix_t::Zero(G_src.rows(), G_src.rows()))
-                                 .finished();
+  const ocs2::matrix_t KKT =
+    (ocs2::matrix_t(H_src.rows() + G_src.rows(), H_src.rows() + G_src.rows()) << H_src.toDense(),
+     G_src.transpose().toDense(), G_src.toDense(), ocs2::matrix_t::Zero(G_src.rows(), G_src.rows()))
+      .finished();
 
-  const ocs2::matrix_t KKTScaled = (ocs2::matrix_t(H.rows() + G.rows(), H.rows() + G.rows()) << H.toDense(), G.transpose().toDense(),
-                                    G.toDense(), ocs2::matrix_t::Zero(G.rows(), G.rows()))
-                                       .finished();
+  const ocs2::matrix_t KKTScaled =
+    (ocs2::matrix_t(H.rows() + G.rows(), H.rows() + G.rows()) << H.toDense(),
+     G.transpose().toDense(), G.toDense(), ocs2::matrix_t::Zero(G.rows(), G.rows()))
+      .finished();
 
   // Inf-norm of row vectors
   ocs2::vector_t infNormRows = KKT.cwiseAbs().rowwise().maxCoeff();
   ocs2::vector_t infNormRowsScaled = KKTScaled.cwiseAbs().rowwise().maxCoeff();
-  EXPECT_LT((infNormRowsScaled.array() - 1).abs().maxCoeff(), (infNormRows.array() - 1).abs().maxCoeff());
+  EXPECT_LT(
+    (infNormRowsScaled.array() - 1).abs().maxCoeff(), (infNormRows.array() - 1).abs().maxCoeff());
   // Inf-norm of column vectors
   ocs2::vector_t infNormCols = KKT.cwiseAbs().colwise().maxCoeff();
   ocs2::vector_t infNormColsScaled = KKTScaled.cwiseAbs().colwise().maxCoeff();
-  EXPECT_LT((infNormColsScaled.array() - 1).abs().maxCoeff(), (infNormCols.array() - 1).abs().maxCoeff());
+  EXPECT_LT(
+    (infNormColsScaled.array() - 1).abs().maxCoeff(), (infNormCols.array() - 1).abs().maxCoeff());
 
   // Test 2: Scale const and dynamics data of each time step first and then construct the stacked matrices from the scaled data.
   std::vector<ocs2::vector_t> scalingVectors;
@@ -129,14 +134,16 @@ TEST_F(PreconditionTest, kktMatrixInPlace) {
   ocs2::getCostMatrixSparse(ocpSize_, x0, costArray, H_scaledData, h_scaledData);
   Eigen::SparseMatrix<ocs2::scalar_t> G_scaledData;
   ocs2::vector_t g_scaledData;
-  ocs2::getConstraintMatrixSparse(ocpSize_, x0, dynamicsArray, nullptr, &scalingVectors, G_scaledData, g_scaledData);
+  ocs2::getConstraintMatrixSparse(
+    ocpSize_, x0, dynamicsArray, nullptr, &scalingVectors, G_scaledData, g_scaledData);
   EXPECT_TRUE(H_ref.isApprox(H_scaledData));  // H
   EXPECT_TRUE(h_ref.isApprox(h_scaledData));  // h
   EXPECT_TRUE(G_ref.isApprox(G_scaledData));  // G
   EXPECT_TRUE(g_ref.isApprox(g_scaledData));  // g
 }
 
-TEST_F(PreconditionTest, ocpDataInPlaceInParallel) {
+TEST_F(PreconditionTest, ocpDataInPlaceInParallel)
+{
   ocs2::ThreadPool threadPool(5, 99);
 
   ocs2::vector_t D_ref, E_ref;
@@ -156,16 +163,17 @@ TEST_F(PreconditionTest, ocpDataInPlaceInParallel) {
   ocs2::vector_array_t D_array, E_array;
   ocs2::scalar_t c;
   ocs2::vector_array_t scalingVectors(N_);
-  ocs2::precondition::ocpDataInPlaceInParallel(threadPool, x0, ocpSize_, 5, dynamicsArray, costArray, D_array, E_array, scalingVectors, c);
+  ocs2::precondition::ocpDataInPlaceInParallel(
+    threadPool, x0, ocpSize_, 5, dynamicsArray, costArray, D_array, E_array, scalingVectors, c);
 
   ocs2::vector_t D_stacked(D_ref.rows()), E_stacked(E_ref.rows());
   int curRow = 0;
-  for (auto& v : D_array) {
+  for (auto & v : D_array) {
     D_stacked.segment(curRow, v.size()) = v;
     curRow += v.size();
   }
   curRow = 0;
-  for (auto& v : E_array) {
+  for (auto & v : E_array) {
     E_stacked.segment(curRow, v.size()) = v;
     curRow += v.size();
   }
@@ -179,7 +187,8 @@ TEST_F(PreconditionTest, ocpDataInPlaceInParallel) {
   ocs2::getCostMatrixSparse(ocpSize_, x0, costArray, H_scaledData, h_scaledData);
   Eigen::SparseMatrix<ocs2::scalar_t> G_scaledData;
   ocs2::vector_t g_scaledData;
-  ocs2::getConstraintMatrixSparse(ocpSize_, x0, dynamicsArray, nullptr, &scalingVectors, G_scaledData, g_scaledData);
+  ocs2::getConstraintMatrixSparse(
+    ocpSize_, x0, dynamicsArray, nullptr, &scalingVectors, G_scaledData, g_scaledData);
 
   EXPECT_TRUE(H_ref.isApprox(H_scaledData));  // H
   EXPECT_TRUE(h_ref.isApprox(h_scaledData));  // h
@@ -187,7 +196,8 @@ TEST_F(PreconditionTest, ocpDataInPlaceInParallel) {
   EXPECT_TRUE(g_ref.isApprox(g_scaledData));  // g
 }
 
-TEST_F(PreconditionTest, descaleSolution) {
+TEST_F(PreconditionTest, descaleSolution)
+{
   ocs2::vector_array_t D(2 * N_);
   ocs2::vector_t DStacked(numDecisionVariables_);
   ocs2::vector_array_t x(N_ + 1), u(N_);
@@ -199,7 +209,7 @@ TEST_F(PreconditionTest, descaleSolution) {
     x[i + 1].setRandom(nx_);
   }
   int curRow = 0;
-  for (auto& v : D) {
+  for (auto & v : D) {
     DStacked.segment(curRow, v.size()) = v;
     curRow += v.size();
   }
@@ -211,7 +221,8 @@ TEST_F(PreconditionTest, descaleSolution) {
   ocs2::vector_t packedSolutionNew;
   ocs2::precondition::descaleSolution(D, x, u);
   ocs2::toKktSolution(x, u, packedSolutionNew);
-  EXPECT_TRUE(packedSolutionNew.isApprox(packedSolution)) << std::setprecision(6) << "DescaledSolution: \n"
-                                                          << packedSolutionNew.transpose() << "\nIt should be \n"
-                                                          << packedSolution.transpose();
+  EXPECT_TRUE(packedSolutionNew.isApprox(packedSolution))
+    << std::setprecision(6) << "DescaledSolution: \n"
+    << packedSolutionNew.transpose() << "\nIt should be \n"
+    << packedSolution.transpose();
 }

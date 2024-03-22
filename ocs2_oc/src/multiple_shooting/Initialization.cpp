@@ -27,14 +27,18 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_oc/multiple_shooting/Initialization.h"
+#include "ocs2_oc/multiple_shooting/Initialization.hpp"
 
-namespace ocs2 {
-namespace multiple_shooting {
+namespace ocs2
+{
+namespace multiple_shooting
+{
 
-void initializeStateInputTrajectories(const vector_t& initState, const std::vector<AnnotatedTime>& timeDiscretization,
-                                      const PrimalSolution& primalSolution, Initializer& initializer, vector_array_t& stateTrajectory,
-                                      vector_array_t& inputTrajectory) {
+void initializeStateInputTrajectories(
+  const vector_t & initState, const std::vector<AnnotatedTime> & timeDiscretization,
+  const PrimalSolution & primalSolution, Initializer & initializer,
+  vector_array_t & stateTrajectory, vector_array_t & inputTrajectory)
+{
   const int N = static_cast<int>(timeDiscretization.size()) - 1;  // // size of the input trajectory
   stateTrajectory.clear();
   stateTrajectory.reserve(N + 1);
@@ -46,13 +50,15 @@ void initializeStateInputTrajectories(const vector_t& initState, const std::vect
   scalar_t interpolateInputTill = timeDiscretization.front().time;
   if (primalSolution.timeTrajectory_.size() >= 2) {
     interpolateStateTill = primalSolution.timeTrajectory_.back();
-    interpolateInputTill = primalSolution.timeTrajectory_[primalSolution.timeTrajectory_.size() - 2];
+    interpolateInputTill =
+      primalSolution.timeTrajectory_[primalSolution.timeTrajectory_.size() - 2];
   }
 
   // Initial state
   const scalar_t initTime = getIntervalStart(timeDiscretization[0]);
   if (initTime < interpolateStateTill) {
-    stateTrajectory.push_back(LinearInterpolation::interpolate(initTime, primalSolution.timeTrajectory_, primalSolution.stateTrajectory_));
+    stateTrajectory.push_back(LinearInterpolation::interpolate(
+      initTime, primalSolution.timeTrajectory_, primalSolution.stateTrajectory_));
   } else {
     stateTrajectory.push_back(initState);
   }
@@ -61,14 +67,16 @@ void initializeStateInputTrajectories(const vector_t& initState, const std::vect
     if (timeDiscretization[i].event == AnnotatedTime::Event::PreEvent) {
       // Event Node
       inputTrajectory.push_back(vector_t());  // no input at event node
-      stateTrajectory.push_back(initializeEventNode(timeDiscretization[i].time, stateTrajectory.back()));
+      stateTrajectory.push_back(
+        initializeEventNode(timeDiscretization[i].time, stateTrajectory.back()));
     } else {
       // Intermediate node
       const scalar_t time = getIntervalStart(timeDiscretization[i]);
       const scalar_t nextTime = getIntervalEnd(timeDiscretization[i + 1]);
       vector_t input, nextState;
       if (time > interpolateInputTill || nextTime > interpolateStateTill) {  // Using initializer
-        std::tie(input, nextState) = initializeIntermediateNode(initializer, time, nextTime, stateTrajectory.back());
+        std::tie(input, nextState) =
+          initializeIntermediateNode(initializer, time, nextTime, stateTrajectory.back());
       } else {  // interpolate previous solution
         std::tie(input, nextState) = initializeIntermediateNode(primalSolution, time, nextTime);
       }
