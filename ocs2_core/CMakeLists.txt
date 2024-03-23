@@ -112,4 +112,9 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
+install(
+  DIRECTORY test/include/
+  DESTINATION include
+)
+
 ament_auto_package()

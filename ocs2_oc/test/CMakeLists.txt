@@ -1,5 +1,3 @@
-include_directories(include)
-
 ament_auto_add_gtest(test_${PROJECT_NAME}_multiple_shooting
   multiple_shooting/testProjectionMultiplierCoefficients.cpp
   multiple_shooting/testTranscriptionMetrics.cpp
