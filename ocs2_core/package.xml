@@ -14,10 +14,10 @@
   <buildtool_depend>eigen3_cmake_module</buildtool_depend>
 
   <build_depend>ocs2_compiler_options</build_depend>
+  <build_depend>cppad_vendor</build_depend>
 
   <depend>boost</depend>
   <depend>eigen</depend>
-  <depend>ocs2_thirdparty</depend>
   <depend>openmp</depend>
 
   <test_depend>ament_lint_auto</test_depend>
