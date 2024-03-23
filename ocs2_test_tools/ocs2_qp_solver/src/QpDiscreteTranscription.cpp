@@ -27,41 +27,56 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include <ocs2_oc/approximate_model/LinearQuadraticApproximator.h>
+#include "ocs2_qp_solver/QpDiscreteTranscription.hpp"
 
-#include "ocs2_qp_solver/QpDiscreteTranscription.h"
+#include "ocs2_oc/approximate_model/LinearQuadraticApproximator.hpp"
 
-namespace ocs2 {
-namespace qp_solver {
+namespace ocs2
+{
+namespace qp_solver
+{
 
-std::vector<LinearQuadraticStage> getLinearQuadraticApproximation(OptimalControlProblem& optimalControProblem,
-                                                                  const ContinuousTrajectory& nominalTrajectory) {
+std::vector<LinearQuadraticStage> getLinearQuadraticApproximation(
+  OptimalControlProblem & optimalControProblem, const ContinuousTrajectory & nominalTrajectory)
+{
   // OCP check
-  if (!optimalControProblem.equalityLagrangianPtr->empty() || !optimalControProblem.stateEqualityLagrangianPtr->empty()) {
-    throw std::runtime_error("[getLinearQuadraticApproximation] equalityLagrangianPtr and stateEqualityLagrangianPtr should be empty!");
-  }
-  if (!optimalControProblem.inequalityLagrangianPtr->empty() || !optimalControProblem.stateInequalityLagrangianPtr->empty()) {
-    throw std::runtime_error("[getLinearQuadraticApproximation] inequalityLagrangianPtr and stateInequalityLagrangianPtr should be empty!");
-  }
-  if (!optimalControProblem.finalEqualityLagrangianPtr->empty() || !optimalControProblem.finalInequalityLagrangianPtr->empty()) {
+  if (
+    !optimalControProblem.equalityLagrangianPtr->empty() ||
+    !optimalControProblem.stateEqualityLagrangianPtr->empty()) {
     throw std::runtime_error(
-        "[getLinearQuadraticApproximation] finalEqualityLagrangianPtr and finalInequalityLagrangianPtr should be empty!");
+      "[getLinearQuadraticApproximation] equalityLagrangianPtr and stateEqualityLagrangianPtr "
+      "should be empty!");
+  }
+  if (
+    !optimalControProblem.inequalityLagrangianPtr->empty() ||
+    !optimalControProblem.stateInequalityLagrangianPtr->empty()) {
+    throw std::runtime_error(
+      "[getLinearQuadraticApproximation] inequalityLagrangianPtr and stateInequalityLagrangianPtr "
+      "should be empty!");
+  }
+  if (
+    !optimalControProblem.finalEqualityLagrangianPtr->empty() ||
+    !optimalControProblem.finalInequalityLagrangianPtr->empty()) {
+    throw std::runtime_error(
+      "[getLinearQuadraticApproximation] finalEqualityLagrangianPtr and "
+      "finalInequalityLagrangianPtr should be empty!");
   }
 
   if (nominalTrajectory.timeTrajectory.empty()) {
     return {};
   }
 
-  auto& t = nominalTrajectory.timeTrajectory;
-  auto& x = nominalTrajectory.stateTrajectory;
-  auto& u = nominalTrajectory.inputTrajectory;
+  auto & t = nominalTrajectory.timeTrajectory;
+  auto & x = nominalTrajectory.stateTrajectory;
+  auto & u = nominalTrajectory.inputTrajectory;
   const int N = t.size() - 1;
 
   // LinearQuadraticProblem with N+1 elements. Terminal stage lqp[N].dynamics is ignored.
   std::vector<LinearQuadraticStage> lqp;
   lqp.reserve(N + 1);
   for (int k = 0; k < N; ++k) {  // Intermediate stages
-    lqp.emplace_back(approximateStage(optimalControProblem, {t[k], x[k], u[k]}, {t[k + 1], x[k + 1]}, k == 0));
+    lqp.emplace_back(
+      approximateStage(optimalControProblem, {t[k], x[k], u[k]}, {t[k + 1], x[k + 1]}, k == 0));
   }
 
   auto modelData = approximateFinalLQ(optimalControProblem, t[N], x[N], MultiplierCollection());
@@ -69,35 +84,46 @@ std::vector<LinearQuadraticStage> getLinearQuadraticApproximation(OptimalControl
   // checking the numerical properties
   const auto errSize = checkSize(modelData, x[N].rows(), 0);
   if (!errSize.empty()) {
-    throw std::runtime_error("[qp_solver::getLinearQuadraticApproximation] Ill-posed problem at final time: " + std::to_string(t[N]) +
-                             "\n" + errSize);
+    throw std::runtime_error(
+      "[qp_solver::getLinearQuadraticApproximation] Ill-posed problem at final time: " +
+      std::to_string(t[N]) + "\n" + errSize);
   }
-  const std::string errProperties = checkCostProperties(modelData) + checkConstraintProperties(modelData);
+  const std::string errProperties =
+    checkCostProperties(modelData) + checkConstraintProperties(modelData);
   if (!errProperties.empty()) {
-    throw std::runtime_error("[qp_solver::getLinearQuadraticApproximation] Ill-posed problem at final time: " + std::to_string(t[N]) +
-                             "\n" + errProperties);
+    throw std::runtime_error(
+      "[qp_solver::getLinearQuadraticApproximation] Ill-posed problem at final time: " +
+      std::to_string(t[N]) + "\n" + errProperties);
   }
 
-  lqp.emplace_back(std::move(modelData.cost), VectorFunctionLinearApproximation(), std::move(modelData.stateEqConstraint));
+  lqp.emplace_back(
+    std::move(modelData.cost), VectorFunctionLinearApproximation(),
+    std::move(modelData.stateEqConstraint));
 
   return lqp;
 }
 
-LinearQuadraticStage approximateStage(OptimalControlProblem& optimalControProblem, TrajectoryRef start, StateTrajectoryRef end,
-                                      bool isInitialTime) {
-  const auto modelData = approximateIntermediateLQ(optimalControProblem, start.t, start.x, start.u, MultiplierCollection());
+LinearQuadraticStage approximateStage(
+  OptimalControlProblem & optimalControProblem, TrajectoryRef start, StateTrajectoryRef end,
+  bool isInitialTime)
+{
+  const auto modelData = approximateIntermediateLQ(
+    optimalControProblem, start.t, start.x, start.u, MultiplierCollection());
 
   // checking the numerical properties
   const auto errSize = checkSize(modelData, start.x.rows(), start.u.rows());
   if (!errSize.empty()) {
-    throw std::runtime_error("[[qp_solver::approximateStage] Ill-posed problem at intermediate time: " + std::to_string(start.t) + "\n" +
-                             errSize);
+    throw std::runtime_error(
+      "[[qp_solver::approximateStage] Ill-posed problem at intermediate time: " +
+      std::to_string(start.t) + "\n" + errSize);
   }
-  const std::string errProperties =
-      checkDynamicsProperties(modelData) + checkCostProperties(modelData) + checkConstraintProperties(modelData);
+  const std::string errProperties = checkDynamicsProperties(modelData) +
+                                    checkCostProperties(modelData) +
+                                    checkConstraintProperties(modelData);
   if (!errProperties.empty()) {
-    throw std::runtime_error("[qp_solver::approximateStage] Ill-posed problem at intermediate time: " + std::to_string(start.t) + "\n" +
-                             errProperties);
+    throw std::runtime_error(
+      "[qp_solver::approximateStage] Ill-posed problem at intermediate time: " +
+      std::to_string(start.t) + "\n" + errProperties);
   }
 
   LinearQuadraticStage lqStage;
@@ -117,13 +143,15 @@ LinearQuadraticStage approximateStage(OptimalControlProblem& optimalControProble
   return lqStage;
 }
 
-VectorFunctionLinearApproximation approximateDynamics(const ModelData& modelData, TrajectoryRef start, scalar_t dt) {
+VectorFunctionLinearApproximation approximateDynamics(
+  const ModelData & modelData, TrajectoryRef start, scalar_t dt)
+{
   // Forward Euler discretization
   // x[k+1] = x[k] + dt * dxdt[k]
   // x[k+1] = (x0[k] + dx[k]) + dt * dxdt[k]
   // x[k+1] = (x0[k] + dx[k]) + dt * (A_c dx[k] + B_c du[k] + b_c)
   // x[k+1] = (I + A_c * dt) dx[k] + (B_c * dt) du[k] + (b_c * dt + x0[k])
-  const auto& continuousDynamics = modelData.dynamics;
+  const auto & continuousDynamics = modelData.dynamics;
   VectorFunctionLinearApproximation discreteDynamics;
   discreteDynamics.dfdx = continuousDynamics.dfdx * dt;
   discreteDynamics.dfdx.diagonal().array() += 1.0;
@@ -132,20 +160,23 @@ VectorFunctionLinearApproximation approximateDynamics(const ModelData& modelData
   return discreteDynamics;
 }
 
-VectorFunctionLinearApproximation approximateConstraints(const ModelData& modelData, bool isInitialTime) {
+VectorFunctionLinearApproximation approximateConstraints(
+  const ModelData & modelData, bool isInitialTime)
+{
   VectorFunctionLinearApproximation constraintsApproximation;
   if (isInitialTime) {
     // only use stat-input constraints for initial time
     constraintsApproximation = std::move(modelData.stateInputEqConstraint);
   } else {
     // concatenate stat-input and state-only constraints
-    const auto& stateInputConstraint = modelData.stateInputEqConstraint;
-    const auto& stateConstraint = modelData.stateEqConstraint;
+    const auto & stateInputConstraint = modelData.stateInputEqConstraint;
+    const auto & stateConstraint = modelData.stateEqConstraint;
     const auto numStateInputConstraints = stateInputConstraint.f.size();
     const auto numStateConstraints = stateConstraint.f.size();
     const auto numStates = stateInputConstraint.dfdx.cols();
     const auto numInputs = stateInputConstraint.dfdu.cols();
-    constraintsApproximation.resize(numStateConstraints + numStateInputConstraints, numStates, numInputs);
+    constraintsApproximation.resize(
+      numStateConstraints + numStateInputConstraints, numStates, numInputs);
     constraintsApproximation.f.head(numStateInputConstraints) = stateInputConstraint.f;
     constraintsApproximation.dfdx.topRows(numStateInputConstraints) = stateInputConstraint.dfdx;
     constraintsApproximation.dfdu.topRows(numStateInputConstraints) = stateInputConstraint.dfdu;

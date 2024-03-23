@@ -29,14 +29,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <ocs2_core/model_data/ModelData.h>
-#include <ocs2_oc/oc_problem/OptimalControlProblem.h>
+#include "ocs2_core/model_data/ModelData.hpp"
+#include "ocs2_oc/oc_problem/OptimalControlProblem.hpp"
+#include "ocs2_qp_solver/QpSolverTypes.hpp"
+#include "ocs2_qp_solver/QpTrajectories.hpp"
 
-#include "ocs2_qp_solver/QpSolverTypes.h"
-#include "ocs2_qp_solver/QpTrajectories.h"
-
-namespace ocs2 {
-namespace qp_solver {
+namespace ocs2
+{
+namespace qp_solver
+{
 
 /**
  * Generates a discrete time control problem with quadratic costs and affine dynamics.
@@ -46,8 +47,8 @@ namespace qp_solver {
  * @param nominalTrajectory : time, state and input trajectory to make the linear quadratic approximation around
  * @return vector of discrete cost and dynamics at each node.
  */
-std::vector<LinearQuadraticStage> getLinearQuadraticApproximation(OptimalControlProblem& optimalControProblem,
-                                                                  const ContinuousTrajectory& nominalTrajectory);
+std::vector<LinearQuadraticStage> getLinearQuadraticApproximation(
+  OptimalControlProblem & optimalControProblem, const ContinuousTrajectory & nominalTrajectory);
 
 /**
  * Constructs the discrete quadratic cost and linear dynamics between the given start and end conditions
@@ -58,8 +59,9 @@ std::vector<LinearQuadraticStage> getLinearQuadraticApproximation(OptimalControl
  * @param isInitialTime : Whether start is an initial time points.
  * @return discreted stage
  */
-LinearQuadraticStage approximateStage(OptimalControlProblem& optimalControProblem, TrajectoryRef start, StateTrajectoryRef end,
-                                      bool isInitialTime);
+LinearQuadraticStage approximateStage(
+  OptimalControlProblem & optimalControProblem, TrajectoryRef start, StateTrajectoryRef end,
+  bool isInitialTime);
 
 /**
  * Computes the discrete dynamics from a start condition over a dt interval
@@ -68,14 +70,16 @@ LinearQuadraticStage approximateStage(OptimalControlProblem& optimalControProble
  * @param dt : duration of the interval
  * @return Linear approximation of the discrete dynamcis
  */
-VectorFunctionLinearApproximation approximateDynamics(const ModelData& modelData, TrajectoryRef start, scalar_t dt);
+VectorFunctionLinearApproximation approximateDynamics(
+  const ModelData & modelData, TrajectoryRef start, scalar_t dt);
 
 /**
  * Computes the equality constraints at given trajectory point
  * @param modelData: The continuous time optimal control problem evaluation.
  * @return Linear approximation of the constraints
  */
-VectorFunctionLinearApproximation approximateConstraints(const ModelData& modelData, bool isInitialTime);
+VectorFunctionLinearApproximation approximateConstraints(
+  const ModelData & modelData, bool isInitialTime);
 
 }  // namespace qp_solver
 }  // namespace ocs2

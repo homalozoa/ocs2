@@ -29,11 +29,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include "ocs2_qp_solver/QpSolverTypes.h"
-#include "ocs2_qp_solver/QpTrajectories.h"
+#include "ocs2_qp_solver/QpSolverTypes.hpp"
+#include "ocs2_qp_solver/QpTrajectories.hpp"
 
-namespace ocs2 {
-namespace qp_solver {
+namespace ocs2
+{
+namespace qp_solver
+{
 
 /**
  * Solves the discretized linear quadratic optimal control problem by constructing a dense QP and inverting the full KKT system.
@@ -43,8 +45,8 @@ namespace qp_solver {
  * @param dx0 : initial state deviation from the nominal trajectories.
  * @return trajectory of state and inputs (in relative coordinates), .i.e. dx(t), du(t)
  */
-std::pair<vector_array_t, vector_array_t> solveLinearQuadraticProblem(const std::vector<LinearQuadraticStage>& lqApproximation,
-                                                                      const vector_t& dx0);
+std::pair<vector_array_t, vector_array_t> solveLinearQuadraticProblem(
+  const std::vector<LinearQuadraticStage> & lqApproximation, const vector_t & dx0);
 
 /**
  * Constructs the matrix of stacked dynamic constraints A w + b = 0
@@ -66,8 +68,9 @@ std::pair<vector_array_t, vector_array_t> solveLinearQuadraticProblem(const std:
  * @param numDecisionVariables : size of w
  * @return linear constraints in w, where w is the vector of decision variables
  */
-VectorFunctionLinearApproximation getConstraintMatrices(const std::vector<LinearQuadraticStage>& lqp, const vector_t& dx0,
-                                                        int numConstraints, int numDecisionVariables);
+VectorFunctionLinearApproximation getConstraintMatrices(
+  const std::vector<LinearQuadraticStage> & lqp, const vector_t & dx0, int numConstraints,
+  int numDecisionVariables);
 
 /**
  * Constructs a matrix of stacked cost functions  1/2 w' H w + g' w
@@ -84,7 +87,8 @@ VectorFunctionLinearApproximation getConstraintMatrices(const std::vector<Linear
  * @param numDecisionVariables : size of w
  * @return quadratic cost function in w, where w is the vector of decision variables
  */
-ScalarFunctionQuadraticApproximation getCostMatrices(const std::vector<LinearQuadraticStage>& lqp, int numDecisionVariables);
+ScalarFunctionQuadraticApproximation getCostMatrices(
+  const std::vector<LinearQuadraticStage> & lqp, int numDecisionVariables);
 
 /**
  * Constructs the equality constrained QP from the discretized linear quadratic control problem.
@@ -92,8 +96,8 @@ ScalarFunctionQuadraticApproximation getCostMatrices(const std::vector<LinearQua
  * @param dx0 : initial state deviation from the nominal trajectories.
  * @return { cost matrices, constraint matrices }
  */
-std::pair<ScalarFunctionQuadraticApproximation, VectorFunctionLinearApproximation> getDenseQp(const std::vector<LinearQuadraticStage>& lqp,
-                                                                                              const vector_t& dx0);
+std::pair<ScalarFunctionQuadraticApproximation, VectorFunctionLinearApproximation> getDenseQp(
+  const std::vector<LinearQuadraticStage> & lqp, const vector_t & dx0);
 
 /**
  * Solves the equality constrained QP
@@ -104,8 +108,9 @@ std::pair<ScalarFunctionQuadraticApproximation, VectorFunctionLinearApproximatio
  *
  * @return {w, lambda} at the solution, where w is the vector of decision variables, and lambda is the vector of lagrange multipliers
  */
-std::pair<vector_t, vector_t> solveDenseQp(const ScalarFunctionQuadraticApproximation& cost,
-                                           const VectorFunctionLinearApproximation& constraints);
+std::pair<vector_t, vector_t> solveDenseQp(
+  const ScalarFunctionQuadraticApproximation & cost,
+  const VectorFunctionLinearApproximation & constraints);
 
 /**
  * Reconstructs the optimal state and input trajectory recursively based on the full qp solution vector
@@ -114,8 +119,8 @@ std::pair<vector_t, vector_t> solveDenseQp(const ScalarFunctionQuadraticApproxim
  * @param w : the vector of decision variables
  * @return { state_trajectory, input_trajectory }
  */
-std::pair<vector_array_t, vector_array_t> getStateAndInputTrajectory(const std::vector<int>& numStates, const std::vector<int>& numInputs,
-                                                                     const vector_t& w);
+std::pair<vector_array_t, vector_array_t> getStateAndInputTrajectory(
+  const std::vector<int> & numStates, const std::vector<int> & numInputs, const vector_t & w);
 
 }  // namespace qp_solver
 }  // namespace ocs2

@@ -27,25 +27,30 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include "ocs2_qp_solver/Ocs2QpSolver.h"
+#include "ocs2_qp_solver/Ocs2QpSolver.hpp"
 
-#include "ocs2_qp_solver/QpDiscreteTranscription.h"
-#include "ocs2_qp_solver/QpSolver.h"
+#include "ocs2_qp_solver/QpDiscreteTranscription.hpp"
+#include "ocs2_qp_solver/QpSolver.hpp"
 
-namespace ocs2 {
-namespace qp_solver {
+namespace ocs2
+{
+namespace qp_solver
+{
 
-ContinuousTrajectory solveLinearQuadraticOptimalControlProblem(OptimalControlProblem& optimalControProblem,
-                                                               const ContinuousTrajectory& nominalTrajectory,
-                                                               const vector_t& initialState) {
+ContinuousTrajectory solveLinearQuadraticOptimalControlProblem(
+  OptimalControlProblem & optimalControProblem, const ContinuousTrajectory & nominalTrajectory,
+  const vector_t & initialState)
+{
   // Approximate
-  const auto lqApproximation = getLinearQuadraticApproximation(optimalControProblem, nominalTrajectory);
+  const auto lqApproximation =
+    getLinearQuadraticApproximation(optimalControProblem, nominalTrajectory);
 
   // Solve for an update step
   ContinuousTrajectory deltaSolution;
   deltaSolution.timeTrajectory = nominalTrajectory.timeTrajectory;
   std::tie(deltaSolution.stateTrajectory, deltaSolution.inputTrajectory) =
-      solveLinearQuadraticProblem(lqApproximation, initialState - nominalTrajectory.stateTrajectory.front());
+    solveLinearQuadraticProblem(
+      lqApproximation, initialState - nominalTrajectory.stateTrajectory.front());
 
   // Take a full step: Add update to nominal trajectory
   return nominalTrajectory + deltaSolution;

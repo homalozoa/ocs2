@@ -27,22 +27,27 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include "ocs2_qp_solver/QpSolver.h"
+#include "ocs2_qp_solver/QpSolver.hpp"
 
-#include <Eigen/LU>
 #include <numeric>
 #include <tuple>
 
-namespace ocs2 {
-namespace qp_solver {
+#include "eigen3/Eigen/LU"
+
+namespace ocs2
+{
+namespace qp_solver
+{
 
 /**
  * Extracts the problem state and inputs dimensions as well as number of constraints from a linear quadratic approximation
  * Looks at the size of the flowmap derivatives of the dynamics.
  * @return { numStatesPerStage, numInputsPerStage, numConstraintsPerStage}
  */
-static std::tuple<std::vector<int>, std::vector<int>, std::vector<int>> getNumStatesInputsConstraints(
-    const std::vector<LinearQuadraticStage>& linearQuadraticApproximation) {
+static std::tuple<std::vector<int>, std::vector<int>, std::vector<int>>
+getNumStatesInputsConstraints(
+  const std::vector<LinearQuadraticStage> & linearQuadraticApproximation)
+{
   if (linearQuadraticApproximation.empty()) {
     return {std::vector<int>(0), std::vector<int>(0), std::vector<int>(0)};
   }
@@ -67,20 +72,26 @@ static std::tuple<std::vector<int>, std::vector<int>, std::vector<int>> getNumSt
 }
 
 /** Counts the number of decision variables in the QP */
-static int getNumDecisionVariables(const std::vector<int>& numStates, const std::vector<int>& numInputs) {
+static int getNumDecisionVariables(
+  const std::vector<int> & numStates, const std::vector<int> & numInputs)
+{
   const auto totalNumberOfStates = std::accumulate(numStates.begin(), numStates.end(), 0);
   const auto totalNumberOfInputs = std::accumulate(numInputs.begin(), numInputs.end(), 0);
   return totalNumberOfStates + totalNumberOfInputs;
 }
 
 /** Counts the number of constraints in the QP */
-static int getNumConstraints(const std::vector<int>& numStates, const std::vector<int>& numConstraints) {
+static int getNumConstraints(
+  const std::vector<int> & numStates, const std::vector<int> & numConstraints)
+{
   // Each stage constrains x_{k+1} states, adding the x_0 constraint, all states are constrained exactly once.
-  return std::accumulate(numStates.begin(), numStates.end(), 0) + std::accumulate(numConstraints.begin(), numConstraints.end(), 0);
+  return std::accumulate(numStates.begin(), numStates.end(), 0) +
+         std::accumulate(numConstraints.begin(), numConstraints.end(), 0);
 }
 
-std::pair<vector_array_t, vector_array_t> solveLinearQuadraticProblem(const std::vector<LinearQuadraticStage>& lqApproximation,
-                                                                      const vector_t& dx0) {
+std::pair<vector_array_t, vector_array_t> solveLinearQuadraticProblem(
+  const std::vector<LinearQuadraticStage> & lqApproximation, const vector_t & dx0)
+{
   // Extract sizes
   std::vector<int> numStates;
   std::vector<int> numInputs;
@@ -90,7 +101,8 @@ std::pair<vector_array_t, vector_array_t> solveLinearQuadraticProblem(const std:
   const auto numQpConstraints = getNumConstraints(numStates, numConstraints);
 
   // Construct QP
-  const auto qpConstraints = getConstraintMatrices(lqApproximation, dx0, numQpConstraints, numDecisionVariables);
+  const auto qpConstraints =
+    getConstraintMatrices(lqApproximation, dx0, numQpConstraints, numDecisionVariables);
   const auto qpCosts = getCostMatrices(lqApproximation, numDecisionVariables);
 
   // Solve
@@ -100,8 +112,10 @@ std::pair<vector_array_t, vector_array_t> solveLinearQuadraticProblem(const std:
   return getStateAndInputTrajectory(numStates, numInputs, primalDualSolution.first);
 }
 
-VectorFunctionLinearApproximation getConstraintMatrices(const std::vector<LinearQuadraticStage>& lqp, const vector_t& dx0,
-                                                        int numConstraints, int numDecisionVariables) {
+VectorFunctionLinearApproximation getConstraintMatrices(
+  const std::vector<LinearQuadraticStage> & lqp, const vector_t & dx0, int numConstraints,
+  int numDecisionVariables)
+{
   if (lqp.empty()) {
     return VectorFunctionLinearApproximation();
   }
@@ -110,8 +124,8 @@ VectorFunctionLinearApproximation getConstraintMatrices(const std::vector<Linear
 
   // Preallocate full constraint matrix
   VectorFunctionLinearApproximation constraints;
-  auto& A = constraints.dfdx;
-  auto& b = constraints.f;
+  auto & A = constraints.dfdx;
+  auto & b = constraints.f;
   A.setZero(numConstraints, numDecisionVariables);
   b.setZero(numConstraints);
 
@@ -123,8 +137,8 @@ VectorFunctionLinearApproximation getConstraintMatrices(const std::vector<Linear
   int currRow = nx_0;
   int currCol = 0;
   for (int k = 0; k < N; ++k) {
-    const auto& dynamics_k = lqp[k].dynamics;
-    const auto& constraints_k = lqp[k].constraints;
+    const auto & dynamics_k = lqp[k].dynamics;
+    const auto & constraints_k = lqp[k].constraints;
     const int nu_k = dynamics_k.dfdu.cols();
     const int nx_k = dynamics_k.dfdx.cols();
     const int nx_Next = dynamics_k.dfdx.rows();
@@ -140,7 +154,8 @@ VectorFunctionLinearApproximation getConstraintMatrices(const std::vector<Linear
     }
 
     // Add [A, B, -I]
-    A.block(currRow, currCol, nx_Next, nx_k + nu_k + nx_Next) << dynamics_k.dfdx, dynamics_k.dfdu, -matrix_t::Identity(nx_Next, nx_Next);
+    A.block(currRow, currCol, nx_Next, nx_k + nu_k + nx_Next) << dynamics_k.dfdx, dynamics_k.dfdu,
+      -matrix_t::Identity(nx_Next, nx_Next);
     // Add [b]
     b.segment(currRow, nx_Next) = dynamics_k.f;
 
@@ -149,7 +164,7 @@ VectorFunctionLinearApproximation getConstraintMatrices(const std::vector<Linear
   }
 
   // Final state constraint
-  const auto& constraints_N = lqp[N].constraints;
+  const auto & constraints_N = lqp[N].constraints;
   const int nc_N = constraints_N.f.size();
   if (nc_N > 0) {
     A.bottomRightCorner(nc_N, constraints_N.dfdx.cols()) = constraints_N.dfdx;
@@ -159,7 +174,9 @@ VectorFunctionLinearApproximation getConstraintMatrices(const std::vector<Linear
   return constraints;
 }
 
-ScalarFunctionQuadraticApproximation getCostMatrices(const std::vector<LinearQuadraticStage>& lqp, int numDecisionVariables) {
+ScalarFunctionQuadraticApproximation getCostMatrices(
+  const std::vector<LinearQuadraticStage> & lqp, int numDecisionVariables)
+{
   if (lqp.empty()) {
     return ScalarFunctionQuadraticApproximation();
   }
@@ -168,22 +185,23 @@ ScalarFunctionQuadraticApproximation getCostMatrices(const std::vector<LinearQua
 
   // Preallocate full Cost matrices
   ScalarFunctionQuadraticApproximation qpCost;
-  auto& H = qpCost.dfdxx;
-  auto& g = qpCost.dfdx;
-  auto& c = qpCost.f;
+  auto & H = qpCost.dfdxx;
+  auto & g = qpCost.dfdx;
+  auto & c = qpCost.f;
   H.setZero(numDecisionVariables, numDecisionVariables);
   g.setZero(numDecisionVariables);
   c = 0.0;
 
   int currRow = 0;
   for (int k = 0; k < N; ++k) {
-    const auto& cost_k = lqp[k].cost;
+    const auto & cost_k = lqp[k].cost;
     const int nx_k = cost_k.dfdux.cols();
     const int nu_k = cost_k.dfdux.rows();
 
     // Add [ Q, P'
     //       P, R ]
-    H.block(currRow, currRow, nx_k + nu_k, nx_k + nu_k) << cost_k.dfdxx, cost_k.dfdux.transpose(), cost_k.dfdux, cost_k.dfduu;
+    H.block(currRow, currRow, nx_k + nu_k, nx_k + nu_k) << cost_k.dfdxx, cost_k.dfdux.transpose(),
+      cost_k.dfdux, cost_k.dfduu;
     // Add [ q, r]
     g.segment(currRow, nx_k + nu_k) << cost_k.dfdx, cost_k.dfdu;
     // Add nominal cost
@@ -193,7 +211,7 @@ ScalarFunctionQuadraticApproximation getCostMatrices(const std::vector<LinearQua
   }
 
   // Terminal cost
-  const auto& cost_N = lqp[N].cost;
+  const auto & cost_N = lqp[N].cost;
   const int nx_N = cost_N.dfdx.size();
   H.block(currRow, currRow, nx_N, nx_N) << cost_N.dfdxx;
   g.segment(currRow, nx_N) << cost_N.dfdx;
@@ -202,8 +220,9 @@ ScalarFunctionQuadraticApproximation getCostMatrices(const std::vector<LinearQua
   return qpCost;
 }
 
-std::pair<ScalarFunctionQuadraticApproximation, VectorFunctionLinearApproximation> getDenseQp(const std::vector<LinearQuadraticStage>& lqp,
-                                                                                              const vector_t& dx0) {
+std::pair<ScalarFunctionQuadraticApproximation, VectorFunctionLinearApproximation> getDenseQp(
+  const std::vector<LinearQuadraticStage> & lqp, const vector_t & dx0)
+{
   // Extract sizes
   std::vector<int> numStates;
   std::vector<int> numInputs;
@@ -214,13 +233,16 @@ std::pair<ScalarFunctionQuadraticApproximation, VectorFunctionLinearApproximatio
 
   // Construct QP
   const auto qpCosts = getCostMatrices(lqp, numDecisionVariables);
-  const auto qpConstraints = getConstraintMatrices(lqp, dx0, numQpConstraints, numDecisionVariables);
+  const auto qpConstraints =
+    getConstraintMatrices(lqp, dx0, numQpConstraints, numDecisionVariables);
 
   return {qpCosts, qpConstraints};
 }
 
-std::pair<vector_t, vector_t> solveDenseQp(const ScalarFunctionQuadraticApproximation& cost,
-                                           const VectorFunctionLinearApproximation& constraints) {
+std::pair<vector_t, vector_t> solveDenseQp(
+  const ScalarFunctionQuadraticApproximation & cost,
+  const VectorFunctionLinearApproximation & constraints)
+{
   const int m = constraints.dfdx.rows();
   const int n = constraints.dfdx.cols();
 
@@ -238,8 +260,9 @@ std::pair<vector_t, vector_t> solveDenseQp(const ScalarFunctionQuadraticApproxim
   return {sol.head(n), sol.tail(m)};
 }
 
-std::pair<vector_array_t, vector_array_t> getStateAndInputTrajectory(const std::vector<int>& numStates, const std::vector<int>& numInputs,
-                                                                     const vector_t& w) {
+std::pair<vector_array_t, vector_array_t> getStateAndInputTrajectory(
+  const std::vector<int> & numStates, const std::vector<int> & numInputs, const vector_t & w)
+{
   assert(numStates.size() == numInputs.size() + 1);
 
   const int N = numInputs.size();

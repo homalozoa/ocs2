@@ -33,15 +33,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include "ocs2_qp_solver/QpSolverTypes.h"
-#include "ocs2_qp_solver/QpTrajectories.h"
+#include "ocs2_oc/test/testProblemsGeneration.hpp"
+#include "ocs2_qp_solver/QpSolverTypes.hpp"
+#include "ocs2_qp_solver/QpTrajectories.hpp"
 
-#include <ocs2_oc/test/testProblemsGeneration.h>
+namespace ocs2
+{
+namespace qp_solver
+{
 
-namespace ocs2 {
-namespace qp_solver {
-
-inline ContinuousTrajectory getRandomTrajectory(int N, int n, int m, scalar_t dt) {
+inline ContinuousTrajectory getRandomTrajectory(int N, int n, int m, scalar_t dt)
+{
   ContinuousTrajectory trajectory;
   trajectory.timeTrajectory = scalar_array_t(N + 1);
   trajectory.stateTrajectory = vector_array_t(N + 1);
@@ -51,30 +53,39 @@ inline ContinuousTrajectory getRandomTrajectory(int N, int n, int m, scalar_t dt
     t += dt;
     return t;
   });
-  std::generate(trajectory.stateTrajectory.begin(), trajectory.stateTrajectory.end(), [n]() { return vector_t::Random(n); });
-  std::generate(trajectory.inputTrajectory.begin(), trajectory.inputTrajectory.end(), [m]() { return vector_t::Random(m); });
+  std::generate(trajectory.stateTrajectory.begin(), trajectory.stateTrajectory.end(), [n]() {
+    return vector_t::Random(n);
+  });
+  std::generate(trajectory.inputTrajectory.begin(), trajectory.inputTrajectory.end(), [m]() {
+    return vector_t::Random(m);
+  });
   return trajectory;
 }
 
-inline std::vector<LinearQuadraticStage> generateRandomLqProblem(int N, int nx, int nu, int nc) {
+inline std::vector<LinearQuadraticStage> generateRandomLqProblem(int N, int nx, int nu, int nc)
+{
   std::vector<LinearQuadraticStage> lqProblem;
   lqProblem.reserve(N + 1);
 
   for (int k = 0; k < N; ++k) {
-    lqProblem.emplace_back(getRandomCost(nx, nu), getRandomDynamics(nx, nu), getRandomConstraints(nx, nu, nc));
+    lqProblem.emplace_back(
+      getRandomCost(nx, nu), getRandomDynamics(nx, nu), getRandomConstraints(nx, nu, nc));
   }
 
   // Terminal Cost
-  lqProblem.emplace_back(getRandomCost(nx, 0), VectorFunctionLinearApproximation(), getRandomConstraints(nx, nu, nc));
+  lqProblem.emplace_back(
+    getRandomCost(nx, 0), VectorFunctionLinearApproximation(), getRandomConstraints(nx, nu, nc));
 
   return lqProblem;
 }
 
 /** Checks QP feasibility and numerical conditioning */
-inline bool isQpFeasible(const ocs2::ScalarFunctionQuadraticApproximation& qpCost,
-                         const ocs2::VectorFunctionLinearApproximation& qpConstraints) {
-  const auto& H = qpCost.dfdxx;
-  const auto& A = qpConstraints.dfdx;
+inline bool isQpFeasible(
+  const ocs2::ScalarFunctionQuadraticApproximation & qpCost,
+  const ocs2::VectorFunctionLinearApproximation & qpConstraints)
+{
+  const auto & H = qpCost.dfdxx;
+  const auto & A = qpConstraints.dfdx;
 
   // Cost must be convex
   Eigen::LDLT<ocs2::matrix_t> ldlt(H);

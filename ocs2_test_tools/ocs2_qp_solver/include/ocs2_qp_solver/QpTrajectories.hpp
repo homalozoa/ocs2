@@ -29,26 +29,46 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <ocs2_core/dynamics/SystemDynamicsBase.h>
-#include <ocs2_oc/oc_problem/OptimalControlProblem.h>
+#include "ocs2_core/Types.hpp"
 
-#include "ocs2_qp_solver/QpSolverTypes.h"
-#include "ocs2_qp_solver/QpTrajectories.h"
+namespace ocs2
+{
+namespace qp_solver
+{
 
-namespace ocs2 {
-namespace qp_solver {
+/** A time, state, input trajectory. The last timepoint has only a state, no input */
+struct ContinuousTrajectory
+{
+  /** time trajectory, size N+1 */
+  scalar_array_t timeTrajectory;
+  /** trajectory of state vectors, size N+1 */
+  vector_array_t stateTrajectory;
+  /** trajectory of input vectors, size N */
+  vector_array_t inputTrajectory;
+};
 
-/**
- * Solves a constrained discrete-time linear quadratic control problem around a provided linearization trajectory.
- * The time horizon and discretization steps are defined by the time trajectory of the provided linearization.
- *
- * @param optimalControProblem: The optimal control problem definition.
- * @param nominalTrajectory : time, state and input trajectory to make the linear quadratic approximation around
- * @param initialState : state at the start of the horizon.
- * @return time, state, and input solution.
- */
-ContinuousTrajectory solveLinearQuadraticOptimalControlProblem(OptimalControlProblem& optimalControProblem,
-                                                               const ContinuousTrajectory& nominalTrajectory, const vector_t& initialState);
+/** Adds state and inputs of two trajectories, time is not added. */
+ContinuousTrajectory operator+(const ContinuousTrajectory & lhs, const ContinuousTrajectory & rhs);
+
+/** Reference to a point along a trajectory. Does not own the state-input data. */
+struct TrajectoryRef
+{
+  /** time */
+  scalar_t t;
+  /** state */
+  const vector_t & x;
+  /** input */
+  const vector_t & u;
+};
+
+/** Reference to the state at a point along a trajectory. Does not own the state data. */
+struct StateTrajectoryRef
+{
+  /** time */
+  scalar_t t;
+  /** state */
+  const vector_t & x;
+};
 
 }  // namespace qp_solver
 }  // namespace ocs2

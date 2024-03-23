@@ -27,15 +27,14 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "ocs2_oc/oc_problem/OptimalControlProblem.hpp"
+#include "ocs2_qp_solver/QpDiscreteTranscription.hpp"
+#include "ocs2_qp_solver/test/testProblemsGeneration.hpp"
 
-#include <ocs2_oc/oc_problem/OptimalControlProblem.h>
-
-#include "ocs2_qp_solver/QpDiscreteTranscription.h"
-#include "ocs2_qp_solver/test/testProblemsGeneration.h"
-
-class DiscreteTranscriptionTest : public testing::Test {
- protected:
+class DiscreteTranscriptionTest : public testing::Test
+{
+protected:
   static constexpr size_t N = 10;  // Trajectory length
   static constexpr size_t STATE_DIM = 3;
   static constexpr size_t INPUT_DIM = 2;
@@ -44,18 +43,22 @@ class DiscreteTranscriptionTest : public testing::Test {
   static constexpr size_t numFinalStateOnlyConstraints = 1;
   static constexpr ocs2::scalar_t dt = 1e-2;
 
-  DiscreteTranscriptionTest() {
+  DiscreteTranscriptionTest()
+  {
     srand(0);
 
-    targetTrajectories = ocs2::TargetTrajectories({0.0}, {ocs2::vector_t::Random(STATE_DIM)}, {ocs2::vector_t::Random(INPUT_DIM)});
+    targetTrajectories = ocs2::TargetTrajectories(
+      {0.0}, {ocs2::vector_t::Random(STATE_DIM)}, {ocs2::vector_t::Random(INPUT_DIM)});
 
     system = ocs2::getOcs2Dynamics(ocs2::getRandomDynamics(STATE_DIM, INPUT_DIM));
 
     ocs2::OptimalControlProblem problem;
     problem.dynamicsPtr.reset(system->clone());
 
-    problem.costPtr->add("IntermediateCost", ocs2::getOcs2Cost(ocs2::getRandomCost(STATE_DIM, INPUT_DIM)));
-    problem.finalCostPtr->add("FinalCost", ocs2::getOcs2StateCost(ocs2::getRandomCost(STATE_DIM, 0)));
+    problem.costPtr->add(
+      "IntermediateCost", ocs2::getOcs2Cost(ocs2::getRandomCost(STATE_DIM, INPUT_DIM)));
+    problem.finalCostPtr->add(
+      "FinalCost", ocs2::getOcs2StateCost(ocs2::getRandomCost(STATE_DIM, 0)));
     problem.targetTrajectoriesPtr = &targetTrajectories;
 
     linearization = ocs2::qp_solver::getRandomTrajectory(N, STATE_DIM, INPUT_DIM, dt);
@@ -66,17 +69,23 @@ class DiscreteTranscriptionTest : public testing::Test {
     constrainedProblem.targetTrajectoriesPtr = &targetTrajectories;
 
     constrainedProblem.equalityConstraintPtr->add(
-        "equality", ocs2::getOcs2Constraints(ocs2::getRandomConstraints(STATE_DIM, INPUT_DIM, numStateInputConstraints)));
+      "equality", ocs2::getOcs2Constraints(
+                    ocs2::getRandomConstraints(STATE_DIM, INPUT_DIM, numStateInputConstraints)));
     constrainedProblem.stateEqualityConstraintPtr->add(
-        "equality", ocs2::getOcs2StateOnlyConstraints(ocs2::getRandomConstraints(STATE_DIM, 0, numStateOnlyConstraints)));
+      "equality", ocs2::getOcs2StateOnlyConstraints(
+                    ocs2::getRandomConstraints(STATE_DIM, 0, numStateOnlyConstraints)));
     constrainedProblem.finalEqualityConstraintPtr->add(
-        "equality", ocs2::getOcs2StateOnlyConstraints(ocs2::getRandomConstraints(STATE_DIM, 0, numFinalStateOnlyConstraints)));
+      "equality", ocs2::getOcs2StateOnlyConstraints(
+                    ocs2::getRandomConstraints(STATE_DIM, 0, numFinalStateOnlyConstraints)));
 
-    constrainedLqr = ocs2::qp_solver::getLinearQuadraticApproximation(constrainedProblem, linearization);
+    constrainedLqr =
+      ocs2::qp_solver::getLinearQuadraticApproximation(constrainedProblem, linearization);
   }
 
-  void checkSizes(const std::vector<ocs2::qp_solver::LinearQuadraticStage>& lqr, size_t numStateInputConstraints,
-                  size_t numStateOnlyConstraints, size_t numTerminalConstraints) const {
+  void checkSizes(
+    const std::vector<ocs2::qp_solver::LinearQuadraticStage> & lqr, size_t numStateInputConstraints,
+    size_t numStateOnlyConstraints, size_t numTerminalConstraints) const
+  {
     ASSERT_EQ(lqr.size(), N + 1);
     for (int k = 0; k < N; ++k) {
       // Cost sizes
@@ -94,7 +103,8 @@ class DiscreteTranscriptionTest : public testing::Test {
       ASSERT_EQ(lqr[k].dynamics.dfdu.cols(), INPUT_DIM);
 
       // Constraint sizes
-      const auto numIntermediateConstraints = k == 0 ? numStateInputConstraints : numStateInputConstraints + numStateOnlyConstraints;
+      const auto numIntermediateConstraints =
+        k == 0 ? numStateInputConstraints : numStateInputConstraints + numStateOnlyConstraints;
       ASSERT_EQ(lqr[k].constraints.f.rows(), numIntermediateConstraints);
       ASSERT_EQ(lqr[k].constraints.dfdx.rows(), numIntermediateConstraints);
       ASSERT_EQ(lqr[k].constraints.dfdu.rows(), numIntermediateConstraints);
@@ -132,19 +142,25 @@ constexpr size_t DiscreteTranscriptionTest::numStateOnlyConstraints;
 constexpr size_t DiscreteTranscriptionTest::numFinalStateOnlyConstraints;
 constexpr ocs2::scalar_t DiscreteTranscriptionTest::dt;
 
-TEST_F(DiscreteTranscriptionTest, unconstrainedLqrHasCorrectSizes) {
+TEST_F(DiscreteTranscriptionTest, unconstrainedLqrHasCorrectSizes)
+{
   checkSizes(unconstrainedLqr, 0, 0, 0);
 }
 
-TEST_F(DiscreteTranscriptionTest, constrainedLqrHasCorrectSizes) {
-  checkSizes(constrainedLqr, numStateInputConstraints, numStateOnlyConstraints, numFinalStateOnlyConstraints);
+TEST_F(DiscreteTranscriptionTest, constrainedLqrHasCorrectSizes)
+{
+  checkSizes(
+    constrainedLqr, numStateInputConstraints, numStateOnlyConstraints,
+    numFinalStateOnlyConstraints);
 }
 
-TEST_F(DiscreteTranscriptionTest, linearizationInvariance) {
+TEST_F(DiscreteTranscriptionTest, linearizationInvariance)
+{
   auto linearization2 = ocs2::qp_solver::getRandomTrajectory(N, STATE_DIM, INPUT_DIM, dt);
   linearization2.timeTrajectory = linearization.timeTrajectory;
 
-  const auto lqp2 = ocs2::qp_solver::getLinearQuadraticApproximation(constrainedProblem, linearization2);
+  const auto lqp2 =
+    ocs2::qp_solver::getLinearQuadraticApproximation(constrainedProblem, linearization2);
 
   // All matrices should stay the same. The linear and constant parts changes
   for (int k = 0; k < N; ++k) {

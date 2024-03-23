@@ -29,13 +29,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <ocs2_core/Types.h>
+#include "ocs2_core/Types.hpp"
 
-namespace ocs2 {
-namespace qp_solver {
+namespace ocs2
+{
+namespace qp_solver
+{
 
 /** Defines the quadratic cost and  linear dynamics at a give stage */
-struct LinearQuadraticStage {
+struct LinearQuadraticStage
+{
   /** Quadratic approximation of the cost */
   ScalarFunctionQuadraticApproximation cost;
   /** Linear approximation of the dynamics */
@@ -44,8 +47,12 @@ struct LinearQuadraticStage {
   VectorFunctionLinearApproximation constraints;
 
   LinearQuadraticStage() = default;
-  LinearQuadraticStage(ScalarFunctionQuadraticApproximation c, VectorFunctionLinearApproximation d, VectorFunctionLinearApproximation g)
-      : cost(std::move(c)), dynamics(std::move(d)), constraints(std::move(g)) {}
+  LinearQuadraticStage(
+    ScalarFunctionQuadraticApproximation c, VectorFunctionLinearApproximation d,
+    VectorFunctionLinearApproximation g)
+  : cost(std::move(c)), dynamics(std::move(d)), constraints(std::move(g))
+  {
+  }
 };
 
 }  // namespace qp_solver
