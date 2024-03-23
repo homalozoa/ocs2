@@ -29,21 +29,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <Eigen/Dense>
-
 #include <cmath>
 #include <iostream>
 #include <limits>
 #include <memory>
 #include <vector>
 
-#include <ocs2_core/Types.h>
-#include "ocs2_frank_wolfe/FrankWolfeDescentDirection.h"
-#include "ocs2_frank_wolfe/NLP_Constraints.h"
-#include "ocs2_frank_wolfe/NLP_Cost.h"
-#include "ocs2_frank_wolfe/NLP_Settings.h"
+#include "eigen3/Eigen/Dense"
+#include "ocs2_core/Types.hpp"
+#include "ocs2_frank_wolfe/FrankWolfeDescentDirection.hpp"
+#include "ocs2_frank_wolfe/NLP_Constraints.hpp"
+#include "ocs2_frank_wolfe/NLP_Cost.hpp"
+#include "ocs2_frank_wolfe/NLP_Settings.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
 /**
  * This class implements the Frank-Wolfe algorithm which is an iterative first-order gradient descent
@@ -54,14 +54,15 @@ namespace ocs2 {
  * calculateCost, calculateGradient, calculateLinearEqualityConstraint, and getSolution.
  *
  */
-class GradientDescent {
- public:
+class GradientDescent
+{
+public:
   /**
    * Constructor.
    *
    * @param [in] nlpSettings: Structure containing the settings for the NLP algorithm.
    */
-  explicit GradientDescent(const NLP_Settings& nlpSettings);
+  explicit GradientDescent(const NLP_Settings & nlpSettings);
 
   /**
    * Default destructor.
@@ -73,35 +74,35 @@ class GradientDescent {
    *
    * @param [out] cost value
    */
-  void getCost(scalar_t& cost) const;
+  void getCost(scalar_t & cost) const;
 
   /**
    * Gets the parameter vector.
    *
    * @param [out] parameters: the parameter vector
    */
-  void getParameters(vector_t& parameters) const;
+  void getParameters(vector_t & parameters) const;
 
   /**
    * Gets the iteration cost log.
    *
    * @param [out] iterationCost: The cost value in each iteration.
    */
-  void getIterationsLog(scalar_array_t& iterationCost) const;
+  void getIterationsLog(scalar_array_t & iterationCost) const;
 
   /**
    * Gets a constant reference to the optimal solver's ID.
    *
    * @param [out] optimizedID: The optimal solver's ID.
    */
-  void optimalSolutionID(size_t& optimizedID) const;
+  void optimalSolutionID(size_t & optimizedID) const;
 
   /**
    * Gets a constant reference to the NLP of settings.
    *
    * @return A constant reference to the NLP of settings.
    */
-  NLP_Settings& nlpSettings();
+  NLP_Settings & nlpSettings();
 
   /**
    * This method runs the Frank-Wolfe algorithm which the initial parameters
@@ -117,10 +118,11 @@ class GradientDescent {
    * @param [in] costPtr: A pointer to the NLP cost.
    * @param [in] constraintsPtr: A pointer to the NLP constraints.
    */
-  void run(const vector_t& initParameters, const vector_t& maxGradientInverse, NLP_Cost* costPtr,
-           NLP_Constraints* constraintsPtr = nullptr);
+  void run(
+    const vector_t & initParameters, const vector_t & maxGradientInverse, NLP_Cost * costPtr,
+    NLP_Constraints * constraintsPtr = nullptr);
 
- protected:
+protected:
   /**
    * Line search to find the best learning rate using decreasing scheme where the step size eventually decreases
    * from the maximum value to the minimum.
@@ -134,8 +136,10 @@ class GradientDescent {
    * @param [out] optimizedID: The ID of the optimized solution.
    * @param [out] optimizedLearningRate: The optimized learning rate.
    */
-  void lineSearch(const vector_t& parameters, const vector_t& gradient, NLP_Cost* costPtr, NLP_Constraints* constraintsPtr,
-                  vector_t& optimizedParameters, scalar_t& optimizedCost, size_t& optimizedID, scalar_t& optimizedLearningRate);
+  void lineSearch(
+    const vector_t & parameters, const vector_t & gradient, NLP_Cost * costPtr,
+    NLP_Constraints * constraintsPtr, vector_t & optimizedParameters, scalar_t & optimizedCost,
+    size_t & optimizedID, scalar_t & optimizedLearningRate);
 
   /*
    * Variables

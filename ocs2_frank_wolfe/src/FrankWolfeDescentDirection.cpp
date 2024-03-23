@@ -27,15 +27,17 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <ocs2_frank_wolfe/FrankWolfeDescentDirection.h>
+#include "ocs2_frank_wolfe/FrankWolfeDescentDirection.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
 FrankWolfeDescentDirection::FrankWolfeDescentDirection(bool display)
-    : lpPtr_(glp_create_prob(), glp_delete_prob), lpOptionsPtr_(new glp_smcp) {
+: lpPtr_(glp_create_prob(), glp_delete_prob), lpOptionsPtr_(new glp_smcp)
+{
   // set LP options
   glp_init_smcp(lpOptionsPtr_.get());
   if (!display) lpOptionsPtr_->msg_lev = GLP_MSG_ERR;
@@ -44,7 +46,8 @@ FrankWolfeDescentDirection::FrankWolfeDescentDirection(bool display)
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void FrankWolfeDescentDirection::instantiateGLPK() {
+void FrankWolfeDescentDirection::instantiateGLPK()
+{
   // erase the solver
   glp_erase_prob(lpPtr_.get());
 
@@ -58,8 +61,10 @@ void FrankWolfeDescentDirection::instantiateGLPK() {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void FrankWolfeDescentDirection::setupLP(const vector_t& parameter, const vector_t& gradient, const vector_t& maxGradientInverse,
-                                         NLP_Constraints* nlpConstraintsPtr) {
+void FrankWolfeDescentDirection::setupLP(
+  const vector_t & parameter, const vector_t & gradient, const vector_t & maxGradientInverse,
+  NLP_Constraints * nlpConstraintsPtr)
+{
   const size_t parameterDim = parameter.size();
 
   // return if there is no parameter
@@ -99,12 +104,12 @@ void FrankWolfeDescentDirection::setupLP(const vector_t& parameter, const vector
   nlpConstraintsPtr->getLinearEqualityConstraintDerivative(dgdx);
   if (g.size() > 0 && dgdx.cols() != parameterDim)
     throw std::runtime_error(
-        "calculateLinearEqualityConstraint: The number of columns of Jacobian matrix "
-        "should be equal to the number of parameters.");
+      "calculateLinearEqualityConstraint: The number of columns of Jacobian matrix "
+      "should be equal to the number of parameters.");
   if (g.size() > 0 && dgdx.rows() != g.rows())
     throw std::runtime_error(
-        "calculateLinearEqualityConstraint: The number of rows of Jacobian matrix "
-        "should be equal to the number of equality constraints.");
+      "calculateLinearEqualityConstraint: The number of rows of Jacobian matrix "
+      "should be equal to the number of equality constraints.");
 
   // get domain inequality constraints
   vector_t h;
@@ -113,12 +118,12 @@ void FrankWolfeDescentDirection::setupLP(const vector_t& parameter, const vector
   nlpConstraintsPtr->getLinearInequalityConstraintDerivative(dhdx);
   if (h.size() > 0 && dhdx.cols() != parameterDim)
     throw std::runtime_error(
-        "calculateLinearInequalityConstraint: The number of columns of Jacobian matrix "
-        "should be equal to the number of parameters.");
+      "calculateLinearInequalityConstraint: The number of columns of Jacobian matrix "
+      "should be equal to the number of parameters.");
   if (h.size() > 0 && dhdx.rows() != h.rows())
     throw std::runtime_error(
-        "calculateLinearInequalityConstraint: The number of rows of Jacobian matrix "
-        "should be equal to the number of inequality constraints.");
+      "calculateLinearInequalityConstraint: The number of rows of Jacobian matrix "
+      "should be equal to the number of inequality constraints.");
 
   // set the total number of constraint limits
   glp_add_rows(lpPtr_.get(), g.size() + h.size());
@@ -151,15 +156,19 @@ void FrankWolfeDescentDirection::setupLP(const vector_t& parameter, const vector
   }
 
   // set the constraint coefficients
-  glp_load_matrix(lpPtr_.get(), g.size() + h.size(), xIndices.data(), yIndices.data(), values.data());
+  glp_load_matrix(
+    lpPtr_.get(), g.size() + h.size(), xIndices.data(), yIndices.data(), values.data());
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void FrankWolfeDescentDirection::run(const vector_t& parameter, const vector_t& gradient, const vector_t& maxGradientInverse,
-                                     NLP_Constraints* nlpConstraintsPtr, vector_t& fwDescentDirection) {
-  if (gradient.size() != parameter.size()) throw std::runtime_error("The gradient vector size is incompatible to the parameter size.");
+void FrankWolfeDescentDirection::run(
+  const vector_t & parameter, const vector_t & gradient, const vector_t & maxGradientInverse,
+  NLP_Constraints * nlpConstraintsPtr, vector_t & fwDescentDirection)
+{
+  if (gradient.size() != parameter.size())
+    throw std::runtime_error("The gradient vector size is incompatible to the parameter size.");
   if (maxGradientInverse.size() != gradient.size())
     throw std::runtime_error("The gradient limit size is incompatible to the gradient size.");
 
@@ -174,10 +183,12 @@ void FrankWolfeDescentDirection::run(const vector_t& parameter, const vector_t& 
 
   // get the solution
   fwDescentDirection.resize(parameter.size());
-  for (size_t i = 0; i < parameter.size(); i++) fwDescentDirection(i) = glp_get_col_prim(lpPtr_.get(), i + 1);
+  for (size_t i = 0; i < parameter.size(); i++)
+    fwDescentDirection(i) = glp_get_col_prim(lpPtr_.get(), i + 1);
 
   // test
-  if (gradient.dot(fwDescentDirection) > 0) throw std::runtime_error("Frank-Wolfe does not produce a descent direction.");
+  if (gradient.dot(fwDescentDirection) > 0)
+    throw std::runtime_error("Frank-Wolfe does not produce a descent direction.");
 }
 
 }  // namespace ocs2

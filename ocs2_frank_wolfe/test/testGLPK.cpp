@@ -27,14 +27,14 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+#include <glpk.h>
 #include <gtest/gtest.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <glpk.h>
-
-TEST(testGLPK, glpk) {
-  glp_prob* lp;
+TEST(testGLPK, glpk)
+{
+  glp_prob * lp;
   int ia[1 + 1000], ja[1 + 1000];
   double ar[1 + 1000], z, x1, x2, x3;
   lp = glp_create_prob();

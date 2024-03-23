@@ -28,40 +28,49 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
 #include <gtest/gtest.h>
+
 #include <iostream>
 
-#include "ocs2_frank_wolfe/GradientDescent.h"
+#include "ocs2_frank_wolfe/GradientDescent.hpp"
 
 using namespace ocs2;
 
-class QuadraticCost final : public NLP_Cost {
- public:
+class QuadraticCost final : public NLP_Cost
+{
+public:
   QuadraticCost() = default;
   ~QuadraticCost() = default;
 
-  size_t setCurrentParameter(const vector_t& x) override {
+  size_t setCurrentParameter(const vector_t & x) override
+  {
     x_ = x;
     return 0;
   }
 
-  bool getCost(size_t id, scalar_t& f) override {
+  bool getCost(size_t id, scalar_t & f) override
+  {
     f = 0.5 * x_.dot(x_);
     return true;
   }
 
-  void getCostDerivative(size_t id, vector_t& g) override { g = x_; }
+  void getCostDerivative(size_t id, vector_t & g) override { g = x_; }
 
-  void getCostSecondDerivative(size_t id, matrix_t& H) override { H.setIdentity(x_.size(), x_.size()); }
+  void getCostSecondDerivative(size_t id, matrix_t & H) override
+  {
+    H.setIdentity(x_.size(), x_.size());
+  }
 
   void clearCache() override {}
 
- private:
+private:
   vector_t x_;
 };
 
-class QuadraticConstraints final : public NLP_Constraints {
- public:
-  QuadraticConstraints(vector_t minX, vector_t maxX) {
+class QuadraticConstraints final : public NLP_Constraints
+{
+public:
+  QuadraticConstraints(vector_t minX, vector_t maxX)
+  {
     size_t numParameters = maxX.size();
 
     Cm_.resize(2 * numParameters, numParameters);
@@ -76,19 +85,20 @@ class QuadraticConstraints final : public NLP_Constraints {
 
   ~QuadraticConstraints() = default;
 
-  void setCurrentParameter(const vector_t& x) override { x_ = x; }
+  void setCurrentParameter(const vector_t & x) override { x_ = x; }
 
-  void getLinearInequalityConstraint(vector_t& h) override { h = Cm_ * x_ + Dv_; }
+  void getLinearInequalityConstraint(vector_t & h) override { h = Cm_ * x_ + Dv_; }
 
-  void getLinearInequalityConstraintDerivative(matrix_t& dhdx) override { dhdx = Cm_; }
+  void getLinearInequalityConstraintDerivative(matrix_t & dhdx) override { dhdx = Cm_; }
 
- private:
+private:
   vector_t x_;
   matrix_t Cm_;
   vector_t Dv_;
 };
 
-TEST(QuadraticTest, QuadraticTest) {
+TEST(QuadraticTest, QuadraticTest)
+{
   NLP_Settings nlpSettings;
   nlpSettings.displayInfo_ = true;
   nlpSettings.maxIterations_ = 500;
@@ -104,7 +114,8 @@ TEST(QuadraticTest, QuadraticTest) {
   vector_t minX = Eigen::Vector2d(1.0, 1.0);
   std::unique_ptr<QuadraticConstraints> constraintsPtr(new QuadraticConstraints(minX, maxX));
 
-  Eigen::Vector2d initParameters = 0.5 * (maxX + minX) + 0.5 * (maxX - minX).cwiseProduct(Eigen::Vector2d::Random());
+  Eigen::Vector2d initParameters =
+    0.5 * (maxX + minX) + 0.5 * (maxX - minX).cwiseProduct(Eigen::Vector2d::Random());
   nlpSolver.run(initParameters, 0.1 * Eigen::Vector2d::Ones(), costPtr.get(), constraintsPtr.get());
 
   double cost;
@@ -118,5 +129,6 @@ TEST(QuadraticTest, QuadraticTest) {
   const double optimalCost = 1.0;
   const Eigen::Vector2d optimalParameters = Eigen::Vector2d::Ones();
 
-  ASSERT_NEAR(cost, optimalCost, nlpSettings.minRelCost_) << "MESSAGE: Frank_Wolfe failed in the Quadratic test!";
+  ASSERT_NEAR(cost, optimalCost, nlpSettings.minRelCost_)
+    << "MESSAGE: Frank_Wolfe failed in the Quadratic test!";
 }

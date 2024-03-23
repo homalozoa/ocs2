@@ -29,62 +29,43 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <ocs2_core/Types.h>
+#include <iostream>
 
-namespace ocs2 {
+namespace ocs2
+{
 
 /**
- * This class is an interface to a NLP cost.
+ * This structure contains the settings for the gradient-descent algorithm.
  */
-class NLP_Cost {
- public:
-  /**
-   * Default constructor.
-   */
-  NLP_Cost() = default;
+class NLP_Settings
+{
+public:
+  NLP_Settings()
+  : displayInfo_(true),
+    maxIterations_(1000),
+    minRelCost_(1e-6),
+    maxLearningRate_(1.0),
+    minLearningRate_(0.05),
+    useAscendingLineSearchNLP_(true)
+  {
+  }
 
+  /** This value determines to display the log output.*/
+  bool displayInfo_;
+  /** This value determines the maximum number of algorithm iterations.*/
+  size_t maxIterations_;
+  /** This value determines the termination condition based on the minimum relative changes of the cost.*/
+  double minRelCost_;
+  /** This value determines the maximum step size for the line search scheme.*/
+  double maxLearningRate_;
+  /** This value determines the minimum step size for the line search scheme.*/
+  double minLearningRate_;
   /**
-   * Default destructor.
-   */
-  virtual ~NLP_Cost() = default;
-
-  /**
-   * Sets the current parameter vector.
-   *
-   * @param [in] x: The value of parameter vector.
-   * @return id: It returns a number which identifies the cached data.
-   */
-  virtual size_t setCurrentParameter(const vector_t& x) = 0;
-
-  /**
-   * Gets the cost value.
-   *
-   * @param [in] id: The ID of the cached data.
-   * @param [out] f: The value of the cost.
-   * @return status: whether the cost computation was successful.
-   */
-  virtual bool getCost(size_t id, scalar_t& f) = 0;
-
-  /**
-   * Gets the gradient of the cost w.r.t. parameter vector.
-   *
-   * @param [in] id: The ID of the cached data.
-   * @param [out] g: The gradient of the cost.
-   */
-  virtual void getCostDerivative(size_t id, vector_t& g) = 0;
-
-  /**
-   * Gets the Hessian of the cost w.r.t. parameter vector.
-   *
-   * @param [in] id: The ID of the cached data.
-   * @param [out] H: The Hessian of the cost.
-   */
-  virtual void getCostSecondDerivative(size_t id, matrix_t& H) = 0;
-
-  /**
-   * Clears the cache.
-   */
-  virtual void clearCache() = 0;
+   * This value determines the line search scheme to be used. \n
+   * - \b Ascending: The step size eventually increases from the minimum value to the maximum. \n
+   * - \b Descending: The step size eventually decreases from the minimum value to the maximum.
+   * */
+  bool useAscendingLineSearchNLP_;
 };
 
 }  // namespace ocs2

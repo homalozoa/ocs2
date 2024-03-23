@@ -34,19 +34,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // GNU Linear Programming Kit
 #include <glpk.h>
 
-#include <ocs2_core/Types.h>
-#include <ocs2_core/misc/Numerics.h>
-#include <ocs2_frank_wolfe/NLP_Constraints.h>
+#include "ocs2_core/Types.hpp"
+#include "ocs2_core/misc/Numerics.hpp"
+#include "ocs2_frank_wolfe/NLP_Constraints.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
 /**
  * This class implements the Frank-Wolfe algorithm for computing the descent direction
  * respecting linear equalities and inequalities. For more discussion on this
  * algorithm, the reader should refer to \cite jaggi13 .
  */
-class FrankWolfeDescentDirection {
- public:
+class FrankWolfeDescentDirection
+{
+public:
   /**
    * Constructor.
    *
@@ -74,10 +76,11 @@ class FrankWolfeDescentDirection {
    * @param [in] nlpConstraintsPtr: A pointer to the NLP constraints.
    * @param [out] fwDescentDirection: The Frank-Wolfe descent direction at the current parameter vector.
    */
-  void run(const vector_t& parameter, const vector_t& gradient, const vector_t& maxGradientInverse, NLP_Constraints* nlpConstraintsPtr,
-           vector_t& fwDescentDirection);
+  void run(
+    const vector_t & parameter, const vector_t & gradient, const vector_t & maxGradientInverse,
+    NLP_Constraints * nlpConstraintsPtr, vector_t & fwDescentDirection);
 
- private:
+private:
   /**
    * Instantiates GLPK solver
    */
@@ -91,12 +94,14 @@ class FrankWolfeDescentDirection {
    * @param [in] maxGradientInverse: descent directions element-wise maximum inverse, \f$ e_v \f$.
    * @param [in] nlpConstraintsPtr: A pointer to the NLP constraints.
    */
-  void setupLP(const vector_t& parameter, const vector_t& gradient, const vector_t& maxGradientInverse, NLP_Constraints* nlpConstraintsPtr);
+  void setupLP(
+    const vector_t & parameter, const vector_t & gradient, const vector_t & maxGradientInverse,
+    NLP_Constraints * nlpConstraintsPtr);
 
   /***********
    * Variables
    **********/
-  std::unique_ptr<glp_prob, void (*)(glp_prob*)> lpPtr_;
+  std::unique_ptr<glp_prob, void (*)(glp_prob *)> lpPtr_;
   std::unique_ptr<glp_smcp> lpOptionsPtr_;
 };
 

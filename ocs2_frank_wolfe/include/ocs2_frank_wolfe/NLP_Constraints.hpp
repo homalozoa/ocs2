@@ -29,15 +29,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <ocs2_core/Types.h>
+#include "ocs2_core/Types.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
 /**
  * This class is an interface to a NLP constraints.
  */
-class NLP_Constraints {
- public:
+class NLP_Constraints
+{
+public:
   /**
    * Default constructor.
    */
@@ -53,7 +55,7 @@ class NLP_Constraints {
    *
    * @param [in] x: The value of parameter vector.
    */
-  virtual void setCurrentParameter(const vector_t& x) {}
+  virtual void setCurrentParameter(const vector_t & x) {}
 
   /**
    * Gets the linear equality constraints. \n
@@ -61,7 +63,7 @@ class NLP_Constraints {
    *
    * @param [out] g: The evaluation of the equality constraints, \f$ g_v \f$ vector.
    */
-  virtual void getLinearEqualityConstraint(vector_t& g) { g.resize(0); }
+  virtual void getLinearEqualityConstraint(vector_t & g) { g.resize(0); }
 
   /**
    * Gets the derivative of the linear equality constraints. \n
@@ -69,7 +71,7 @@ class NLP_Constraints {
    *
    * @param [out] dgdx: The Jacobian of the equality constraints, \f$ A_m \f$ vector.
    */
-  virtual void getLinearEqualityConstraintDerivative(matrix_t& dgdx) { dgdx.resize(0, 0); }
+  virtual void getLinearEqualityConstraintDerivative(matrix_t & dgdx) { dgdx.resize(0, 0); }
 
   /**
    * Gets the linear inequality constraints. \n
@@ -77,7 +79,7 @@ class NLP_Constraints {
    *
    * @param [out] h: The evaluation of the inequality constraints, \f$ h_v \f$ vector.
    */
-  virtual void getLinearInequalityConstraint(vector_t& h) { h.resize(0); }
+  virtual void getLinearInequalityConstraint(vector_t & h) { h.resize(0); }
 
   /**
    * Gets the derivative of the linear inequality constraints. \n
@@ -85,7 +87,7 @@ class NLP_Constraints {
    *
    * @param [out] dhdx: The Jacobian of the inequality constraints, \f$ C_m \f$ vector.
    */
-  virtual void getLinearInequalityConstraintDerivative(matrix_t& dhdx) { dhdx.resize(0, 0); }
+  virtual void getLinearInequalityConstraintDerivative(matrix_t & dhdx) { dhdx.resize(0, 0); }
 };
 
 }  // namespace ocs2

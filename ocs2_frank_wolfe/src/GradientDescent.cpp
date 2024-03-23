@@ -27,60 +27,61 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <ocs2_frank_wolfe/GradientDescent.h>
+#include "ocs2_frank_wolfe/GradientDescent.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-GradientDescent::GradientDescent(const NLP_Settings& nlpSettings)
+GradientDescent::GradientDescent(const NLP_Settings & nlpSettings)
 
-    : nlpSettings_(nlpSettings), frankWolfeDescentDirectionPtr_(new FrankWolfeDescentDirection(nlpSettings.displayInfo_)) {
+: nlpSettings_(nlpSettings),
+  frankWolfeDescentDirectionPtr_(new FrankWolfeDescentDirection(nlpSettings.displayInfo_))
+{
   CleanFmtDisplay_ = Eigen::IOFormat(3, 0, ", ", "\n", "[", "]");
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void GradientDescent::getCost(scalar_t& cost) const {
-  cost = optimizedCost_;
-}
+void GradientDescent::getCost(scalar_t & cost) const { cost = optimizedCost_; }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void GradientDescent::getParameters(vector_t& parameters) const {
+void GradientDescent::getParameters(vector_t & parameters) const
+{
   parameters = optimizedParameters_;
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void GradientDescent::getIterationsLog(scalar_array_t& iterationCost) const {
+void GradientDescent::getIterationsLog(scalar_array_t & iterationCost) const
+{
   iterationCost = iterationCost_;
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void GradientDescent::optimalSolutionID(size_t& optimizedID) const {
-  optimizedID = optimizedID_;
-}
+void GradientDescent::optimalSolutionID(size_t & optimizedID) const { optimizedID = optimizedID_; }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-NLP_Settings& GradientDescent::nlpSettings() {
-  return nlpSettings_;
-}
+NLP_Settings & GradientDescent::nlpSettings() { return nlpSettings_; }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void GradientDescent::lineSearch(const vector_t& parameters, const vector_t& gradient, NLP_Cost* costPtr, NLP_Constraints* constraintsPtr,
-                                 vector_t& optimizedParameters, scalar_t& optimizedCost, size_t& optimizedID,
-                                 scalar_t& optimizedLearningRate) {
+void GradientDescent::lineSearch(
+  const vector_t & parameters, const vector_t & gradient, NLP_Cost * costPtr,
+  NLP_Constraints * constraintsPtr, vector_t & optimizedParameters, scalar_t & optimizedCost,
+  size_t & optimizedID, scalar_t & optimizedLearningRate)
+{
   scalar_t learningRate, contractionRate;
   if (nlpSettings_.useAscendingLineSearchNLP_ == true) {
     learningRate = nlpSettings_.minLearningRate_;
@@ -168,15 +169,18 @@ void GradientDescent::lineSearch(const vector_t& parameters, const vector_t& gra
   }  // end of while loop
 
   if (nlpSettings_.displayInfo_) {
-    std::cerr << "Line search terminates with learning rate: " << optimizedLearningRate << std::endl;
+    std::cerr << "Line search terminates with learning rate: " << optimizedLearningRate
+              << std::endl;
   }
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void GradientDescent::run(const vector_t& initParameters, const vector_t& maxGradientInverse, NLP_Cost* costPtr,
-                          NLP_Constraints* constraintsPtr /* = nullptr*/) {
+void GradientDescent::run(
+  const vector_t & initParameters, const vector_t & maxGradientInverse, NLP_Cost * costPtr,
+  NLP_Constraints * constraintsPtr /* = nullptr*/)
+{
   // display
   if (nlpSettings_.displayInfo_) {
     std::cerr << "\n++++++++++++++++++++++++++++++++++++++++++++++++++++++";
@@ -205,7 +209,8 @@ void GradientDescent::run(const vector_t& initParameters, const vector_t& maxGra
 
   if (nlpSettings_.displayInfo_) {
     std::cerr << "cost:         " << optimizedCost_ << '\n';
-    std::cerr << "parameters:   " << optimizedParameters_.transpose().format(CleanFmtDisplay_) << '\n';
+    std::cerr << "parameters:   " << optimizedParameters_.transpose().format(CleanFmtDisplay_)
+              << '\n';
   }
 
   size_t iteration = 0;
@@ -223,34 +228,41 @@ void GradientDescent::run(const vector_t& initParameters, const vector_t& maxGra
     scalar_t cachedCost = optimizedCost_;
     costPtr->getCostDerivative(optimizedID_, optimizedGradient_);
     if (nlpSettings_.displayInfo_) {
-      std::cerr << "Gradient:             " << optimizedGradient_.transpose().format(CleanFmtDisplay_) << '\n';
+      std::cerr << "Gradient:             "
+                << optimizedGradient_.transpose().format(CleanFmtDisplay_) << '\n';
     }
 
     // compute the projected gradient
     if (constraintsPtr) {
       vector_t fwDescentDirection;
-      frankWolfeDescentDirectionPtr_->run(optimizedParameters_, optimizedGradient_, maxGradientInverse, constraintsPtr, fwDescentDirection);
+      frankWolfeDescentDirectionPtr_->run(
+        optimizedParameters_, optimizedGradient_, maxGradientInverse, constraintsPtr,
+        fwDescentDirection);
       optimizedGradient_ = -fwDescentDirection;
       // display
       if (nlpSettings_.displayInfo_) {
-        std::cerr << "Frank-Wolfe gradient: " << optimizedGradient_.transpose().format(CleanFmtDisplay_) << '\n';
+        std::cerr << "Frank-Wolfe gradient: "
+                  << optimizedGradient_.transpose().format(CleanFmtDisplay_) << '\n';
       }
     }
 
     // line search
-    lineSearch(optimizedParameters_, optimizedGradient_, costPtr, constraintsPtr, optimizedParameters_, optimizedCost_, optimizedID_,
-               optimizedLearningRate);
+    lineSearch(
+      optimizedParameters_, optimizedGradient_, costPtr, constraintsPtr, optimizedParameters_,
+      optimizedCost_, optimizedID_, optimizedLearningRate);
 
     // loop variables
     relCost = std::fabs(optimizedCost_ - cachedCost);
-    isCostFunctionConverged = (optimizedLearningRate == 0) || optimizedGradient_.isZero() || (relCost < nlpSettings_.minRelCost_);
+    isCostFunctionConverged = (optimizedLearningRate == 0) || optimizedGradient_.isZero() ||
+                              (relCost < nlpSettings_.minRelCost_);
     iterationCost_.push_back(optimizedCost_);
     iteration++;
 
     // display
     if (nlpSettings_.displayInfo_) {
       std::cerr << "cost:         " << optimizedCost_ << '\n';
-      std::cerr << "parameters:   " << optimizedParameters_.transpose().format(CleanFmtDisplay_) << '\n';
+      std::cerr << "parameters:   " << optimizedParameters_.transpose().format(CleanFmtDisplay_)
+                << '\n';
       std::cerr << "solution ID:  " << optimizedID_ << '\n';
     }
 
@@ -267,7 +279,8 @@ void GradientDescent::run(const vector_t& initParameters, const vector_t& maxGra
       } else if (optimizedLearningRate == 0) {
         std::cerr << "NLP successfully terminates as learningRate reduced to zero.\n";
       } else {
-        std::cerr << "NLP successfully terminates as cost relative change (relCost=" << relCost << ") reached to the minimum value.\n";
+        std::cerr << "NLP successfully terminates as cost relative change (relCost=" << relCost
+                  << ") reached to the minimum value.\n";
       }
     } else {
       std::cerr << "Maximum number of iterations has reached.\n";
