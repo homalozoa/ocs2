@@ -142,8 +142,8 @@ inline TrajectorySpreading::Status trajectorySpread(
   const auto status =
     trajectorySpreading.set(oldModeSchedule, newModeSchedule, primalSolution.timeTrajectory_);
 
-  // adjust modeSchedule, state, input, time, postEventIndices
-  primalSolution.modeSchedule_ = newModeSchedule;
+  // adjust mode_schedule, state, input, time, postEventIndices
+  primalSolution.mode_schedule_ = newModeSchedule;
   trajectorySpreading.adjustTrajectory(primalSolution.stateTrajectory_);
   trajectorySpreading.adjustTrajectory(primalSolution.inputTrajectory_);
   trajectorySpreading.adjustTimeTrajectory(primalSolution.timeTrajectory_);

@@ -27,11 +27,13 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_centroidal_model/CentroidalModelInfo.h"
+#include "ocs2_centroidal_model/CentroidalModelInfo.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
-std::string toString(CentroidalModelType type) {
+std::string toString(CentroidalModelType type)
+{
   switch (type) {
     case CentroidalModelType::FullCentroidalDynamics:
       return "FullCentroidalDynamics";
@@ -42,14 +44,16 @@ std::string toString(CentroidalModelType type) {
   }
 }
 
-std::ostream& operator<<(std::ostream& os, CentroidalModelType type) {
+std::ostream & operator<<(std::ostream & os, CentroidalModelType type)
+{
   os << toString(type);
   return os;
 }
 
 template <>
 template <>
-CentroidalModelInfoCppAd CentroidalModelInfo::toCppAd() const {
+CentroidalModelInfoCppAd CentroidalModelInfo::toCppAd() const
+{
   CentroidalModelInfoCppAd cppAdInfo;
 
   cppAdInfo.centroidalModelType = this->centroidalModelType;

@@ -39,12 +39,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace ocs2 {
 namespace legged_robot {
 
-vector_t LeggedRobotMpcnetDefinition::getObservation(scalar_t t, const vector_t& x, const ModeSchedule& modeSchedule,
+vector_t LeggedRobotMpcnetDefinition::getObservation(scalar_t t, const vector_t& x, const ModeSchedule& mode_schedule,
                                                      const TargetTrajectories& targetTrajectories) {
   /**
    * generalized time
    */
-  const feet_array_t<LegPhase> swingPhasePerLeg = getSwingPhasePerLeg(t, modeSchedule);
+  const feet_array_t<LegPhase> swingPhasePerLeg = getSwingPhasePerLeg(t, mode_schedule);
   vector_t generalizedTime(3 * swingPhasePerLeg.size());
   // phase
   for (int i = 0; i < swingPhasePerLeg.size(); i++) {
@@ -88,7 +88,7 @@ vector_t LeggedRobotMpcnetDefinition::getObservation(scalar_t t, const vector_t&
 }
 
 std::pair<matrix_t, vector_t> LeggedRobotMpcnetDefinition::getActionTransformation(scalar_t t, const vector_t& x,
-                                                                                   const ModeSchedule& modeSchedule,
+                                                                                   const ModeSchedule& mode_schedule,
                                                                                    const TargetTrajectories& targetTrajectories) {
   const matrix3_t R = getRotationMatrixFromZyxEulerAngles<scalar_t>(x.segment<3>(9));
   matrix_t actionTransformationMatrix = matrix_t::Identity(24, 24);
@@ -97,12 +97,12 @@ std::pair<matrix_t, vector_t> LeggedRobotMpcnetDefinition::getActionTransformati
   actionTransformationMatrix.block<3, 3>(6, 6) = R;
   actionTransformationMatrix.block<3, 3>(9, 9) = R;
   // TODO(areske): check why less robust with weight compensating bias?
-  // const auto contactFlags = modeNumber2StanceLeg(modeSchedule.modeAtTime(t));
+  // const auto contactFlags = modeNumber2StanceLeg(mode_schedule.modeAtTime(t));
   // const vector_t actionTransformationVector = weightCompensatingInput(centroidalModelInfo_, contactFlags);
   return {actionTransformationMatrix, vector_t::Zero(24)};
 }
 
-bool LeggedRobotMpcnetDefinition::isValid(scalar_t t, const vector_t& x, const ModeSchedule& modeSchedule,
+bool LeggedRobotMpcnetDefinition::isValid(scalar_t t, const vector_t& x, const ModeSchedule& mode_schedule,
                                           const TargetTrajectories& targetTrajectories) {
   const vector_t deviation = x - defaultState_;
   if (std::abs(deviation[8]) > allowedHeightDeviation_) {

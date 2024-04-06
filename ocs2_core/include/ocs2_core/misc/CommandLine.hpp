@@ -1,3 +1,4 @@
+// Copyright 2024 Homalozoa. All rights reserved.
 // Copyright 2020 Farbod Farshidian. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -45,7 +46,7 @@ namespace ocs2
  * @praram [in] shouldTerminate: A function signals termination of the line reading thread. For example, one
  * can use this to terminate if the rosmaster is stopped.
  */
-inline std::string getCommandLineString(bool (*shouldTerminate)() = []() { return false; })
+inline std::string get_cmdline_str(bool (*shouldTerminate)() = []() { return false; })
 {
   // Set up a thread to read user inputs
   std::string line{""};
@@ -74,7 +75,7 @@ inline std::string getCommandLineString(bool (*shouldTerminate)() = []() { retur
 /**
  * Transforms a line of words to a vector of words.
  */
-inline std::vector<std::string> stringToWords(const std::string & str)
+inline std::vector<std::string> str_to_words(const std::string & str)
 {
   std::istringstream iss(str);
   std::vector<std::string> words{

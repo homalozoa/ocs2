@@ -21,12 +21,12 @@ defaultJointState
 
 initialModeSchedule
 {
-  modeSequence
+  mode_sequence
   {
     [0]  STANCE
     [1]  STANCE
   }
-  eventTimes
+  event_times
   {
     [0]  0.5
   }
@@ -34,7 +34,7 @@ initialModeSchedule
 
 defaultModeSequenceTemplate
 {
-  modeSequence
+  mode_sequence
   {
     [0]  STANCE
   }

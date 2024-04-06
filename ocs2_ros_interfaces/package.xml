@@ -1,29 +1,44 @@
 <?xml version="1.0"?>
-
-<package format="2">
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
 
   <name>ocs2_ros_interfaces</name>
   <version>0.0.0</version>
   <description>The ocs2 communication interfaces to ROS</description>
 
-  <license>TODO</license>
   <maintainer email="farbod.farshidian@gmail.com">Farbod Farshidian</maintainer>
   <maintainer email="jcarius@ethz.ch">Jan Carius</maintainer>
   <maintainer email="rgrandia@ethz.ch">Ruben Grandia</maintainer>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <license>BSD-3-Clause</license>
 
-  <build_depend>cmake_modules</build_depend>
-  <build_depend>cmake_clang_tools</build_depend>
+  <buildtool_depend>ament_cmake_auto</buildtool_depend>
+  <buildtool_depend>eigen3_cmake_module</buildtool_depend>
 
-  <depend>roscpp</depend>
+  <build_depend>ocs2_compiler_options</build_depend>
+
+  <depend>eigen</depend>
   <depend>ocs2_msgs</depend>
   <depend>ocs2_core</depend>
   <depend>ocs2_mpc</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
   <depend>std_msgs</depend>
   <depend>visualization_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>interactive_markers</depend>
-  <exec_depend>rqt_multiplot</exec_depend>
 
+  <!-- <exec_depend>rqt_multiplot</exec_depend> -->
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_cmake_clang_format</test_depend>
+  <test_depend>ament_cmake_copyright</test_depend>
+  <test_depend>ament_cmake_cppcheck</test_depend>
+  <test_depend>ament_cmake_cpplint</test_depend>
+  <test_depend>ament_cmake_lint_cmake</test_depend>
+  <test_depend>ament_cmake_xmllint</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 </package>

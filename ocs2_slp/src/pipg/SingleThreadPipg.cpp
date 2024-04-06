@@ -27,17 +27,21 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_slp/pipg/SingleThreadPipg.h"
+#include "ocs2_slp/pipg/SingleThreadPipg.hpp"
 
 #include <iostream>
 #include <numeric>
 
-namespace ocs2 {
-namespace pipg {
+namespace ocs2
+{
+namespace pipg
+{
 
-SolverStatus singleThreadPipg(const pipg::Settings& settings, const Eigen::SparseMatrix<scalar_t>& H, const vector_t& h,
-                              const Eigen::SparseMatrix<scalar_t>& G, const vector_t& g, const vector_t& EInv, const PipgBounds& pipgBounds,
-                              vector_t& stackedSolution) {
+SolverStatus singleThreadPipg(
+  const pipg::Settings & settings, const Eigen::SparseMatrix<scalar_t> & H, const vector_t & h,
+  const Eigen::SparseMatrix<scalar_t> & G, const vector_t & g, const vector_t & EInv,
+  const PipgBounds & pipgBounds, vector_t & stackedSolution)
+{
   // Cold start
   vector_t z = vector_t::Zero(H.cols());
   vector_t z_old = vector_t::Zero(H.cols());
@@ -84,15 +88,17 @@ SolverStatus singleThreadPipg(const pipg::Settings& settings, const Eigen::Spars
       const vector_t z_delta = z - z_old;
       const scalar_t z_deltaNorm = z_delta.squaredNorm();
       isConverged =
-          constraintsViolationInfNorm <= settings.absoluteTolerance &&
-          (z_deltaNorm <= settings.relativeTolerance * settings.relativeTolerance * zNorm || z_deltaNorm <= settings.absoluteTolerance);
+        constraintsViolationInfNorm <= settings.absoluteTolerance &&
+        (z_deltaNorm <= settings.relativeTolerance * settings.relativeTolerance * zNorm ||
+         z_deltaNorm <= settings.absoluteTolerance);
     }
 
     ++k;
   }  // end of while loop
 
   stackedSolution.swap(z);
-  pipg::SolverStatus status = isConverged ? pipg::SolverStatus::SUCCESS : pipg::SolverStatus::MAX_ITER;
+  pipg::SolverStatus status =
+    isConverged ? pipg::SolverStatus::SUCCESS : pipg::SolverStatus::MAX_ITER;
 
   if (settings.displayShortSummary) {
     std::cerr << "\n+++++++++++++++++++++++++++++++++++++++++++++";

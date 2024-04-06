@@ -70,9 +70,9 @@ protected:
 
   std::shared_ptr<ReferenceManager> getReferenceManagerPtr() const
   {
-    const ModeSchedule modeSchedule({tGoal}, {0, 1});
+    const ModeSchedule mode_schedule({tGoal}, {0, 1});
     const TargetTrajectories targetTrajectories({tGoal}, {xGoal}, {vector_t::Zero(INPUT_DIM)});
-    return std::make_shared<ReferenceManager>(targetTrajectories, modeSchedule);
+    return std::make_shared<ReferenceManager>(targetTrajectories, mode_schedule);
   }
 
   std::unique_ptr<StateInputCost> getCostPtr() const

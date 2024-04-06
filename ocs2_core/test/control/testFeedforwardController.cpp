@@ -1,3 +1,4 @@
+// Copyright 2024 Homalozoa. All rights reserved.
 // Copyright 2020 Michael Spieler. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -25,6 +26,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
 
 #include "gtest/gtest.h"
 #include "ocs2_core/control/FeedforwardController.hpp"

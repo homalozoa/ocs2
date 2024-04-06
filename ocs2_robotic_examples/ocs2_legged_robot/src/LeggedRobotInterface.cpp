@@ -81,12 +81,12 @@ LeggedRobotInterface::LeggedRobotInterface(const std::string& taskFile, const st
   } else {
     throw std::invalid_argument("[LeggedRobotInterface] URDF file not found: " + urdfFilePath.string());
   }
-  // check that targetCommand file exists
+  // check that target_command file exists
   boost::filesystem::path referenceFilePath(referenceFile);
   if (boost::filesystem::exists(referenceFilePath)) {
     std::cerr << "[LeggedRobotInterface] Loading target command settings from: " << referenceFilePath << std::endl;
   } else {
-    throw std::invalid_argument("[LeggedRobotInterface] targetCommand file not found: " + referenceFilePath.string());
+    throw std::invalid_argument("[LeggedRobotInterface] target_command file not found: " + referenceFilePath.string());
   }
 
   bool verbose;
@@ -216,7 +216,7 @@ std::shared_ptr<GaitSchedule> LeggedRobotInterface::loadGaitSchedule(const std::
     std::for_each(defaultModeSequenceTemplate.switchingTimes.begin() + 1, defaultModeSequenceTemplate.switchingTimes.end() - 1,
                   [&](double eventTime) { gait.eventPhases.push_back(eventTime / gait.duration); });
     // Modes:
-    gait.modeSequence = defaultModeSequenceTemplate.modeSequence;
+    gait.mode_sequence = defaultModeSequenceTemplate.mode_sequence;
     return gait;
   }();
 

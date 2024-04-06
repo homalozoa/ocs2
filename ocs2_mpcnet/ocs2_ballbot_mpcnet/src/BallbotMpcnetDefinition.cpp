@@ -32,7 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace ocs2 {
 namespace ballbot {
 
-vector_t BallbotMpcnetDefinition::getObservation(scalar_t t, const vector_t& x, const ModeSchedule& modeSchedule,
+vector_t BallbotMpcnetDefinition::getObservation(scalar_t t, const vector_t& x, const ModeSchedule& mode_schedule,
                                                  const TargetTrajectories& targetTrajectories) {
   vector_t observation = x - targetTrajectories.getDesiredState(t);
   const Eigen::Matrix<scalar_t, 2, 2> R =
@@ -43,12 +43,12 @@ vector_t BallbotMpcnetDefinition::getObservation(scalar_t t, const vector_t& x, 
 }
 
 std::pair<matrix_t, vector_t> BallbotMpcnetDefinition::getActionTransformation(scalar_t t, const vector_t& x,
-                                                                               const ModeSchedule& modeSchedule,
+                                                                               const ModeSchedule& mode_schedule,
                                                                                const TargetTrajectories& targetTrajectories) {
   return {matrix_t::Identity(3, 3), vector_t::Zero(3)};
 }
 
-bool BallbotMpcnetDefinition::isValid(scalar_t t, const vector_t& x, const ModeSchedule& modeSchedule,
+bool BallbotMpcnetDefinition::isValid(scalar_t t, const vector_t& x, const ModeSchedule& mode_schedule,
                                       const TargetTrajectories& targetTrajectories) {
   return true;
 }

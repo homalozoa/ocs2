@@ -38,10 +38,10 @@ namespace mpcnet {
 void MpcnetInterfaceBase::startDataGeneration(scalar_t alpha, const std::string& policyFilePath, scalar_t timeStep, size_t dataDecimation,
                                               size_t nSamples, const matrix_t& samplingCovariance,
                                               const std::vector<SystemObservation>& initialObservations,
-                                              const std::vector<ModeSchedule>& modeSchedules,
+                                              const std::vector<ModeSchedule>& mode_schedules,
                                               const std::vector<TargetTrajectories>& targetTrajectories) {
   mpcnetRolloutManagerPtr_->startDataGeneration(alpha, policyFilePath, timeStep, dataDecimation, nSamples, samplingCovariance,
-                                                initialObservations, modeSchedules, targetTrajectories);
+                                                initialObservations, mode_schedules, targetTrajectories);
 }
 
 /******************************************************************************************************/
@@ -63,9 +63,9 @@ data_array_t MpcnetInterfaceBase::getGeneratedData() {
 /******************************************************************************************************/
 void MpcnetInterfaceBase::startPolicyEvaluation(scalar_t alpha, const std::string& policyFilePath, scalar_t timeStep,
                                                 const std::vector<SystemObservation>& initialObservations,
-                                                const std::vector<ModeSchedule>& modeSchedules,
+                                                const std::vector<ModeSchedule>& mode_schedules,
                                                 const std::vector<TargetTrajectories>& targetTrajectories) {
-  mpcnetRolloutManagerPtr_->startPolicyEvaluation(alpha, policyFilePath, timeStep, initialObservations, modeSchedules, targetTrajectories);
+  mpcnetRolloutManagerPtr_->startPolicyEvaluation(alpha, policyFilePath, timeStep, initialObservations, mode_schedules, targetTrajectories);
 }
 
 /******************************************************************************************************/

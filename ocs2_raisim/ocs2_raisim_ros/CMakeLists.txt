@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.8)
 project(ocs2_raisim_ros)
 
 # Generate compile_commands.json for clang tools
@@ -37,7 +37,8 @@ include_directories(
 add_library(${PROJECT_NAME}
   src/RaisimHeightmapRosConverter.cpp
 )
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(
+  ${PROJECT_NAME}
     ${catkin_LIBRARIES}
 )
 

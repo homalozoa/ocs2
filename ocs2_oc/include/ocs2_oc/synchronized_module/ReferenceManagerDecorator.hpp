@@ -60,13 +60,13 @@ public:
   {
     return referenceManagerPtr_->getModeSchedule();
   }
-  void setModeSchedule(const ModeSchedule & modeSchedule) override
+  void setModeSchedule(const ModeSchedule & mode_schedule) override
   {
-    referenceManagerPtr_->setModeSchedule(modeSchedule);
+    referenceManagerPtr_->setModeSchedule(mode_schedule);
   }
-  void setModeSchedule(ModeSchedule && modeSchedule) override
+  void setModeSchedule(ModeSchedule && mode_schedule) override
   {
-    referenceManagerPtr_->setModeSchedule(std::move(modeSchedule));
+    referenceManagerPtr_->setModeSchedule(std::move(mode_schedule));
   }
 
   const TargetTrajectories & getTargetTrajectories() const override

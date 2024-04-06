@@ -164,15 +164,15 @@ TEST(TestAnymalLoopshapingMotionTracking, testSensitivity) {
     observation.state.head(switched_model::STATE_DIM) =
         ocs2::LinearInterpolation::interpolate(initTime, motionData.first.timeTrajectory, motionData.first.stateTrajectory);
     observation.input = ocs2::vector_t::Zero(switched_model_loopshaping::INPUT_DIM);
-    mpcInterface.setCurrentObservation(observation);
+    mpcInterface.set_current_observation(observation);
 
     mpcInterface.getReferenceManager().setTargetTrajectories(motionData.first);
     anymalInterface->getQuadrupedInterface().getSwitchedModelModeScheduleManagerPtr()->getGaitSchedule()->setGaitAtTime(motionData.second,
                                                                                                                         initTime);
 
     // Wait for the first policy
-    mpcInterface.setCurrentObservation(observation);
-    while (!mpcInterface.initialPolicyReceived()) {
+    mpcInterface.set_current_observation(observation);
+    while (!mpcInterface.initial_policy_received()) {
       mpcInterface.advanceMpc();
     }
 
@@ -189,14 +189,14 @@ TEST(TestAnymalLoopshapingMotionTracking, testSensitivity) {
       size_t mode;
       ocs2::vector_t optimalState, optimalInput;
 
-      mpcInterface.updatePolicy();
-      mpcInterface.evaluatePolicy(time, ocs2::vector_t::Zero(switched_model_loopshaping::STATE_DIM), optimalState, optimalInput, mode);
+      mpcInterface.update_policy();
+      mpcInterface.evaluate_policy(time, ocs2::vector_t::Zero(switched_model_loopshaping::STATE_DIM), optimalState, optimalInput, mode);
 
       // use optimal state for the next observation:
       observation.time = time;
       observation.state = optimalState;
       observation.input = optimalInput;
-      mpcInterface.setCurrentObservation(observation);
+      mpcInterface.set_current_observation(observation);
 
       // Base tracking
       const auto refState = ocs2::LinearInterpolation::interpolate(time, motionData.first.timeTrajectory, motionData.first.stateTrajectory);

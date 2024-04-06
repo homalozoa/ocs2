@@ -16,7 +16,7 @@ list
 
 stance
  {
-   modeSequence
+   mode_sequence
    {
      [0]     STANCE
    }
@@ -29,7 +29,7 @@ stance
 
 trot
  {
-   modeSequence
+   mode_sequence
    {
      [0]     LF_RH
      [1]     RF_LH
@@ -44,7 +44,7 @@ trot
 
 standing_trot
 {
-  modeSequence
+  mode_sequence
   {
     [0]     LF_RH
     [1]     STANCE
@@ -63,7 +63,7 @@ standing_trot
 
 flying_trot
 {
-  modeSequence
+  mode_sequence
   {
     [0]     LF_RH
     [1]     FLY
@@ -82,7 +82,7 @@ flying_trot
 
 pace
 {
-  modeSequence
+  mode_sequence
   {
     [0]     LF_LH
     [1]     FLY
@@ -101,7 +101,7 @@ pace
 
 standing_pace
 {
-  modeSequence
+  mode_sequence
   {
     [0]     LF_LH
     [1]     STANCE
@@ -120,7 +120,7 @@ standing_pace
 
 dynamic_walk
 {
-  modeSequence
+  mode_sequence
   {
     [0]     LF_RF_RH
     [1]     RF_RH
@@ -143,7 +143,7 @@ dynamic_walk
 
 static_walk
 {
-  modeSequence
+  mode_sequence
   {
     [0]     LF_RF_RH
     [1]     RF_LH_RH
@@ -162,7 +162,7 @@ static_walk
 
 amble
 {
-  modeSequence
+  mode_sequence
   {
     [0]     RF_LH
     [1]     LF_LH
@@ -181,7 +181,7 @@ amble
 
 lindyhop
 {
-  modeSequence
+  mode_sequence
   {
     [0]     LF_RH
     [1]     STANCE
@@ -216,7 +216,7 @@ lindyhop
 
 skipping
 {
-  modeSequence
+  mode_sequence
   {
     [0]     LF_RH
     [1]     FLY
@@ -243,7 +243,7 @@ skipping
 
 pawup
 {
-   modeSequence
+   mode_sequence
    {
      [0]     RF_LH_RH
    }

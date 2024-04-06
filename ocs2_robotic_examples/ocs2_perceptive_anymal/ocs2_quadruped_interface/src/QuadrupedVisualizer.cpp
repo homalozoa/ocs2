@@ -55,7 +55,7 @@ void QuadrupedVisualizer::update(const ocs2::SystemObservation& observation, con
     publishObservation(timeStamp, observation);
     publishDesiredTrajectory(timeStamp, command.mpcTargetTrajectories_);
     publishOptimizedStateTrajectory(timeStamp, primalSolution.timeTrajectory_, primalSolution.stateTrajectory_,
-                                    primalSolution.modeSchedule_);
+                                    primalSolution.mode_schedule_);
     lastTime_ = observation.time;
   }
 }
@@ -228,7 +228,7 @@ void QuadrupedVisualizer::publishDesiredTrajectory(ros::Time timeStamp, const oc
 
 void QuadrupedVisualizer::publishOptimizedStateTrajectory(ros::Time timeStamp, const scalar_array_t& mpcTimeTrajectory,
                                                           const vector_array_t& mpcStateTrajectory,
-                                                          const ocs2::ModeSchedule& modeSchedule) const {
+                                                          const ocs2::ModeSchedule& mode_schedule) const {
   if (mpcTimeTrajectory.empty() || mpcStateTrajectory.empty()) {
     return;  // Nothing to publish
   }
@@ -287,15 +287,15 @@ void QuadrupedVisualizer::publishOptimizedStateTrajectory(ros::Time timeStamp, c
   sphereList.scale.z = footMarkerDiameter_;
   sphereList.ns = "Future footholds";
   sphereList.pose.orientation = ocs2::getOrientationMsg({1., 0., 0., 0.});
-  const auto& eventTimes = modeSchedule.eventTimes;
-  const auto& subsystemSequence = modeSchedule.modeSequence;
+  const auto& event_times = mode_schedule.event_times;
+  const auto& subsystemSequence = mode_schedule.mode_sequence;
   const double tStart = mpcTimeTrajectory.front();
   const double tEnd = mpcTimeTrajectory.back();
-  for (int event = 0; event < eventTimes.size(); ++event) {
-    if (tStart < eventTimes[event] && eventTimes[event] < tEnd) {  // Only publish future footholds within the optimized horizon
+  for (int event = 0; event < event_times.size(); ++event) {
+    if (tStart < event_times[event] && event_times[event] < tEnd) {  // Only publish future footholds within the optimized horizon
       const auto preEventContactFlags = modeNumber2StanceLeg(subsystemSequence[event]);
       const auto postEventContactFlags = modeNumber2StanceLeg(subsystemSequence[event + 1]);
-      const vector_t postEventState = ocs2::LinearInterpolation::interpolate(eventTimes[event], mpcTimeTrajectory, mpcStateTrajectory);
+      const vector_t postEventState = ocs2::LinearInterpolation::interpolate(event_times[event], mpcTimeTrajectory, mpcStateTrajectory);
       const state_vector_t postEventSwitchedState = postEventState.head(STATE_DIM);
       const base_coordinate_t basePose = getBasePose(postEventSwitchedState);
       const joint_coordinate_t qJoints = getJointPositions(postEventSwitchedState);

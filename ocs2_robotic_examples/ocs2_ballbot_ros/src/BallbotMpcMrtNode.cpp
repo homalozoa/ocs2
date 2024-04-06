@@ -101,7 +101,7 @@ int main(int argc, char** argv) {
 
   // Create the MPC MRT Interface
   ocs2::MPC_MRT_Interface mpcMrtInterface(mpc);
-  mpcMrtInterface.initRollout(&ballbotInterface.getRollout());
+  mpcMrtInterface.init_rollout(&ballbotInterface.getRollout());
 
   /*
    * Initialize the simulation and controller
@@ -118,9 +118,9 @@ int main(int argc, char** argv) {
 
   // Set the first observation and command and wait for optimization to finish
   ROS_INFO_STREAM("Waiting for the initial policy ...");
-  mpcMrtInterface.setCurrentObservation(initObservation);
+  mpcMrtInterface.set_current_observation(initObservation);
   mpcMrtInterface.getReferenceManager().setTargetTrajectories(initTargetTrajectories);
-  while (!mpcMrtInterface.initialPolicyReceived() && ros::ok() && ros::master::check()) {
+  while (!mpcMrtInterface.initial_policy_received() && ros::ok() && ros::master::check()) {
     mpcMrtInterface.advanceMpc();
     ros::WallRate(ballbotInterface.mpcSettings().mrtDesiredFrequency_).sleep();
   }
@@ -170,14 +170,14 @@ int main(int argc, char** argv) {
           const auto dt = 1.0 / ballbotInterface.mpcSettings().mrtDesiredFrequency_;
           ocs2::SystemObservation nextObservation;
           nextObservation.time = currentObservation.time + dt;
-          mpcMrtInterface.rolloutPolicy(currentObservation.time, currentObservation.state, dt, nextObservation.state, nextObservation.input,
+          mpcMrtInterface.rollout_policy(currentObservation.time, currentObservation.state, dt, nextObservation.state, nextObservation.input,
                                         nextObservation.mode);
 
           // "state estimation"
           currentObservation = nextObservation;
 
           // Visualization
-          ballbotDummyVisualization.update(currentObservation, mpcMrtInterface.getPolicy(), mpcMrtInterface.getCommand());
+          ballbotDummyVisualization.update(currentObservation, mpcMrtInterface.get_policy(), mpcMrtInterface.get_command());
 
           // Publish the observation. Only needed for the command interface
           observationPublisher.publish(ocs2::ros_msg_conversions::createObservationMsg(currentObservation));
@@ -199,10 +199,10 @@ int main(int argc, char** argv) {
 
 ocs2::vector_t mpcTrackingController(const ocs2::SystemObservation& currentObservation, ocs2::MPC_MRT_Interface& mpcMrtInterface) {
   // Update the current state of the system
-  mpcMrtInterface.setCurrentObservation(currentObservation);
+  mpcMrtInterface.set_current_observation(currentObservation);
 
   // Load the latest MPC policy
-  bool policyUpdated = mpcMrtInterface.updatePolicy();
+  bool policyUpdated = mpcMrtInterface.update_policy();
   if (policyUpdated) {
     ROS_INFO_STREAM("<<< New MPC policy received at " << currentObservation.time);
   }
@@ -211,7 +211,7 @@ ocs2::vector_t mpcTrackingController(const ocs2::SystemObservation& currentObser
   ocs2::vector_t optimizedState;  // Evaluation of the optimized state trajectory.
   ocs2::vector_t optimizedInput;  // Evaluation of the optimized input trajectory.
   size_t plannedMode;             // The mode that is active at the time the policy is evaluated at.
-  mpcMrtInterface.evaluatePolicy(currentObservation.time, currentObservation.state, optimizedState, optimizedInput, plannedMode);
+  mpcMrtInterface.evaluate_policy(currentObservation.time, currentObservation.state, optimizedState, optimizedInput, plannedMode);
 
   return optimizedInput;
 }

@@ -1,3 +1,4 @@
+// Copyright 2024 Homalozoa. All rights reserved.
 // Copyright 2020 Farbod Farshidian. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -37,7 +38,7 @@
 TEST(testModeSchedule, getNumberOfPrecedingEvents)
 {
   constexpr auto eps = ocs2::numeric_traits::limitEpsilon<ocs2::scalar_t>();
-  const ocs2::scalar_array_t eventTimes{1.0, 2.0, 3.0, 4.0, 5.0};
+  const ocs2::scalar_array_t event_times{1.0, 2.0, 3.0, 4.0, 5.0};
   ocs2::scalar_array_t timeTrajectory{1.5, 2.0, (2.0 + eps), 2.5, 3.0, (3.0 + eps), 3.5};
   ocs2::size_array_t postEventIndices{2, 5};
   size_t output;
@@ -99,7 +100,7 @@ TEST(testModeSchedule, getNumberOfPrecedingEvents)
 
 TEST(testModeSchedule, findIntersectionToExtendableInterval)
 {
-  const ocs2::scalar_array_t eventTimes{1.0, 2.0, 3.0, 4.0};
+  const ocs2::scalar_array_t event_times{1.0, 2.0, 3.0, 4.0};
   ocs2::scalar_array_t timeTrajectory;
   std::pair<ocs2::scalar_t, ocs2::scalar_t> timePeriod;
   std::pair<ocs2::scalar_t, ocs2::scalar_t> output;
@@ -107,64 +108,64 @@ TEST(testModeSchedule, findIntersectionToExtendableInterval)
   // empty timeTrajectory
   timeTrajectory.clear();
   timePeriod = std::make_pair(1.5, 3.0);
-  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, eventTimes, timePeriod);
+  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, event_times, timePeriod);
   EXPECT_TRUE(output.first > output.second) << "The interval should be empty!";
 
   // empty interval
   timeTrajectory.clear();
   timePeriod = std::make_pair(1.5, 1.0);
-  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, eventTimes, timePeriod);
+  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, event_times, timePeriod);
   EXPECT_TRUE(output.first > output.second) << "The interval should be empty!";
 
   // the same as timeTrajectory
   timeTrajectory = ocs2::scalar_array_t{1.5, 2.3};
   timePeriod = std::make_pair(timeTrajectory.front(), timeTrajectory.back());
-  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, eventTimes, timePeriod);
+  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, event_times, timePeriod);
   EXPECT_EQ(output.first, timeTrajectory.front());
   EXPECT_EQ(output.second, timeTrajectory.back());
 
   // with timeTrajectory
   timeTrajectory = ocs2::scalar_array_t{1.5, 2.3};
   timePeriod = std::make_pair(1.6, 2.0);
-  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, eventTimes, timePeriod);
+  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, event_times, timePeriod);
   EXPECT_EQ(output.first, 1.6);
   EXPECT_EQ(output.second, 2.0);
 
   // no intersection to timeTrajectory but its extendable interval (left hand side case)
   timeTrajectory = ocs2::scalar_array_t{2.5, 3.3};
   timePeriod = std::make_pair(1.8, 2.1);
-  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, eventTimes, timePeriod);
+  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, event_times, timePeriod);
   EXPECT_EQ(output.first, 2.0);
   EXPECT_EQ(output.second, 2.1);
 
   // no intersection to timeTrajectory but its extendable interval (right hand side case)
   timeTrajectory = ocs2::scalar_array_t{1.5, 2.3};
   timePeriod = std::make_pair(2.8, 3.8);
-  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, eventTimes, timePeriod);
+  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, event_times, timePeriod);
   EXPECT_EQ(output.first, 2.8);
   EXPECT_EQ(output.second, 3.0);
 
   // no intersection to timeTrajectory and its extendable interval (left hand side case)
   timeTrajectory = ocs2::scalar_array_t{1.5, 2.3};
   timePeriod = std::make_pair(0.0, 1.0);
-  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, eventTimes, timePeriod);
+  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, event_times, timePeriod);
   EXPECT_TRUE(output.first > output.second) << "The interval should be empty!";
 
   // no intersection to timeTrajectory and its extendable interval (right hand side case)
   timeTrajectory = ocs2::scalar_array_t{1.5, 2.3};
   timePeriod = std::make_pair(3.0, 3.8);
-  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, eventTimes, timePeriod);
+  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, event_times, timePeriod);
   EXPECT_TRUE(output.first > output.second) << "The interval should be empty!";
 
   // corner case: no intersection time trajectory end at event time (left hand side case)
   timeTrajectory = ocs2::scalar_array_t{2.0, 4.0};
   timePeriod = std::make_pair(0.0, 2.0);
-  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, eventTimes, timePeriod);
+  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, event_times, timePeriod);
   EXPECT_TRUE(output.first > output.second) << "The interval should be empty!";
 
   // corner case: no intersection time trajectory end at event time (right hand side case)
   timeTrajectory = ocs2::scalar_array_t{1.0, 3.0};
   timePeriod = std::make_pair(3.0, 4.0);
-  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, eventTimes, timePeriod);
+  output = ocs2::findIntersectionToExtendableInterval(timeTrajectory, event_times, timePeriod);
   EXPECT_TRUE(output.first > output.second) << "The interval should be empty!";
 }

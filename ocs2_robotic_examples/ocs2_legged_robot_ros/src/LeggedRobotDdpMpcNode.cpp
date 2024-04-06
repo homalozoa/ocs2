@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
     auto createStateInputBoundsObserver = [&](const std::string& termName) {
       const ocs2::scalar_array_t observingTimePoints{0.0};
       const std::vector<std::string> topicNames{"metrics/" + termName + "/0MsLookAhead"};
-      auto callback = ocs2::ros::createConstraintCallback(nodeHandle, {0.0}, topicNames,
+      auto callback = ocs2::ros::create_constraint_cb(nodeHandle, {0.0}, topicNames,
                                                           ocs2::ros::CallbackInterpolationStrategy::linear_interpolation);
       return ocs2::SolverObserver::ConstraintTermObserver(ocs2::SolverObserver::Type::Intermediate, termName, std::move(callback));
     };

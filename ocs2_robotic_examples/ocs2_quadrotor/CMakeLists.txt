@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.8)
 project(ocs2_quadrotor)
 
 # Generate compile_commands.json for clang tools
@@ -66,7 +66,8 @@ add_library(${PROJECT_NAME}
 add_dependencies(${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}
 )
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(
+  ${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
   dl
@@ -136,7 +137,8 @@ catkin_add_gtest(${PROJECT_NAME}_PyBindingsTest
 target_include_directories(${PROJECT_NAME}_PyBindingsTest
   PRIVATE ${PROJECT_BINARY_DIR}/include
 )
-target_link_libraries(${PROJECT_NAME}_PyBindingsTest
+target_link_libraries(
+  ${PROJECT_NAME}_PyBindingsTest
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}

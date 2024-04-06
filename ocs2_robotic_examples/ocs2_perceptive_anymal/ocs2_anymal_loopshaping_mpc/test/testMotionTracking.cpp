@@ -44,7 +44,7 @@ class TestAnymalLoopshapingMpc : public ::testing::Test {
     anymalInterface->getReferenceManagerPtr()->preSolverRun(initTime, finalTime, state);
   }
 
-  std::unique_ptr<ocs2::MPC_BASE> mpcPtr;
+  std::unique_ptr<ocs2::MpcBase> mpcPtr;
   std::unique_ptr<switched_model_loopshaping::QuadrupedLoopshapingInterface> anymalInterface;
   ocs2::OptimalControlProblem problem;
   ocs2::TargetTrajectories targetTrajectories;
@@ -61,18 +61,18 @@ TEST_F(TestAnymalLoopshapingMpc, trot_in_place) {
   observation.time = initTime;
   observation.state = anymalInterface->getInitialState();
   observation.input = ocs2::vector_t::Zero(switched_model_loopshaping::INPUT_DIM);
-  mpcInterface.setCurrentObservation(observation);
+  mpcInterface.set_current_observation(observation);
 
   switched_model::Gait gait;
   gait.duration = 1.0;
   gait.eventPhases = {0.45, 0.5, 0.95};
   using MN = switched_model::ModeNumber;
-  gait.modeSequence = {MN::LF_RH, MN::STANCE, MN::RF_LH, MN::STANCE};
+  gait.mode_sequence = {MN::LF_RH, MN::STANCE, MN::RF_LH, MN::STANCE};
   anymalInterface->getQuadrupedInterface().getSwitchedModelModeScheduleManagerPtr()->getGaitSchedule()->setGaitAtTime(gait, initTime);
 
   // Wait for the first policy
-  mpcInterface.setCurrentObservation(observation);
-  while (!mpcInterface.initialPolicyReceived()) {
+  mpcInterface.set_current_observation(observation);
+  while (!mpcInterface.initial_policy_received()) {
     mpcInterface.advanceMpc();
   }
 
@@ -88,15 +88,15 @@ TEST_F(TestAnymalLoopshapingMpc, trot_in_place) {
     size_t mode;
     ocs2::vector_t optimalState, optimalInput;
 
-    mpcInterface.updatePolicy();
-    std::cerr << mpcInterface.getPerformanceIndices() << "\n";
-    mpcInterface.evaluatePolicy(time, ocs2::vector_t::Zero(switched_model_loopshaping::STATE_DIM), optimalState, optimalInput, mode);
+    mpcInterface.update_policy();
+    std::cerr << mpcInterface.get_performance_indices() << "\n";
+    mpcInterface.evaluate_policy(time, ocs2::vector_t::Zero(switched_model_loopshaping::STATE_DIM), optimalState, optimalInput, mode);
 
     // use optimal state for the next observation:
     observation.time = time;
     observation.state = optimalState;
     observation.input = ocs2::vector_t::Zero(switched_model_loopshaping::INPUT_DIM);
-    mpcInterface.setCurrentObservation(observation);
+    mpcInterface.set_current_observation(observation);
   }
 
   // Check if base tracking was achieved
@@ -128,15 +128,15 @@ TEST_F(TestAnymalLoopshapingMpc, motion_tracking) {
   observation.state.head(switched_model::STATE_DIM) =
       ocs2::LinearInterpolation::interpolate(initTime, motionData.first.timeTrajectory, motionData.first.stateTrajectory);
   observation.input = ocs2::vector_t::Zero(switched_model_loopshaping::INPUT_DIM);
-  mpcInterface.setCurrentObservation(observation);
+  mpcInterface.set_current_observation(observation);
 
   mpcInterface.getReferenceManager().setTargetTrajectories(motionData.first);
   anymalInterface->getQuadrupedInterface().getSwitchedModelModeScheduleManagerPtr()->getGaitSchedule()->setGaitAtTime(motionData.second,
                                                                                                                       initTime);
 
   // Wait for the first policy
-  mpcInterface.setCurrentObservation(observation);
-  while (!mpcInterface.initialPolicyReceived()) {
+  mpcInterface.set_current_observation(observation);
+  while (!mpcInterface.initial_policy_received()) {
     mpcInterface.advanceMpc();
   }
 
@@ -152,15 +152,15 @@ TEST_F(TestAnymalLoopshapingMpc, motion_tracking) {
     size_t mode;
     ocs2::vector_t optimalState, optimalInput;
 
-    mpcInterface.updatePolicy();
-    std::cerr << mpcInterface.getPerformanceIndices() << "\n";
-    mpcInterface.evaluatePolicy(time, ocs2::vector_t::Zero(switched_model_loopshaping::STATE_DIM), optimalState, optimalInput, mode);
+    mpcInterface.update_policy();
+    std::cerr << mpcInterface.get_performance_indices() << "\n";
+    mpcInterface.evaluate_policy(time, ocs2::vector_t::Zero(switched_model_loopshaping::STATE_DIM), optimalState, optimalInput, mode);
 
     // use optimal state for the next observation:
     observation.time = time;
     observation.state = optimalState;
     observation.input = ocs2::vector_t::Zero(switched_model_loopshaping::INPUT_DIM);
-    mpcInterface.setCurrentObservation(observation);
+    mpcInterface.set_current_observation(observation);
   }
 
   // Check if base tracking was achieved

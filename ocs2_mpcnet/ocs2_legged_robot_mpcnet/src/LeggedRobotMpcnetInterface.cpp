@@ -53,7 +53,7 @@ LeggedRobotMpcnetInterface::LeggedRobotMpcnetInterface(size_t nDataGenerationThr
   const std::string raisimFile = ros::package::getPath("ocs2_legged_robot_raisim") + "/config/raisim.info";
   const std::string resourcePath = ros::package::getPath("ocs2_robotic_assets") + "/resources/anymal_c/meshes";
   // set up MPC-Net rollout manager for data generation and policy evaluation
-  std::vector<std::unique_ptr<MPC_BASE>> mpcPtrs;
+  std::vector<std::unique_ptr<MpcBase>> mpcPtrs;
   std::vector<std::unique_ptr<ocs2::mpcnet::MpcnetControllerBase>> mpcnetPtrs;
   std::vector<std::unique_ptr<RolloutBase>> rolloutPtrs;
   std::vector<std::shared_ptr<ocs2::mpcnet::MpcnetDefinitionBase>> mpcnetDefinitionPtrs;
@@ -112,7 +112,7 @@ LeggedRobotMpcnetInterface::LeggedRobotMpcnetInterface(size_t nDataGenerationThr
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-std::unique_ptr<MPC_BASE> LeggedRobotMpcnetInterface::getMpc(LeggedRobotInterface& leggedRobotInterface) {
+std::unique_ptr<MpcBase> LeggedRobotMpcnetInterface::getMpc(LeggedRobotInterface& leggedRobotInterface) {
   // ensure MPC and DDP settings are as needed for MPC-Net
   const auto mpcSettings = [&]() {
     auto settings = leggedRobotInterface.mpcSettings();

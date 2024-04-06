@@ -27,43 +27,58 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_slp/Helpers.h"
+#include "ocs2_slp/Helpers.hpp"
 
 #include <atomic>
 #include <numeric>
 
-namespace {
-int getNumDecisionVariables(const ocs2::OcpSize& ocpSize) {
-  return std::accumulate(ocpSize.numInputs.begin(), ocpSize.numInputs.end(),
-                         std::accumulate(ocpSize.numStates.begin() + 1, ocpSize.numStates.end(), (int)0));
+namespace
+{
+int getNumDecisionVariables(const ocs2::OcpSize & ocpSize)
+{
+  return std::accumulate(
+    ocpSize.numInputs.begin(), ocpSize.numInputs.end(),
+    std::accumulate(ocpSize.numStates.begin() + 1, ocpSize.numStates.end(), (int)0));
 }
 
-int getNumDynamicsConstraints(const ocs2::OcpSize& ocpSize) {
+int getNumDynamicsConstraints(const ocs2::OcpSize & ocpSize)
+{
   return std::accumulate(ocpSize.numStates.begin() + 1, ocpSize.numStates.end(), (int)0);
 }
 
-int getNumGeneralEqualityConstraints(const ocs2::OcpSize& ocpSize) {
-  return std::accumulate(ocpSize.numIneqConstraints.begin(), ocpSize.numIneqConstraints.end(), (int)0);
+int getNumGeneralEqualityConstraints(const ocs2::OcpSize & ocpSize)
+{
+  return std::accumulate(
+    ocpSize.numIneqConstraints.begin(), ocpSize.numIneqConstraints.end(), (int)0);
 }
 }  // anonymous namespace
 
-namespace ocs2 {
-namespace slp {
+namespace ocs2
+{
+namespace slp
+{
 
-scalar_t hessianEigenvaluesUpperBound(const OcpSize& ocpSize, const std::vector<ScalarFunctionQuadraticApproximation>& cost) {
+scalar_t hessianEigenvaluesUpperBound(
+  const OcpSize & ocpSize, const std::vector<ScalarFunctionQuadraticApproximation> & cost)
+{
   const vector_t rowwiseAbsSumH = hessianAbsRowSum(ocpSize, cost);
   return rowwiseAbsSumH.maxCoeff();
 }
 
-scalar_t GGTEigenvaluesUpperBound(ThreadPool& threadPool, const OcpSize& ocpSize,
-                                  const std::vector<VectorFunctionLinearApproximation>& dynamics,
-                                  const std::vector<VectorFunctionLinearApproximation>* constraintsPtr,
-                                  const vector_array_t* scalingVectorsPtr) {
-  const vector_t rowwiseAbsSumGGT = GGTAbsRowSumInParallel(threadPool, ocpSize, dynamics, constraintsPtr, scalingVectorsPtr);
+scalar_t GGTEigenvaluesUpperBound(
+  ThreadPool & threadPool, const OcpSize & ocpSize,
+  const std::vector<VectorFunctionLinearApproximation> & dynamics,
+  const std::vector<VectorFunctionLinearApproximation> * constraintsPtr,
+  const vector_array_t * scalingVectorsPtr)
+{
+  const vector_t rowwiseAbsSumGGT =
+    GGTAbsRowSumInParallel(threadPool, ocpSize, dynamics, constraintsPtr, scalingVectorsPtr);
   return rowwiseAbsSumGGT.maxCoeff();
 }
 
-vector_t hessianAbsRowSum(const OcpSize& ocpSize, const std::vector<ScalarFunctionQuadraticApproximation>& cost) {
+vector_t hessianAbsRowSum(
+  const OcpSize & ocpSize, const std::vector<ScalarFunctionQuadraticApproximation> & cost)
+{
   const int N = ocpSize.numStages;
   const int nu_0 = ocpSize.numInputs[0];
   vector_t res(getNumDecisionVariables(ocpSize));
@@ -92,16 +107,20 @@ vector_t hessianAbsRowSum(const OcpSize& ocpSize, const std::vector<ScalarFuncti
   return res;
 }
 
-vector_t GGTAbsRowSumInParallel(ThreadPool& threadPool, const OcpSize& ocpSize,
-                                const std::vector<VectorFunctionLinearApproximation>& dynamics,
-                                const std::vector<VectorFunctionLinearApproximation>* constraints,
-                                const vector_array_t* scalingVectorsPtr) {
+vector_t GGTAbsRowSumInParallel(
+  ThreadPool & threadPool, const OcpSize & ocpSize,
+  const std::vector<VectorFunctionLinearApproximation> & dynamics,
+  const std::vector<VectorFunctionLinearApproximation> * constraints,
+  const vector_array_t * scalingVectorsPtr)
+{
   const int N = ocpSize.numStages;
   if (N < 1) {
-    throw std::runtime_error("[GGTAbsRowSumInParallel] The number of stages cannot be less than 1.");
+    throw std::runtime_error(
+      "[GGTAbsRowSumInParallel] The number of stages cannot be less than 1.");
   }
   if (scalingVectorsPtr != nullptr && scalingVectorsPtr->size() != N) {
-    throw std::runtime_error("[GGTAbsRowSumInParallel] The size of scalingVectors doesn't match the number of stage.");
+    throw std::runtime_error(
+      "[GGTAbsRowSumInParallel] The size of scalingVectors doesn't match the number of stage.");
   }
   Eigen::setNbThreads(1);  // No multithreading within Eigen.
 
@@ -113,35 +132,40 @@ vector_t GGTAbsRowSumInParallel(ThreadPool& threadPool, const OcpSize& ocpSize,
     int k;
     while ((k = timeIndex++) < N) {
       const auto nx_next = ocpSize.numStates[k + 1];
-      const auto& B = dynamics[k].dfdu;
+      const auto & B = dynamics[k].dfdu;
       tempMatrixArray[k] =
-          (scalingVectorsPtr == nullptr ? matrix_t::Identity(nx_next, nx_next)
-                                        : (*scalingVectorsPtr)[k].cwiseProduct((*scalingVectorsPtr)[k]).asDiagonal().toDenseMatrix());
+        (scalingVectorsPtr == nullptr ? matrix_t::Identity(nx_next, nx_next)
+                                      : (*scalingVectorsPtr)[k]
+                                          .cwiseProduct((*scalingVectorsPtr)[k])
+                                          .asDiagonal()
+                                          .toDenseMatrix());
       tempMatrixArray[k] += B * B.transpose();
 
       if (k != 0) {
-        const auto& A = dynamics[k].dfdx;
+        const auto & A = dynamics[k].dfdx;
         tempMatrixArray[k] += A * A.transpose();
       }
 
       absRowSumArray[k] = tempMatrixArray[k].cwiseAbs().rowwise().sum();
 
       if (k != 0) {
-        const auto& A = dynamics[k].dfdx;
-        absRowSumArray[k] += (A * (scalingVectorsPtr == nullptr ? matrix_t::Identity(A.cols(), A.cols())
-                                                                : (*scalingVectorsPtr)[k - 1].asDiagonal().toDenseMatrix()))
-                                 .cwiseAbs()
-                                 .rowwise()
-                                 .sum();
+        const auto & A = dynamics[k].dfdx;
+        absRowSumArray[k] += (A * (scalingVectorsPtr == nullptr
+                                     ? matrix_t::Identity(A.cols(), A.cols())
+                                     : (*scalingVectorsPtr)[k - 1].asDiagonal().toDenseMatrix()))
+                               .cwiseAbs()
+                               .rowwise()
+                               .sum();
       }
       if (k != N - 1) {
-        const auto& ANext = dynamics[k + 1].dfdx;
-        absRowSumArray[k] += (ANext * (scalingVectorsPtr == nullptr ? matrix_t::Identity(ANext.cols(), ANext.cols())
-                                                                    : (*scalingVectorsPtr)[k].asDiagonal().toDenseMatrix()))
-                                 .transpose()
-                                 .cwiseAbs()
-                                 .rowwise()
-                                 .sum();
+        const auto & ANext = dynamics[k + 1].dfdx;
+        absRowSumArray[k] += (ANext * (scalingVectorsPtr == nullptr
+                                         ? matrix_t::Identity(ANext.cols(), ANext.cols())
+                                         : (*scalingVectorsPtr)[k].asDiagonal().toDenseMatrix()))
+                               .transpose()
+                               .cwiseAbs()
+                               .rowwise()
+                               .sum();
       }
     }
   };
@@ -149,7 +173,7 @@ vector_t GGTAbsRowSumInParallel(ThreadPool& threadPool, const OcpSize& ocpSize,
 
   vector_t res = vector_t::Zero(getNumDynamicsConstraints(ocpSize));
   int curRow = 0;
-  for (const auto& v : absRowSumArray) {
+  for (const auto & v : absRowSumArray) {
     res.segment(curRow, v.size()) = v;
     curRow += v.size();
   }

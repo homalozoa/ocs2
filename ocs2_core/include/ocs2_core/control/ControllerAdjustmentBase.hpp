@@ -1,3 +1,4 @@
+// Copyright 2024 Homalozoa. All rights reserved.
 // Copyright 2020 Farbod Farshidian. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -55,12 +56,12 @@ public:
   /**
    * Adjust the controller based on the last changes in the logic rules.
    *
-   * @param [in] eventTimes: The new event times.
+   * @param [in] event_times: The new event times.
    * @param [in] controllerEventTimes: The control policy stock's event times.
    * @param [out] controllerStock: The controller stock which will be modified.
    */
   virtual void adjustController(
-    const scalar_array_t & eventTimes, const scalar_array_t & controllerEventTimes,
+    const scalar_array_t & event_times, const scalar_array_t & controllerEventTimes,
     std::vector<LinearController> & controllersStock) = 0;
 };
 

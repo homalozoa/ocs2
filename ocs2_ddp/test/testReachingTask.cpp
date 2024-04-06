@@ -27,19 +27,20 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "ocs2_ddp/ILQR.hpp"
+#include "ocs2_ddp/SLQ.hpp"
+#include "ocs2_oc/rollout/TimeTriggeredRollout.hpp"
+#include "ocs2_oc/test/DoubleIntegratorReachingTask.hpp"
 
-#include <ocs2_oc/rollout/TimeTriggeredRollout.h>
-#include <ocs2_oc/test/DoubleIntegratorReachingTask.h>
+namespace ocs2
+{
 
-#include <ocs2_ddp/ILQR.h>
-#include <ocs2_ddp/SLQ.h>
-
-namespace ocs2 {
-
-namespace {
+namespace
+{
 // rollout settings
-rollout::Settings getRolloutSettings(ddp::Algorithm alg) {
+rollout::Settings getRolloutSettings(ddp::Algorithm alg)
+{
   rollout::Settings s;
   s.absTolODE = 1e-9;
   s.relTolODE = 1e-6;
@@ -51,7 +52,8 @@ rollout::Settings getRolloutSettings(ddp::Algorithm alg) {
 }
 
 // DDP settings
-ddp::Settings getDdpSettings(ddp::Algorithm alg, bool display) {
+ddp::Settings getDdpSettings(ddp::Algorithm alg, bool display)
+{
   ddp::Settings s;
   s.algorithm_ = alg;
   s.nThreads_ = 2;
@@ -62,7 +64,8 @@ ddp::Settings getDdpSettings(ddp::Algorithm alg, bool display) {
   s.minRelCost_ = DoubleIntegratorReachingTask::minRelCost;
   s.constraintTolerance_ = DoubleIntegratorReachingTask::constraintTolerance;
   s.timeStep_ = DoubleIntegratorReachingTask::timeStep;
-  s.backwardPassIntegratorType_ = (alg == ddp::Algorithm::SLQ) ? IntegratorType::ODE45 : IntegratorType::RK4;
+  s.backwardPassIntegratorType_ =
+    (alg == ddp::Algorithm::SLQ) ? IntegratorType::ODE45 : IntegratorType::RK4;
   s.strategy_ = search_strategy::Type::LINE_SEARCH;
   s.lineSearch_.minStepLength = 0.01;
   s.lineSearch_.maxStepLength = 1.0;
@@ -74,30 +77,37 @@ ddp::Settings getDdpSettings(ddp::Algorithm alg, bool display) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /* Reaching task at event time (tGoal) for a problem with horizon 2*tGoal. The solution input should be zero in [tGoal, 2*tGoal]. */
-class PreJumpDoubleIntegratorReachingTask : public DoubleIntegratorReachingTask,
-                                            public testing::Test,
-                                            public testing::WithParamInterface<DoubleIntegratorReachingTask::PenaltyType> {
- protected:
-  PreJumpDoubleIntegratorReachingTask() {
+class PreJumpDoubleIntegratorReachingTask
+: public DoubleIntegratorReachingTask,
+  public testing::Test,
+  public testing::WithParamInterface<DoubleIntegratorReachingTask::PenaltyType>
+{
+protected:
+  PreJumpDoubleIntegratorReachingTask()
+  {
     // reference manager
     referenceManagerPtr = getReferenceManagerPtr();
     // optimal control problem
     ocp.dynamicsPtr = getDynamicsPtr();
     ocp.costPtr->add("cost", getCostPtr());
-    ocp.equalityConstraintPtr->add("zero_force", std::make_unique<ZeroInputConstraint>(*referenceManagerPtr));
-    ocp.preJumpEqualityLagrangianPtr->add("goal_reaching", getGoalReachingAugmentedLagrangian(xGoal, GetParam()));
+    ocp.equalityConstraintPtr->add(
+      "zero_force", std::make_unique<ZeroInputConstraint>(*referenceManagerPtr));
+    ocp.preJumpEqualityLagrangianPtr->add(
+      "goal_reaching", getGoalReachingAugmentedLagrangian(xGoal, GetParam()));
   }
 
-  void test(const PrimalSolution& primalSolution) const {
+  void test(const PrimalSolution & primalSolution) const
+  {
     for (size_t i = 0; i < primalSolution.timeTrajectory_.size(); ++i) {
       // zero input after tGoal
       if (primalSolution.timeTrajectory_[i] > tGoal) {
-        EXPECT_NEAR(primalSolution.inputTrajectory_[i](0), 0.0, constraintTolerance) << " at time " << primalSolution.timeTrajectory_[i];
+        EXPECT_NEAR(primalSolution.inputTrajectory_[i](0), 0.0, constraintTolerance)
+          << " at time " << primalSolution.timeTrajectory_[i];
       }
       // reaching to the target
       if (primalSolution.timeTrajectory_[i] > tGoal) {
         EXPECT_TRUE(primalSolution.stateTrajectory_[i].isApprox(xGoal, constraintTolerance))
-            << " at time " << primalSolution.timeTrajectory_[i];
+          << " at time " << primalSolution.timeTrajectory_[i];
       }
     }  // end of i loop
   }
@@ -106,7 +116,8 @@ class PreJumpDoubleIntegratorReachingTask : public DoubleIntegratorReachingTask,
   std::shared_ptr<ReferenceManager> referenceManagerPtr;
 };
 
-TEST_P(PreJumpDoubleIntegratorReachingTask, SLQ) {
+TEST_P(PreJumpDoubleIntegratorReachingTask, SLQ)
+{
   constexpr bool display = true;
   constexpr auto alg = ddp::Algorithm::SLQ;
   // rollout
@@ -123,45 +134,55 @@ TEST_P(PreJumpDoubleIntegratorReachingTask, SLQ) {
   printSolution(primalSolution, display);
 }
 
-INSTANTIATE_TEST_CASE_P(PreJumpDoubleIntegratorReachingTaskCase, PreJumpDoubleIntegratorReachingTask,
-                        testing::ValuesIn({DoubleIntegratorReachingTask::PenaltyType::QuadraticPenalty,
-                                           DoubleIntegratorReachingTask::PenaltyType::SmoothAbsolutePenalty}),
-                        [](const testing::TestParamInfo<PreJumpDoubleIntegratorReachingTask::ParamType>& info) {
-                          if (info.param == DoubleIntegratorReachingTask::PenaltyType::QuadraticPenalty) {
-                            return std::string("QuadraticPenalty");
-                          } else if (info.param == DoubleIntegratorReachingTask::PenaltyType::SmoothAbsolutePenalty) {
-                            return std::string("SmoothAbsolutePenalty");
-                          }
-                        });
+INSTANTIATE_TEST_CASE_P(
+  PreJumpDoubleIntegratorReachingTaskCase, PreJumpDoubleIntegratorReachingTask,
+  testing::ValuesIn(
+    {DoubleIntegratorReachingTask::PenaltyType::QuadraticPenalty,
+     DoubleIntegratorReachingTask::PenaltyType::SmoothAbsolutePenalty}),
+  [](const testing::TestParamInfo<PreJumpDoubleIntegratorReachingTask::ParamType> & info) {
+    if (info.param == DoubleIntegratorReachingTask::PenaltyType::QuadraticPenalty) {
+      return std::string("QuadraticPenalty");
+    } else if (info.param == DoubleIntegratorReachingTask::PenaltyType::SmoothAbsolutePenalty) {
+      return std::string("SmoothAbsolutePenalty");
+    } else {
+      throw std::runtime_error("Undefined PenaltyTyp!");
+    }
+  });
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
 /* Reaching task at final time for a problem with horizon tGoal. */
-class FinalDoubleIntegratorReachingTask : public DoubleIntegratorReachingTask,
-                                          public testing::Test,
-                                          public testing::WithParamInterface<DoubleIntegratorReachingTask::PenaltyType> {
- protected:
-  FinalDoubleIntegratorReachingTask() {
+class FinalDoubleIntegratorReachingTask
+: public DoubleIntegratorReachingTask,
+  public testing::Test,
+  public testing::WithParamInterface<DoubleIntegratorReachingTask::PenaltyType>
+{
+protected:
+  FinalDoubleIntegratorReachingTask()
+  {
     // reference manager
     referenceManagerPtr = getReferenceManagerPtr();
     // optimal control problem
     ocp.dynamicsPtr = getDynamicsPtr();
     ocp.costPtr->add("cost", getCostPtr());
-    ocp.finalEqualityLagrangianPtr->add("goal_reaching", getGoalReachingAugmentedLagrangian(xGoal, GetParam()));
+    ocp.finalEqualityLagrangianPtr->add(
+      "goal_reaching", getGoalReachingAugmentedLagrangian(xGoal, GetParam()));
   }
 
-  void test(const PrimalSolution& primalSolution) const {
+  void test(const PrimalSolution & primalSolution) const
+  {
     // reaching to the target
     EXPECT_TRUE(primalSolution.stateTrajectory_.back().isApprox(xGoal, constraintTolerance))
-        << " at time " << primalSolution.timeTrajectory_.back();
+      << " at time " << primalSolution.timeTrajectory_.back();
   }
 
   OptimalControlProblem ocp;
   std::shared_ptr<ReferenceManager> referenceManagerPtr;
 };
 
-TEST_P(FinalDoubleIntegratorReachingTask, SLQ) {
+TEST_P(FinalDoubleIntegratorReachingTask, SLQ)
+{
   constexpr bool display = true;
   constexpr auto alg = ddp::Algorithm::SLQ;
   // rollout
@@ -178,17 +199,19 @@ TEST_P(FinalDoubleIntegratorReachingTask, SLQ) {
   printSolution(primalSolution, display);
 }
 
-INSTANTIATE_TEST_CASE_P(FinalDoubleIntegratorReachingTaskCase, FinalDoubleIntegratorReachingTask,
-                        testing::ValuesIn({DoubleIntegratorReachingTask::PenaltyType::QuadraticPenalty,
-                                           DoubleIntegratorReachingTask::PenaltyType::SmoothAbsolutePenalty}),
-                        [](const testing::TestParamInfo<PreJumpDoubleIntegratorReachingTask::ParamType>& info) {
-                          if (info.param == DoubleIntegratorReachingTask::PenaltyType::QuadraticPenalty) {
-                            return std::string("QuadraticPenalty");
-                          } else if (info.param == DoubleIntegratorReachingTask::PenaltyType::SmoothAbsolutePenalty) {
-                            return std::string("SmoothAbsolutePenalty");
-                          } else {
-                            throw std::runtime_error("Undefined PenaltyTyp!");
-                          }
-                        });
+INSTANTIATE_TEST_CASE_P(
+  FinalDoubleIntegratorReachingTaskCase, FinalDoubleIntegratorReachingTask,
+  testing::ValuesIn(
+    {DoubleIntegratorReachingTask::PenaltyType::QuadraticPenalty,
+     DoubleIntegratorReachingTask::PenaltyType::SmoothAbsolutePenalty}),
+  [](const testing::TestParamInfo<PreJumpDoubleIntegratorReachingTask::ParamType> & info) {
+    if (info.param == DoubleIntegratorReachingTask::PenaltyType::QuadraticPenalty) {
+      return std::string("QuadraticPenalty");
+    } else if (info.param == DoubleIntegratorReachingTask::PenaltyType::SmoothAbsolutePenalty) {
+      return std::string("SmoothAbsolutePenalty");
+    } else {
+      throw std::runtime_error("Undefined PenaltyTyp!");
+    }
+  });
 
 }  // namespace ocs2

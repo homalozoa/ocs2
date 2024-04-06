@@ -27,46 +27,56 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include <ocs2_ddp/riccati_equations/DiscreteTimeRiccatiEquations.h>
+#include "ocs2_ddp/riccati_equations/DiscreteTimeRiccatiEquations.hpp"
 
-namespace ocs2 {
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-DiscreteTimeRiccatiEquations::DiscreteTimeRiccatiEquations(bool reducedFormRiccati, bool isRiskSensitive)
-    : reducedFormRiccati_(reducedFormRiccati), isRiskSensitive_(isRiskSensitive) {}
+namespace ocs2
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void DiscreteTimeRiccatiEquations::setRiskSensitiveCoefficient(scalar_t riskSensitiveCoeff) {
+DiscreteTimeRiccatiEquations::DiscreteTimeRiccatiEquations(
+  bool reducedFormRiccati, bool isRiskSensitive)
+: reducedFormRiccati_(reducedFormRiccati), isRiskSensitive_(isRiskSensitive)
+{
+}
+
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
+void DiscreteTimeRiccatiEquations::setRiskSensitiveCoefficient(scalar_t riskSensitiveCoeff)
+{
   riskSensitiveCoeff_ = riskSensitiveCoeff;
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void DiscreteTimeRiccatiEquations::computeMap(const ModelData& projectedModelData, const riccati_modification::Data& riccatiModification,
-                                              const matrix_t& SmNext, const vector_t& SvNext, const scalar_t& sNext, matrix_t& projectedKm,
-                                              vector_t& projectedLv, matrix_t& Sm, vector_t& Sv, scalar_t& s) {
+void DiscreteTimeRiccatiEquations::computeMap(
+  const ModelData & projectedModelData, const riccati_modification::Data & riccatiModification,
+  const matrix_t & SmNext, const vector_t & SvNext, const scalar_t & sNext, matrix_t & projectedKm,
+  vector_t & projectedLv, matrix_t & Sm, vector_t & Sv, scalar_t & s)
+{
   if (isRiskSensitive_) {
-    computeMapILEG(projectedModelData, riccatiModification, SmNext, SvNext, sNext, discreteTimeRiccatiData_, projectedKm, projectedLv, Sm,
-                   Sv, s);
+    computeMapILEG(
+      projectedModelData, riccatiModification, SmNext, SvNext, sNext, discreteTimeRiccatiData_,
+      projectedKm, projectedLv, Sm, Sv, s);
   } else {
-    computeMapILQR(projectedModelData, riccatiModification, SmNext, SvNext, sNext, discreteTimeRiccatiData_, projectedKm, projectedLv, Sm,
-                   Sv, s);
+    computeMapILQR(
+      projectedModelData, riccatiModification, SmNext, SvNext, sNext, discreteTimeRiccatiData_,
+      projectedKm, projectedLv, Sm, Sv, s);
   }
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void DiscreteTimeRiccatiEquations::computeMapILQR(const ModelData& projectedModelData,
-                                                  const riccati_modification::Data& riccatiModification, const matrix_t& SmNext,
-                                                  const vector_t& SvNext, const scalar_t& sNext, DiscreteTimeRiccatiData& dreCache,
-                                                  matrix_t& projectedKm, vector_t& projectedLv, matrix_t& Sm, vector_t& Sv,
-                                                  scalar_t& s) const {
+void DiscreteTimeRiccatiEquations::computeMapILQR(
+  const ModelData & projectedModelData, const riccati_modification::Data & riccatiModification,
+  const matrix_t & SmNext, const vector_t & SvNext, const scalar_t & sNext,
+  DiscreteTimeRiccatiData & dreCache, matrix_t & projectedKm, vector_t & projectedLv, matrix_t & Sm,
+  vector_t & Sv, scalar_t & s) const
+{
   // precomputation (1)
   dreCache.Sm_projectedHv_.noalias() = SmNext * projectedModelData.dynamicsBias;
   dreCache.Sm_projectedAm_.noalias() = SmNext * projectedModelData.dynamics.dfdx;
@@ -75,11 +85,13 @@ void DiscreteTimeRiccatiEquations::computeMapILQR(const ModelData& projectedMode
 
   // projectedGm = projectedPm + projectedBm^T * Sm * projectedAm
   dreCache.projectedGm_ = projectedModelData.cost.dfdux;
-  dreCache.projectedGm_.noalias() += projectedModelData.dynamics.dfdu.transpose() * dreCache.Sm_projectedAm_;
+  dreCache.projectedGm_.noalias() +=
+    projectedModelData.dynamics.dfdu.transpose() * dreCache.Sm_projectedAm_;
 
   // projectedGv = projectedRv + projectedBm^T * (Sv + Sm * projectedHv)
   dreCache.projectedGv_ = projectedModelData.cost.dfdu;
-  dreCache.projectedGv_.noalias() += projectedModelData.dynamics.dfdu.transpose() * dreCache.Sv_plus_Sm_projectedHv_;
+  dreCache.projectedGv_.noalias() +=
+    projectedModelData.dynamics.dfdu.transpose() * dreCache.Sv_plus_Sm_projectedHv_;
 
   // projected feedback
   projectedKm = -dreCache.projectedGm_ - riccatiModification.deltaGm_;
@@ -91,7 +103,8 @@ void DiscreteTimeRiccatiEquations::computeMapILQR(const ModelData& projectedMode
   if (!reducedFormRiccati_) {
     // projectedHm
     dreCache.projectedHm_ = projectedModelData.cost.dfduu;
-    dreCache.projectedHm_.noalias() += dreCache.Sm_projectedBm_.transpose() * projectedModelData.dynamics.dfdu;
+    dreCache.projectedHm_.noalias() +=
+      dreCache.Sm_projectedBm_.transpose() * projectedModelData.dynamics.dfdu;
 
     dreCache.projectedHm_projectedKm_.noalias() = dreCache.projectedHm_ * projectedKm;
     dreCache.projectedHm_projectedLv_.noalias() = dreCache.projectedHm_ * projectedLv;
@@ -156,11 +169,12 @@ void DiscreteTimeRiccatiEquations::computeMapILQR(const ModelData& projectedMode
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void DiscreteTimeRiccatiEquations::computeMapILEG(const ModelData& projectedModelData,
-                                                  const riccati_modification::Data& riccatiModification, const matrix_t& SmNext,
-                                                  const vector_t& SvNext, const scalar_t& sNext, DiscreteTimeRiccatiData& dreCache,
-                                                  matrix_t& projectedKm, vector_t& projectedLv, matrix_t& Sm, vector_t& Sv,
-                                                  scalar_t& s) const {
+void DiscreteTimeRiccatiEquations::computeMapILEG(
+  const ModelData & projectedModelData, const riccati_modification::Data & riccatiModification,
+  const matrix_t & SmNext, const vector_t & SvNext, const scalar_t & sNext,
+  DiscreteTimeRiccatiData & dreCache, matrix_t & projectedKm, vector_t & projectedLv, matrix_t & Sm,
+  vector_t & Sv, scalar_t & s) const
+{
   dreCache.Sigma_Sv_.noalias() = projectedModelData.dynamicsCovariance * SvNext;
   dreCache.I_minus_Sm_Sigma_.setIdentity(projectedModelData.stateDim, projectedModelData.stateDim);
   dreCache.I_minus_Sm_Sigma_.noalias() -= SmNext * projectedModelData.dynamicsCovariance;
@@ -168,15 +182,18 @@ void DiscreteTimeRiccatiEquations::computeMapILEG(const ModelData& projectedMode
   Eigen::LDLT<matrix_t> ldltSm(dreCache.I_minus_Sm_Sigma_);
   scalar_t det_I_minus_Sm_Sigma_ = ldltSm.vectorD().array().log().sum();
 
-  dreCache.inv_I_minus_Sm_Sigma_.setIdentity(projectedModelData.stateDim, projectedModelData.stateDim);
+  dreCache.inv_I_minus_Sm_Sigma_.setIdentity(
+    projectedModelData.stateDim, projectedModelData.stateDim);
   ldltSm.solveInPlace(dreCache.inv_I_minus_Sm_Sigma_);
 
   dreCache.SmNextStochastic_.noalias() = dreCache.inv_I_minus_Sm_Sigma_ * SmNext;
   dreCache.SvNextStochastic_.noalias() = dreCache.inv_I_minus_Sm_Sigma_ * SvNext;
-  dreCache.sNextStochastic_ = sNext + riskSensitiveCoeff_ * Sv.dot(dreCache.Sigma_Sv_) - 0.5 / riskSensitiveCoeff_ * det_I_minus_Sm_Sigma_;
+  dreCache.sNextStochastic_ = sNext + riskSensitiveCoeff_ * Sv.dot(dreCache.Sigma_Sv_) -
+                              0.5 / riskSensitiveCoeff_ * det_I_minus_Sm_Sigma_;
 
-  computeMapILQR(projectedModelData, riccatiModification, dreCache.SmNextStochastic_, dreCache.SvNextStochastic_, dreCache.sNextStochastic_,
-                 dreCache, projectedKm, projectedLv, Sm, Sv, s);
+  computeMapILQR(
+    projectedModelData, riccatiModification, dreCache.SmNextStochastic_, dreCache.SvNextStochastic_,
+    dreCache.sNextStochastic_, dreCache, projectedKm, projectedLv, Sm, Sv, s);
 }
 
 }  // namespace ocs2

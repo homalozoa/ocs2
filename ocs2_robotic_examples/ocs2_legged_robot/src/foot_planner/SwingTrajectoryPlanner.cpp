@@ -63,24 +63,24 @@ scalar_t SwingTrajectoryPlanner::getZpositionConstraint(size_t leg, scalar_t tim
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void SwingTrajectoryPlanner::update(const ModeSchedule& modeSchedule, scalar_t terrainHeight) {
-  const scalar_array_t terrainHeightSequence(modeSchedule.modeSequence.size(), terrainHeight);
+void SwingTrajectoryPlanner::update(const ModeSchedule& mode_schedule, scalar_t terrainHeight) {
+  const scalar_array_t terrainHeightSequence(mode_schedule.mode_sequence.size(), terrainHeight);
   feet_array_t<scalar_array_t> liftOffHeightSequence;
   liftOffHeightSequence.fill(terrainHeightSequence);
   feet_array_t<scalar_array_t> touchDownHeightSequence;
   touchDownHeightSequence.fill(terrainHeightSequence);
-  update(modeSchedule, liftOffHeightSequence, touchDownHeightSequence);
+  update(mode_schedule, liftOffHeightSequence, touchDownHeightSequence);
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void SwingTrajectoryPlanner::update(const ModeSchedule& modeSchedule, const feet_array_t<scalar_array_t>& liftOffHeightSequence,
+void SwingTrajectoryPlanner::update(const ModeSchedule& mode_schedule, const feet_array_t<scalar_array_t>& liftOffHeightSequence,
                                     const feet_array_t<scalar_array_t>& touchDownHeightSequence) {
-  const auto& modeSequence = modeSchedule.modeSequence;
-  const auto& eventTimes = modeSchedule.eventTimes;
+  const auto& mode_sequence = mode_schedule.mode_sequence;
+  const auto& event_times = mode_schedule.event_times;
 
-  const auto eesContactFlagStocks = extractContactFlags(modeSequence);
+  const auto eesContactFlagStocks = extractContactFlags(mode_sequence);
 
   feet_array_t<std::vector<int>> startTimesIndices;
   feet_array_t<std::vector<int>> finalTimesIndices;
@@ -90,15 +90,15 @@ void SwingTrajectoryPlanner::update(const ModeSchedule& modeSchedule, const feet
 
   for (size_t j = 0; j < numFeet_; j++) {
     feetHeightTrajectories_[j].clear();
-    feetHeightTrajectories_[j].reserve(modeSequence.size());
-    for (int p = 0; p < modeSequence.size(); ++p) {
+    feetHeightTrajectories_[j].reserve(mode_sequence.size());
+    for (int p = 0; p < mode_sequence.size(); ++p) {
       if (!eesContactFlagStocks[j][p]) {  // for a swing leg
         const int swingStartIndex = startTimesIndices[j][p];
         const int swingFinalIndex = finalTimesIndices[j][p];
-        checkThatIndicesAreValid(j, p, swingStartIndex, swingFinalIndex, modeSequence);
+        checkThatIndicesAreValid(j, p, swingStartIndex, swingFinalIndex, mode_sequence);
 
-        const scalar_t swingStartTime = eventTimes[swingStartIndex];
-        const scalar_t swingFinalTime = eventTimes[swingFinalIndex];
+        const scalar_t swingStartTime = event_times[swingStartIndex];
+        const scalar_t swingFinalTime = event_times[swingFinalIndex];
 
         const scalar_t scaling = swingTrajectoryScaling(swingStartTime, swingFinalTime, config_.swingTimeScale);
 
@@ -113,7 +113,7 @@ void SwingTrajectoryPlanner::update(const ModeSchedule& modeSchedule, const feet
         feetHeightTrajectories_[j].emplace_back(liftOff, liftOffHeightSequence[j][p], touchDown);
       }
     }
-    feetHeightTrajectoriesEvents_[j] = eventTimes;
+    feetHeightTrajectoriesEvents_[j] = event_times;
   }
 }
 

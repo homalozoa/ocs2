@@ -63,7 +63,7 @@ scalar_t getIntervalDuration(const AnnotatedTime & start, const AnnotatedTime & 
 }
 
 std::vector<AnnotatedTime> timeDiscretizationWithEvents(
-  scalar_t initTime, scalar_t finalTime, scalar_t dt, const scalar_array_t & eventTimes,
+  scalar_t initTime, scalar_t finalTime, scalar_t dt, const scalar_array_t & event_times,
   scalar_t dt_min)
 {
   assert(dt > 0);
@@ -72,7 +72,7 @@ std::vector<AnnotatedTime> timeDiscretizationWithEvents(
 
   // Initialize
   timeDiscretization.emplace_back(initTime, AnnotatedTime::Event::None);
-  scalar_t nextEventIdx = lookup::findIndexInTimeArray(eventTimes, initTime);
+  scalar_t nextEventIdx = lookup::findIndexInTimeArray(event_times, initTime);
 
   // Fill iteratively with pre event, post events are added later
   AnnotatedTime nextNode = timeDiscretization.back();
@@ -81,8 +81,8 @@ std::vector<AnnotatedTime> timeDiscretizationWithEvents(
     nextNode.event = AnnotatedTime::Event::None;
 
     // Check if an event has passed
-    if (nextEventIdx < eventTimes.size() && nextNode.time >= eventTimes[nextEventIdx]) {
-      nextNode.time = eventTimes[nextEventIdx];
+    if (nextEventIdx < event_times.size() && nextNode.time >= event_times[nextEventIdx]) {
+      nextNode.time = event_times[nextEventIdx];
       nextNode.event = AnnotatedTime::Event::PreEvent;
       nextEventIdx++;
     }

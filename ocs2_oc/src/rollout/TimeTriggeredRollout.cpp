@@ -51,7 +51,7 @@ TimeTriggeredRollout::TimeTriggeredRollout(
 /******************************************************************************************************/
 vector_t TimeTriggeredRollout::run(
   scalar_t initTime, const vector_t & initState, scalar_t finalTime, ControllerBase * controller,
-  ModeSchedule & modeSchedule, scalar_array_t & timeTrajectory, size_array_t & postEventIndices,
+  ModeSchedule & mode_schedule, scalar_array_t & timeTrajectory, size_array_t & postEventIndices,
   vector_array_t & stateTrajectory, vector_array_t & inputTrajectory)
 {
   if (initTime > finalTime) {
@@ -64,7 +64,7 @@ vector_t TimeTriggeredRollout::run(
 
   // extract sub-systems
   const auto timeIntervalArray =
-    findActiveModesTimeInterval(initTime, finalTime, modeSchedule.eventTimes);
+    findActiveModesTimeInterval(initTime, finalTime, mode_schedule.event_times);
   const int numSubsystems = timeIntervalArray.size();
   const int numEvents = numSubsystems - 1;
 

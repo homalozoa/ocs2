@@ -52,8 +52,8 @@ void GaitAdaptation::advanceSwingEvents(const GaitSchedule& gaitSchedule) {
   const auto checkHorizon = settings_.earlyTouchDownTimeWindow;
 
   // Extract contact timings from the gait schedule
-  const auto modeSchedule = gaitSchedule.getModeSchedule(checkHorizon);
-  const auto contactTimingsPerLeg = switched_model::extractContactTimingsPerLeg(modeSchedule);
+  const auto mode_schedule = gaitSchedule.getModeSchedule(checkHorizon);
+  const auto contactTimingsPerLeg = switched_model::extractContactTimingsPerLeg(mode_schedule);
   const auto currentTime = gaitSchedule.getCurrentTime();
 
   for (size_t leg = 0; leg < switched_model::NUM_CONTACT_POINTS; ++leg) {
@@ -130,13 +130,13 @@ earlyTouchDownAdaptation(const switched_model::feet_array_t<bool>& earlyTouchDow
       if (earlyTouchDownPerLeg[leg]) {
         const int modeIndexOfNextContact = getModeIndexOfNextContactStateOfLeg(true, currentModeIndex, leg, currentGait);
 
-        if (modeIndexOfNextContact < currentGait.modeSequence.size()) {  // update current gait
+        if (modeIndexOfNextContact < currentGait.mode_sequence.size()) {  // update current gait
           setContactStateOfLegBetweenModes(true, currentModeIndex, modeIndexOfNextContact, leg, currentGait);
         } else {  // update current gait till end, and next gait
           setContactStateOfLegBetweenModes(true, currentModeIndex, modeIndexOfNextContact - 1, leg, currentGait);
 
           int modeIndexOfNextContactOfNextGait = getModeIndexOfNextContactStateOfLeg(true, 0, leg, nextGait);
-          if (modeIndexOfNextContactOfNextGait == nextGait.modeSequence.size()) {
+          if (modeIndexOfNextContactOfNextGait == nextGait.mode_sequence.size()) {
             --modeIndexOfNextContactOfNextGait;
           }
           setContactStateOfLegBetweenModes(true, 0, modeIndexOfNextContactOfNextGait, leg, nextGait);
@@ -148,8 +148,8 @@ earlyTouchDownAdaptation(const switched_model::feet_array_t<bool>& earlyTouchDow
 
 int getModeIndexOfNextContactStateOfLeg(bool contact, int startModeIdx, size_t leg, const Gait& gait) {
   int modeIndex = startModeIdx;
-  while (modeIndex < gait.modeSequence.size()) {
-    size_t currentMode = gait.modeSequence[modeIndex];
+  while (modeIndex < gait.mode_sequence.size()) {
+    size_t currentMode = gait.mode_sequence[modeIndex];
     if (modeNumber2StanceLeg(currentMode)[leg] == contact) {
       break;
     } else {
@@ -161,9 +161,9 @@ int getModeIndexOfNextContactStateOfLeg(bool contact, int startModeIdx, size_t l
 
 void setContactStateOfLegBetweenModes(bool contact, int startModeIdx, int lastModeIdx, size_t leg, Gait& gait) {
   for (int modeIndex = startModeIdx; modeIndex <= lastModeIdx; ++modeIndex) {
-    auto stanceLegs = switched_model::modeNumber2StanceLeg(gait.modeSequence[modeIndex]);
+    auto stanceLegs = switched_model::modeNumber2StanceLeg(gait.mode_sequence[modeIndex]);
     stanceLegs[leg] = contact;
-    gait.modeSequence[modeIndex] = switched_model::stanceLeg2ModeNumber(stanceLegs);
+    gait.mode_sequence[modeIndex] = switched_model::stanceLeg2ModeNumber(stanceLegs);
   }
 }
 

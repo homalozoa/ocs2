@@ -38,7 +38,7 @@ PrimalSolution loopshapingToSystemPrimalSolution(
   PrimalSolution systemPrimalSolution;
   systemPrimalSolution.controllerPtr_ = nullptr;
   systemPrimalSolution.timeTrajectory_ = primalSolution.timeTrajectory_;
-  systemPrimalSolution.modeSchedule_ = primalSolution.modeSchedule_;
+  systemPrimalSolution.mode_schedule_ = primalSolution.mode_schedule_;
   systemPrimalSolution.stateTrajectory_.reserve(primalSolution.stateTrajectory_.size());
   systemPrimalSolution.inputTrajectory_.reserve(primalSolution.inputTrajectory_.size());
   for (size_t k = 0; k < primalSolution.stateTrajectory_.size(); ++k) {

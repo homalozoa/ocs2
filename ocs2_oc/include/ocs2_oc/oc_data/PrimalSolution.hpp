@@ -55,7 +55,7 @@ struct PrimalSolution
     stateTrajectory_(other.stateTrajectory_),
     inputTrajectory_(other.inputTrajectory_),
     postEventIndices_(other.postEventIndices_),
-    modeSchedule_(other.modeSchedule_),
+    mode_schedule_(other.mode_schedule_),
     controllerPtr_(other.controllerPtr_ ? other.controllerPtr_->clone() : nullptr)
   {
   }
@@ -67,7 +67,7 @@ struct PrimalSolution
     stateTrajectory_ = other.stateTrajectory_;
     inputTrajectory_ = other.inputTrajectory_;
     postEventIndices_ = other.postEventIndices_;
-    modeSchedule_ = other.modeSchedule_;
+    mode_schedule_ = other.mode_schedule_;
     if (other.controllerPtr_) {
       controllerPtr_.reset(other.controllerPtr_->clone());
     } else {
@@ -89,7 +89,7 @@ struct PrimalSolution
     stateTrajectory_.swap(other.stateTrajectory_);
     inputTrajectory_.swap(other.inputTrajectory_);
     postEventIndices_.swap(other.postEventIndices_);
-    ::ocs2::swap(modeSchedule_, other.modeSchedule_);
+    ::ocs2::swap(mode_schedule_, other.mode_schedule_);
     controllerPtr_.swap(other.controllerPtr_);
   }
 
@@ -99,7 +99,7 @@ struct PrimalSolution
     stateTrajectory_.clear();
     inputTrajectory_.clear();
     postEventIndices_.clear();
-    modeSchedule_.clear();
+    mode_schedule_.clear();
     if (controllerPtr_ != nullptr) {
       controllerPtr_->clear();
     }
@@ -109,7 +109,7 @@ struct PrimalSolution
   vector_array_t stateTrajectory_;
   vector_array_t inputTrajectory_;
   size_array_t postEventIndices_;
-  ModeSchedule modeSchedule_;
+  ModeSchedule mode_schedule_;
   std::unique_ptr<ControllerBase> controllerPtr_;
 };
 

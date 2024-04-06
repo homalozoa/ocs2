@@ -18,12 +18,12 @@ contact_flag_t SwitchedModelModeScheduleManager::getContactFlags(scalar_t time) 
 }
 
 void SwitchedModelModeScheduleManager::modifyReferences(scalar_t initTime, scalar_t finalTime, const vector_t& initState,
-                                                        ocs2::TargetTrajectories& targetTrajectories, ocs2::ModeSchedule& modeSchedule) {
+                                                        ocs2::TargetTrajectories& targetTrajectories, ocs2::ModeSchedule& mode_schedule) {
   const auto timeHorizon = finalTime - initTime;
   {
     auto lockedGaitSchedulePtr = gaitSchedule_.lock();
     lockedGaitSchedulePtr->advanceToTime(initTime);
-    modeSchedule = lockedGaitSchedulePtr->getModeSchedule(timeHorizon + swingTrajectoryPtr_->settings().referenceExtensionAfterHorizon);
+    mode_schedule = lockedGaitSchedulePtr->getModeSchedule(timeHorizon + swingTrajectoryPtr_->settings().referenceExtensionAfterHorizon);
   }
 
   // Transfer terrain ownership if a new terrain is available
@@ -34,7 +34,7 @@ void SwitchedModelModeScheduleManager::modifyReferences(scalar_t initTime, scala
   }
 
   // Prepare swing motions
-  swingTrajectoryPtr_->updateSwingMotions(initTime, finalTime, initState, targetTrajectories, modeSchedule);
+  swingTrajectoryPtr_->updateSwingMotions(initTime, finalTime, initState, targetTrajectories, mode_schedule);
 }
 
 }  // namespace switched_model

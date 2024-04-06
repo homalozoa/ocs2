@@ -36,7 +36,7 @@ namespace mpcnet {
 /******************************************************************************************************/
 /******************************************************************************************************/
 MpcnetRolloutManager::MpcnetRolloutManager(size_t nDataGenerationThreads, size_t nPolicyEvaluationThreads,
-                                           std::vector<std::unique_ptr<MPC_BASE>> mpcPtrs,
+                                           std::vector<std::unique_ptr<MpcBase>> mpcPtrs,
                                            std::vector<std::unique_ptr<MpcnetControllerBase>> mpcnetPtrs,
                                            std::vector<std::unique_ptr<RolloutBase>> rolloutPtrs,
                                            std::vector<std::shared_ptr<MpcnetDefinitionBase>> mpcnetDefinitionPtrs,
@@ -72,7 +72,7 @@ MpcnetRolloutManager::MpcnetRolloutManager(size_t nDataGenerationThreads, size_t
 void MpcnetRolloutManager::startDataGeneration(scalar_t alpha, const std::string& policyFilePath, scalar_t timeStep, size_t dataDecimation,
                                                size_t nSamples, const matrix_t& samplingCovariance,
                                                const std::vector<SystemObservation>& initialObservations,
-                                               const std::vector<ModeSchedule>& modeSchedules,
+                                               const std::vector<ModeSchedule>& mode_schedules,
                                                const std::vector<TargetTrajectories>& targetTrajectories) {
   if (nDataGenerationThreads_ <= 0) {
     throw std::runtime_error("[MpcnetRolloutManager::startDataGeneration] cannot work without at least one data generation thread.");
@@ -87,7 +87,7 @@ void MpcnetRolloutManager::startDataGeneration(scalar_t alpha, const std::string
     dataGenerationFtrs_.push_back(dataGenerationThreadPoolPtr_->run([=](int threadNumber) {
       const auto* result =
           dataGenerationPtrs_[threadNumber]->run(alpha, policyFilePath, timeStep, dataDecimation, nSamples, samplingCovariance,
-                                                 initialObservations.at(i), modeSchedules.at(i), targetTrajectories.at(i));
+                                                 initialObservations.at(i), mode_schedules.at(i), targetTrajectories.at(i));
       nDataGenerationTasksDone_++;
       // print thread and task number
       std::cerr << "Data generation thread " << threadNumber << " finished task " << nDataGenerationTasksDone_ << "\n";
@@ -166,7 +166,7 @@ const data_array_t& MpcnetRolloutManager::getGeneratedData() {
 /******************************************************************************************************/
 void MpcnetRolloutManager::startPolicyEvaluation(scalar_t alpha, const std::string& policyFilePath, scalar_t timeStep,
                                                  const std::vector<SystemObservation>& initialObservations,
-                                                 const std::vector<ModeSchedule>& modeSchedules,
+                                                 const std::vector<ModeSchedule>& mode_schedules,
                                                  const std::vector<TargetTrajectories>& targetTrajectories) {
   if (nPolicyEvaluationThreads_ <= 0) {
     throw std::runtime_error("[MpcnetRolloutManager::startPolicyEvaluation] cannot work without at least one policy evaluation thread.");
@@ -180,7 +180,7 @@ void MpcnetRolloutManager::startPolicyEvaluation(scalar_t alpha, const std::stri
   for (int i = 0; i < initialObservations.size(); i++) {
     policyEvaluationFtrs_.push_back(policyEvaluationThreadPoolPtr_->run([=](int threadNumber) {
       const auto result = policyEvaluationPtrs_[threadNumber]->run(alpha, policyFilePath, timeStep, initialObservations.at(i),
-                                                                   modeSchedules.at(i), targetTrajectories.at(i));
+                                                                   mode_schedules.at(i), targetTrajectories.at(i));
       nPolicyEvaluationTasksDone_++;
       // print thread and task number
       std::cerr << "Policy evaluation thread " << threadNumber << " finished task " << nPolicyEvaluationTasksDone_ << "\n";

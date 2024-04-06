@@ -101,11 +101,11 @@ namespace legged_robot {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-feet_array_t<LegPhase> getContactPhasePerLeg(scalar_t time, const ocs2::ModeSchedule& modeSchedule) {
+feet_array_t<LegPhase> getContactPhasePerLeg(scalar_t time, const ocs2::ModeSchedule& mode_schedule) {
   feet_array_t<LegPhase> contactPhasePerLeg;
 
   // Convert mode sequence to a contact timing vector per leg
-  const auto contactTimingsPerLeg = extractContactTimingsPerLeg(modeSchedule);
+  const auto contactTimingsPerLeg = extractContactTimingsPerLeg(mode_schedule);
 
   // Extract contact phases per leg
   for (size_t leg = 0; leg < contactPhasePerLeg.size(); ++leg) {
@@ -144,11 +144,11 @@ feet_array_t<LegPhase> getContactPhasePerLeg(scalar_t time, const ocs2::ModeSche
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-feet_array_t<LegPhase> getSwingPhasePerLeg(scalar_t time, const ocs2::ModeSchedule& modeSchedule) {
+feet_array_t<LegPhase> getSwingPhasePerLeg(scalar_t time, const ocs2::ModeSchedule& mode_schedule) {
   feet_array_t<LegPhase> swingPhasePerLeg;
 
   // Convert mode sequence to a swing timing vector per leg
-  const auto swingTimingsPerLeg = extractSwingTimingsPerLeg(modeSchedule);
+  const auto swingTimingsPerLeg = extractSwingTimingsPerLeg(mode_schedule);
 
   // Extract swing phases per leg
   for (size_t leg = 0; leg < swingPhasePerLeg.size(); ++leg) {
@@ -187,15 +187,15 @@ feet_array_t<LegPhase> getSwingPhasePerLeg(scalar_t time, const ocs2::ModeSchedu
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-feet_array_t<std::vector<ContactTiming>> extractContactTimingsPerLeg(const ocs2::ModeSchedule& modeSchedule) {
+feet_array_t<std::vector<ContactTiming>> extractContactTimingsPerLeg(const ocs2::ModeSchedule& mode_schedule) {
   feet_array_t<std::vector<ContactTiming>> contactTimingsPerLeg;
 
   // Convert mode sequence to a contact flag vector per leg
-  const auto contactSequencePerLeg = extractContactFlags(modeSchedule.modeSequence);
+  const auto contactSequencePerLeg = extractContactFlags(mode_schedule.mode_sequence);
 
   // Extract timings per leg
   for (size_t leg = 0; leg < contactTimingsPerLeg.size(); ++leg) {
-    contactTimingsPerLeg[leg] = extractContactTimings(modeSchedule.eventTimes, contactSequencePerLeg[leg]);
+    contactTimingsPerLeg[leg] = extractContactTimings(mode_schedule.event_times, contactSequencePerLeg[leg]);
   }
 
   return contactTimingsPerLeg;
@@ -204,15 +204,15 @@ feet_array_t<std::vector<ContactTiming>> extractContactTimingsPerLeg(const ocs2:
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-feet_array_t<std::vector<SwingTiming>> extractSwingTimingsPerLeg(const ocs2::ModeSchedule& modeSchedule) {
+feet_array_t<std::vector<SwingTiming>> extractSwingTimingsPerLeg(const ocs2::ModeSchedule& mode_schedule) {
   feet_array_t<std::vector<SwingTiming>> swingTimingsPerLeg;
 
   // Convert mode sequence to a contact flag vector per leg
-  const auto contactSequencePerLeg = extractContactFlags(modeSchedule.modeSequence);
+  const auto contactSequencePerLeg = extractContactFlags(mode_schedule.mode_sequence);
 
   // Extract timings per leg
   for (size_t leg = 0; leg < swingTimingsPerLeg.size(); ++leg) {
-    swingTimingsPerLeg[leg] = extractSwingTimings(modeSchedule.eventTimes, contactSequencePerLeg[leg]);
+    swingTimingsPerLeg[leg] = extractSwingTimings(mode_schedule.event_times, contactSequencePerLeg[leg]);
   }
 
   return swingTimingsPerLeg;
@@ -245,12 +245,12 @@ scalar_t getTimeOfNextTouchDown(scalar_t currentTime, const std::vector<ContactT
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-std::vector<ContactTiming> extractContactTimings(const std::vector<scalar_t>& eventTimes, const std::vector<bool>& contactFlags) {
-  assert(eventTimes.size() + 1 == contactFlags.size());
+std::vector<ContactTiming> extractContactTimings(const std::vector<scalar_t>& event_times, const std::vector<bool>& contactFlags) {
+  assert(event_times.size() + 1 == contactFlags.size());
   const int numPhases = contactFlags.size();
 
   std::vector<ContactTiming> contactTimings;
-  contactTimings.reserve(1 + eventTimes.size() / 2);  // Approximate upper bound
+  contactTimings.reserve(1 + event_times.size() / 2);  // Approximate upper bound
   int currentPhase = 0;
 
   while (currentPhase < numPhases) {
@@ -263,7 +263,7 @@ std::vector<ContactTiming> extractContactTimings(const std::vector<scalar_t>& ev
     }
 
     // Register start of the contact phase
-    const scalar_t startTime = (currentPhase == 0) ? std::numeric_limits<scalar_t>::quiet_NaN() : eventTimes[currentPhase - 1];
+    const scalar_t startTime = (currentPhase == 0) ? std::numeric_limits<scalar_t>::quiet_NaN() : event_times[currentPhase - 1];
 
     // Find when the contact phase ends
     while (currentPhase + 1 < numPhases && contactFlags[currentPhase + 1]) {
@@ -271,7 +271,7 @@ std::vector<ContactTiming> extractContactTimings(const std::vector<scalar_t>& ev
     }
 
     // Register end of the contact phase
-    const scalar_t endTime = (currentPhase + 1 >= numPhases) ? std::numeric_limits<scalar_t>::quiet_NaN() : eventTimes[currentPhase];
+    const scalar_t endTime = (currentPhase + 1 >= numPhases) ? std::numeric_limits<scalar_t>::quiet_NaN() : event_times[currentPhase];
 
     // Add to phases
     contactTimings.push_back({startTime, endTime});
@@ -283,12 +283,12 @@ std::vector<ContactTiming> extractContactTimings(const std::vector<scalar_t>& ev
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-std::vector<SwingTiming> extractSwingTimings(const std::vector<scalar_t>& eventTimes, const std::vector<bool>& contactFlags) {
-  assert(eventTimes.size() + 1 == contactFlags.size());
+std::vector<SwingTiming> extractSwingTimings(const std::vector<scalar_t>& event_times, const std::vector<bool>& contactFlags) {
+  assert(event_times.size() + 1 == contactFlags.size());
   const int numPhases = contactFlags.size();
 
   std::vector<SwingTiming> swingTimings;
-  swingTimings.reserve(1 + eventTimes.size() / 2);  // Approximate upper bound
+  swingTimings.reserve(1 + event_times.size() / 2);  // Approximate upper bound
   int currentPhase = 0;
 
   while (currentPhase < numPhases) {
@@ -301,7 +301,7 @@ std::vector<SwingTiming> extractSwingTimings(const std::vector<scalar_t>& eventT
     }
 
     // Register start of the swing phase
-    const scalar_t startTime = (currentPhase == 0) ? std::numeric_limits<scalar_t>::quiet_NaN() : eventTimes[currentPhase - 1];
+    const scalar_t startTime = (currentPhase == 0) ? std::numeric_limits<scalar_t>::quiet_NaN() : event_times[currentPhase - 1];
 
     // Find when the swing phase ends
     while (currentPhase + 1 < numPhases && !contactFlags[currentPhase + 1]) {
@@ -309,7 +309,7 @@ std::vector<SwingTiming> extractSwingTimings(const std::vector<scalar_t>& eventT
     }
 
     // Register end of the contact phase
-    const scalar_t endTime = (currentPhase + 1 >= numPhases) ? std::numeric_limits<scalar_t>::quiet_NaN() : eventTimes[currentPhase];
+    const scalar_t endTime = (currentPhase + 1 >= numPhases) ? std::numeric_limits<scalar_t>::quiet_NaN() : event_times[currentPhase];
 
     // Add to phases
     swingTimings.push_back({startTime, endTime});
@@ -321,14 +321,14 @@ std::vector<SwingTiming> extractSwingTimings(const std::vector<scalar_t>& eventT
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-feet_array_t<std::vector<bool>> extractContactFlags(const std::vector<size_t>& modeSequence) {
-  const size_t numPhases = modeSequence.size();
+feet_array_t<std::vector<bool>> extractContactFlags(const std::vector<size_t>& mode_sequence) {
+  const size_t numPhases = mode_sequence.size();
 
   feet_array_t<std::vector<bool>> contactFlagStock;
   std::fill(contactFlagStock.begin(), contactFlagStock.end(), std::vector<bool>(numPhases));
 
   for (size_t i = 0; i < numPhases; i++) {
-    const auto contactFlag = modeNumber2StanceLeg(modeSequence[i]);
+    const auto contactFlag = modeNumber2StanceLeg(mode_sequence[i]);
     for (size_t j = 0; j < contactFlagStock.size(); j++) {
       contactFlagStock[j][i] = contactFlag[j];
     }

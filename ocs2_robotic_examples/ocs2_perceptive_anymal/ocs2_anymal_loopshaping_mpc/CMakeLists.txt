@@ -43,7 +43,8 @@ include_directories(
 add_library(${PROJECT_NAME}
   src/AnymalLoopshapingInterface.cpp
 )
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(
+  ${PROJECT_NAME}
   ${catkin_LIBRARIES}
 )
 target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
@@ -51,7 +52,8 @@ target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 add_executable(${PROJECT_NAME}_mpc_node
   src/AnymalLoopshapingMpcNode.cpp
 )
-target_link_libraries(${PROJECT_NAME}_mpc_node
+target_link_libraries(
+  ${PROJECT_NAME}_mpc_node
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
 )
@@ -59,7 +61,8 @@ target_link_libraries(${PROJECT_NAME}_mpc_node
 add_executable(${PROJECT_NAME}_dummy_mrt_node
   src/AnymalLoopshapingDummyMrt.cpp
 )
-target_link_libraries(${PROJECT_NAME}_dummy_mrt_node
+target_link_libraries(
+  ${PROJECT_NAME}_dummy_mrt_node
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
 )
@@ -67,7 +70,8 @@ target_link_libraries(${PROJECT_NAME}_dummy_mrt_node
 add_executable(${PROJECT_NAME}_perceptive_demo
   src/PerceptiveMpcDemo.cpp
   )
-target_link_libraries(${PROJECT_NAME}_perceptive_demo
+target_link_libraries(
+  ${PROJECT_NAME}_perceptive_demo
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
   )
@@ -115,7 +119,8 @@ catkin_add_gtest(${PROJECT_NAME}_test
   test/testMotionTracking.cpp
   test/testSensitivity.cpp
 )
-target_link_libraries(${PROJECT_NAME}_test
+target_link_libraries(
+  ${PROJECT_NAME}_test
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
   gtest_main

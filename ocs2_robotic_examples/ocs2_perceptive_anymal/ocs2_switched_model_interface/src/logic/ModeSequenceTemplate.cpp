@@ -34,9 +34,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace switched_model {
 
-std::ostream& operator<<(std::ostream& stream, const ModeSequenceTemplate& modeSequenceTemplate) {
-  stream << "Template switching times: {" << ocs2::toDelimitedString(modeSequenceTemplate.switchingTimes) << "}\n";
-  stream << "Template mode sequence:   {" << ocs2::toDelimitedString(modeSequenceTemplate.modeSequence) << "}\n";
+std::ostream& operator<<(std::ostream& stream, const ModeSequenceTemplate& mode_sequenceTemplate) {
+  stream << "Template switching times: {" << ocs2::to_delimited_str(mode_sequenceTemplate.switchingTimes) << "}\n";
+  stream << "Template mode sequence:   {" << ocs2::to_delimited_str(mode_sequenceTemplate.mode_sequence) << "}\n";
   return stream;
 }
 
@@ -44,70 +44,70 @@ ModeSequenceTemplate loadModeSequenceTemplate(const std::string& filename, const
   std::vector<scalar_t> switchingTimes;
   ocs2::loadData::loadStdVector(filename, topicName + ".switchingTimes", switchingTimes, verbose);
 
-  std::vector<std::string> modeSequenceString;
-  ocs2::loadData::loadStdVector(filename, topicName + ".modeSequence", modeSequenceString, verbose);
+  std::vector<std::string> mode_sequenceString;
+  ocs2::loadData::loadStdVector(filename, topicName + ".mode_sequence", mode_sequenceString, verbose);
 
-  if (switchingTimes.empty() || modeSequenceString.empty()) {
+  if (switchingTimes.empty() || mode_sequenceString.empty()) {
     throw std::runtime_error("[loadModeSequenceTemplate] failed to load : " + topicName + " from " + filename);
   }
 
   // convert the mode name to mode enum
-  std::vector<size_t> modeSequence;
-  modeSequence.reserve(modeSequenceString.size());
-  for (const auto& modeName : modeSequenceString) {
-    modeSequence.push_back(string2ModeNumber(modeName));
+  std::vector<size_t> mode_sequence;
+  mode_sequence.reserve(mode_sequenceString.size());
+  for (const auto& modeName : mode_sequenceString) {
+    mode_sequence.push_back(string2ModeNumber(modeName));
   }
 
-  return {switchingTimes, modeSequence};
+  return {switchingTimes, mode_sequence};
 }
 
-ocs2_msgs::mode_schedule createModeSequenceTemplateMsg(const ModeSequenceTemplate& modeSequenceTemplate) {
-  ocs2_msgs::mode_schedule modeScheduleMsg;
-  modeScheduleMsg.eventTimes.assign(modeSequenceTemplate.switchingTimes.begin(), modeSequenceTemplate.switchingTimes.end());
-  modeScheduleMsg.modeSequence.assign(modeSequenceTemplate.modeSequence.begin(), modeSequenceTemplate.modeSequence.end());
-  return modeScheduleMsg;
+ocs2_msgs::mode_schedule createModeSequenceTemplateMsg(const ModeSequenceTemplate& mode_sequenceTemplate) {
+  ocs2_msgs::mode_schedule mode_scheduleMsg;
+  mode_scheduleMsg.event_times.assign(mode_sequenceTemplate.switchingTimes.begin(), mode_sequenceTemplate.switchingTimes.end());
+  mode_scheduleMsg.mode_sequence.assign(mode_sequenceTemplate.mode_sequence.begin(), mode_sequenceTemplate.mode_sequence.end());
+  return mode_scheduleMsg;
 }
 
-ModeSequenceTemplate readModeSequenceTemplateMsg(const ocs2_msgs::mode_schedule& modeScheduleMsg) {
-  std::vector<scalar_t> switchingTimes(modeScheduleMsg.eventTimes.begin(), modeScheduleMsg.eventTimes.end());
-  std::vector<size_t> modeSequence(modeScheduleMsg.modeSequence.begin(), modeScheduleMsg.modeSequence.end());
-  return {switchingTimes, modeSequence};
+ModeSequenceTemplate readModeSequenceTemplateMsg(const ocs2_msgs::mode_schedule& mode_scheduleMsg) {
+  std::vector<scalar_t> switchingTimes(mode_scheduleMsg.event_times.begin(), mode_scheduleMsg.event_times.end());
+  std::vector<size_t> mode_sequence(mode_scheduleMsg.mode_sequence.begin(), mode_scheduleMsg.mode_sequence.end());
+  return {switchingTimes, mode_sequence};
 }
 
-Gait toGait(const ModeSequenceTemplate& modeSequenceTemplate) {
-  const auto startTime = modeSequenceTemplate.switchingTimes.front();
-  const auto endTime = modeSequenceTemplate.switchingTimes.back();
+Gait toGait(const ModeSequenceTemplate& mode_sequenceTemplate) {
+  const auto startTime = mode_sequenceTemplate.switchingTimes.front();
+  const auto endTime = mode_sequenceTemplate.switchingTimes.back();
   Gait gait;
   gait.duration = endTime - startTime;
   // Events: from time -> phase
-  gait.eventPhases.reserve(modeSequenceTemplate.switchingTimes.size());
-  std::for_each(modeSequenceTemplate.switchingTimes.begin() + 1, modeSequenceTemplate.switchingTimes.end() - 1,
+  gait.eventPhases.reserve(mode_sequenceTemplate.switchingTimes.size());
+  std::for_each(mode_sequenceTemplate.switchingTimes.begin() + 1, mode_sequenceTemplate.switchingTimes.end() - 1,
                 [&](scalar_t eventTime) { gait.eventPhases.push_back((eventTime - startTime) / gait.duration); });
   // Modes:
-  gait.modeSequence = modeSequenceTemplate.modeSequence;
+  gait.mode_sequence = mode_sequenceTemplate.mode_sequence;
   assert(isValidGait(gait));
   return gait;
 }
 
 ocs2::ModeSchedule loadModeSchedule(const std::string& filename, const std::string& topicName, bool verbose) {
-  std::vector<scalar_t> eventTimes;
-  ocs2::loadData::loadStdVector(filename, topicName + ".eventTimes", eventTimes, verbose);
+  std::vector<scalar_t> event_times;
+  ocs2::loadData::loadStdVector(filename, topicName + ".event_times", event_times, verbose);
 
-  std::vector<std::string> modeSequenceString;
-  ocs2::loadData::loadStdVector(filename, topicName + ".modeSequence", modeSequenceString, verbose);
+  std::vector<std::string> mode_sequenceString;
+  ocs2::loadData::loadStdVector(filename, topicName + ".mode_sequence", mode_sequenceString, verbose);
 
-  if (modeSequenceString.empty()) {
+  if (mode_sequenceString.empty()) {
     throw std::runtime_error("[loadModeSchedule] failed to load : " + topicName + " from " + filename);
   }
 
   // convert the mode name to mode enum
-  std::vector<size_t> modeSequence;
-  modeSequence.reserve(modeSequenceString.size());
-  for (const auto& modeName : modeSequenceString) {
-    modeSequence.push_back(string2ModeNumber(modeName));
+  std::vector<size_t> mode_sequence;
+  mode_sequence.reserve(mode_sequenceString.size());
+  for (const auto& modeName : mode_sequenceString) {
+    mode_sequence.push_back(string2ModeNumber(modeName));
   }
 
-  return {eventTimes, modeSequence};
+  return {event_times, mode_sequence};
 }
 
 }  // namespace switched_model

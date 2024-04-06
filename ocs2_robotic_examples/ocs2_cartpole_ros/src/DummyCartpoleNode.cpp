@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
 
   // MRT
   ocs2::MRT_ROS_Interface mrt(robotName);
-  mrt.initRollout(&cartPoleInterface.getRollout());
+  mrt.init_rollout(&cartPoleInterface.getRollout());
   mrt.launchNodes(nodeHandle);
 
   // Visualization
@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
   // Dummy loop
   ocs2::MRT_ROS_Dummy_Loop dummyCartpole(mrt, cartPoleInterface.mpcSettings().mrtDesiredFrequency_,
                                          cartPoleInterface.mpcSettings().mpcDesiredFrequency_);
-  dummyCartpole.subscribeObservers({cartpoleDummyVisualization});
+  dummyCartpole.subscribe_observers({cartpoleDummyVisualization});
 
   // initial state
   ocs2::SystemObservation initObservation;

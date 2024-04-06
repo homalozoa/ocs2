@@ -31,48 +31,59 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cmath>
 #include <utility>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "ocs2_core/automatic_differentiation/CppAdInterface.hpp"
+#include "ocs2_core/misc/Numerics.hpp"
+#include "ocs2_perceptive/interpolation/TrilinearInterpolation.hpp"
 
-#include <ocs2_core/automatic_differentiation/CppAdInterface.h>
-#include <ocs2_core/misc/Numerics.h>
+namespace ocs2
+{
+namespace trilinear_interpolation
+{
 
-#include "ocs2_perceptive/interpolation/TrilinearInterpolation.h"
-
-namespace ocs2 {
-namespace trilinear_interpolation {
-
-class TestTrilinearInterpolation : public ::testing::Test {
- protected:
+class TestTrilinearInterpolation : public ::testing::Test
+{
+protected:
   using array8_t = std::array<scalar_t, 8>;
   using vector3_t = Eigen::Matrix<scalar_t, 3, 1>;
 
-  TestTrilinearInterpolation() {
-    auto adTrilinearInterpolation = [](const ad_vector_t& x, const ad_vector_t& p, ad_vector_t& out) {
-      const ad_scalar_t resolution = p(0);
-      const ad_vector_t referenceCorner = (ad_vector_t(3) << p(1), p(2), p(3)).finished();
-      const std::array<ad_scalar_t, 8> cornerValues = {p(4), p(5), p(6), p(7), p(8), p(9), p(10), p(11)};
+  TestTrilinearInterpolation()
+  {
+    auto adTrilinearInterpolation =
+      [](const ad_vector_t & x, const ad_vector_t & p, ad_vector_t & out) {
+        const ad_scalar_t resolution = p(0);
+        const ad_vector_t referenceCorner = (ad_vector_t(3) << p(1), p(2), p(3)).finished();
+        const std::array<ad_scalar_t, 8> cornerValues = {p(4), p(5), p(6),  p(7),
+                                                         p(8), p(9), p(10), p(11)};
 
-      const ad_vector_t positionRed = (x.head(3) - referenceCorner) / resolution;
-      const ad_vector_t positionRedFlip = ad_vector_t::Ones(3) - positionRed;
+        const ad_vector_t positionRed = (x.head(3) - referenceCorner) / resolution;
+        const ad_vector_t positionRedFlip = ad_vector_t::Ones(3) - positionRed;
 
-      const ad_scalar_t v00 = positionRedFlip(0) * cornerValues[0] + positionRed(0) * cornerValues[1];
-      const ad_scalar_t v10 = positionRedFlip(0) * cornerValues[2] + positionRed(0) * cornerValues[3];
-      const ad_scalar_t v01 = positionRedFlip(0) * cornerValues[4] + positionRed(0) * cornerValues[5];
-      const ad_scalar_t v11 = positionRedFlip(0) * cornerValues[6] + positionRed(0) * cornerValues[7];
-      const ad_scalar_t v0 = positionRedFlip(1) * v00 + positionRed(1) * v10;
-      const ad_scalar_t v1 = positionRedFlip(1) * v01 + positionRed(1) * v11;
+        const ad_scalar_t v00 =
+          positionRedFlip(0) * cornerValues[0] + positionRed(0) * cornerValues[1];
+        const ad_scalar_t v10 =
+          positionRedFlip(0) * cornerValues[2] + positionRed(0) * cornerValues[3];
+        const ad_scalar_t v01 =
+          positionRedFlip(0) * cornerValues[4] + positionRed(0) * cornerValues[5];
+        const ad_scalar_t v11 =
+          positionRedFlip(0) * cornerValues[6] + positionRed(0) * cornerValues[7];
+        const ad_scalar_t v0 = positionRedFlip(1) * v00 + positionRed(1) * v10;
+        const ad_scalar_t v1 = positionRedFlip(1) * v01 + positionRed(1) * v11;
 
-      out.resize(1);
-      out(0) = positionRedFlip(2) * v0 + positionRed(2) * v1;
-      out(0) *= x(3);
-    };
+        out.resize(1);
+        out(0) = positionRedFlip(2) * v0 + positionRed(2) * v1;
+        out(0) *= x(3);
+      };
 
-    cppadInterfacePtr.reset(new CppAdInterface(adTrilinearInterpolation, variableDim, parameterDim, "TestTrilinearInterpolation"));
+    cppadInterfacePtr.reset(new CppAdInterface(
+      adTrilinearInterpolation, variableDim, parameterDim, "TestTrilinearInterpolation"));
     cppadInterfacePtr->createModels(CppAdInterface::ApproximationOrder::First, verbose);
   }
 
-  scalar_t trilinearInterpolation(scalar_t resolution, const vector3_t& referenceCorner, const array8_t& cornerValues,
-                                  const vector3_t& position) {
+  scalar_t trilinearInterpolation(
+    scalar_t resolution, const vector3_t & referenceCorner, const array8_t & cornerValues,
+    const vector3_t & position)
+  {
     const vector3_t positionRed = (position - referenceCorner) / resolution;
     const vector3_t positionRedFlip = vector3_t::Ones() - positionRed;
 
@@ -89,7 +100,9 @@ class TestTrilinearInterpolation : public ::testing::Test {
   }
 
   /** param = (resolution, referenceCornerXYZ, cornerValues[0:7]) */
-  vector_t toParameter(scalar_t resolution, const vector3_t& referenceCorner, const array8_t& cornerValues) {
+  vector_t toParameter(
+    scalar_t resolution, const vector3_t & referenceCorner, const array8_t & cornerValues)
+  {
     vector_t p(12);
     p(0) = resolution;
     p(1) = referenceCorner.x();
@@ -123,7 +136,8 @@ constexpr size_t TestTrilinearInterpolation::parameterDim;
 constexpr scalar_t TestTrilinearInterpolation::precision;
 constexpr scalar_t TestTrilinearInterpolation::resolution;
 
-TEST_F(TestTrilinearInterpolation, testAdFunction) {
+TEST_F(TestTrilinearInterpolation, testAdFunction)
+{
   for (size_t i = 0; i < numSamples; i++) {
     const vector_t randValues = vector_t::Random(parameterDim - 1 + variableDim - 1);
     const vector3_t position(randValues(0), randValues(1), randValues(2));
@@ -131,7 +145,8 @@ TEST_F(TestTrilinearInterpolation, testAdFunction) {
     const array8_t cornerValues = {randValues(6),  randValues(7),  randValues(8),  randValues(9),
                                    randValues(10), randValues(11), randValues(12), randValues(13)};
 
-    const scalar_t trueValue = trilinearInterpolation(resolution, referenceCorner, cornerValues, position);
+    const scalar_t trueValue =
+      trilinearInterpolation(resolution, referenceCorner, cornerValues, position);
 
     const vector_t input = (vector_t(4) << position, 1.0).finished();
     const vector_t param = toParameter(resolution, referenceCorner, cornerValues);
@@ -139,15 +154,18 @@ TEST_F(TestTrilinearInterpolation, testAdFunction) {
     const scalar_t value = cppadInterfacePtr->getFunctionValue(input, param)(0);
     // true linear approximation
     const matrix_t jacAug = cppadInterfacePtr->getJacobian(input, param);
-    const std::pair<scalar_t, vector3_t> linApprox = {jacAug(0, 3), vector3_t(jacAug(0, 0), jacAug(0, 1), jacAug(0, 2))};
+    const std::pair<scalar_t, vector3_t> linApprox = {
+      jacAug(0, 3), vector3_t(jacAug(0, 0), jacAug(0, 1), jacAug(0, 2))};
 
-    EXPECT_TRUE(std::abs(trueValue - value) < precision) << "the true value is " << trueValue << " while the value is " << value;
+    EXPECT_TRUE(std::abs(trueValue - value) < precision)
+      << "the true value is " << trueValue << " while the value is " << value;
     EXPECT_TRUE(std::abs(trueValue - linApprox.first) < precision)
-        << "the true value is " << trueValue << " while the linApprox.first is " << linApprox.first;
+      << "the true value is " << trueValue << " while the linApprox.first is " << linApprox.first;
   }  // end of i loop
 }
 
-TEST_F(TestTrilinearInterpolation, testTrilinearInterpolation) {
+TEST_F(TestTrilinearInterpolation, testTrilinearInterpolation)
+{
   for (size_t i = 0; i < numSamples; i++) {
     const vector_t randValues = vector_t::Random(parameterDim - 1 + variableDim - 1);
     const vector3_t position(randValues(0), randValues(1), randValues(2));
@@ -161,18 +179,22 @@ TEST_F(TestTrilinearInterpolation, testTrilinearInterpolation) {
     const scalar_t trueValue = cppadInterfacePtr->getFunctionValue(input, param)(0);
     // true linear approximation
     const matrix_t jacAug = cppadInterfacePtr->getJacobian(input, param);
-    const std::pair<scalar_t, vector3_t> trueLinApprox = {jacAug(0, 3), vector3_t(jacAug(0, 0), jacAug(0, 1), jacAug(0, 2))};
+    const std::pair<scalar_t, vector3_t> trueLinApprox = {
+      jacAug(0, 3), vector3_t(jacAug(0, 0), jacAug(0, 1), jacAug(0, 2))};
 
     // value and linear approximation
-    const auto value = trilinear_interpolation::getValue(resolution, referenceCorner, cornerValues, position);
-    const auto linApprox = trilinear_interpolation::getLinearApproximation(resolution, referenceCorner, cornerValues, position);
+    const auto value =
+      trilinear_interpolation::getValue(resolution, referenceCorner, cornerValues, position);
+    const auto linApprox = trilinear_interpolation::getLinearApproximation(
+      resolution, referenceCorner, cornerValues, position);
 
-    EXPECT_TRUE(std::abs(trueValue - value) < precision) << "the true value is " << trueValue << " while the value is " << value;
+    EXPECT_TRUE(std::abs(trueValue - value) < precision)
+      << "the true value is " << trueValue << " while the value is " << value;
     EXPECT_TRUE(std::abs(trueValue - linApprox.first) < precision)
-        << "the true value is " << trueValue << " while linApprox.first is " << linApprox.first;
+      << "the true value is " << trueValue << " while linApprox.first is " << linApprox.first;
     EXPECT_TRUE(trueLinApprox.second.isApprox(linApprox.second, precision))
-        << "the true value is (" << trueLinApprox.second.transpose() << ") while linApprox.second is (" << linApprox.second.transpose()
-        << ") ";
+      << "the true value is (" << trueLinApprox.second.transpose()
+      << ") while linApprox.second is (" << linApprox.second.transpose() << ") ";
   }  // end of i loop
 }
 

@@ -43,13 +43,13 @@ namespace ocs2
 /******************************************************************************************************/
 /******************************************************************************************************/
 std::vector<std::pair<scalar_t, scalar_t>> RolloutBase::findActiveModesTimeInterval(
-  scalar_t initTime, scalar_t finalTime, const scalar_array_t & eventTimes) const
+  scalar_t initTime, scalar_t finalTime, const scalar_array_t & event_times) const
 {
   // switching times
   const auto firstIndex =
-    std::upper_bound(eventTimes.cbegin(), eventTimes.cend(), initTime);  // no event at initial time
+    std::upper_bound(event_times.cbegin(), event_times.cend(), initTime);  // no event at initial time
   const auto lastIndex = std::upper_bound(
-    eventTimes.cbegin(), eventTimes.cend(), finalTime);  // can be an event at final time
+    event_times.cbegin(), event_times.cend(), finalTime);  // can be an event at final time
   scalar_array_t switchingTimes;
   switchingTimes.push_back(initTime);
   switchingTimes.insert(switchingTimes.end(), firstIndex, lastIndex);

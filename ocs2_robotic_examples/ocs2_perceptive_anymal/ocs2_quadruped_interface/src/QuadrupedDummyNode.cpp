@@ -21,7 +21,7 @@ void quadrupedDummyNode(ros::NodeHandle& nodeHandle, const QuadrupedInterface& q
   // MRT
   ocs2::MRT_ROS_Interface mrt(robotName);
   if (rolloutPtr != nullptr) {
-    mrt.initRollout(rolloutPtr);
+    mrt.init_rollout(rolloutPtr);
   }
   mrt.launchNodes(nodeHandle);
 
@@ -36,7 +36,7 @@ void quadrupedDummyNode(ros::NodeHandle& nodeHandle, const QuadrupedInterface& q
 
   // Dummy MRT
   ocs2::MRT_ROS_Dummy_Loop dummySimulator(mrt, mrtDesiredFrequency, mpcDesiredFrequency);
-  dummySimulator.subscribeObservers({visualizer, logger});
+  dummySimulator.subscribe_observers({visualizer, logger});
 
   // initial state
   ocs2::SystemObservation initObservation;

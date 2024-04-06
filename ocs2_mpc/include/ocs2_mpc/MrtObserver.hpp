@@ -41,10 +41,10 @@ namespace ocs2
  *
  * The MRT uses a buffer structure to allow access to a in-use policy while a new policy is being prepared in a separate thread.
  * After a new policy is available in the separate thread, it is loaded into a policy buffer.
- *      - At this point the "modifyBufferedSolution" of this class is called.
+ *      - At this point the "modify_buffered_solution" of this class is called.
  *
  * When a user requests an update, the in-use policy is swapped for the buffered policy.
- *      - At this point the "modifyActiveSolution" of this class is called.
+ *      - At this point the "modify_active_solution" of this class is called.
  *
  * Both filling of the buffer and the update swapping are protected by the same mutex.
  */
@@ -61,25 +61,25 @@ public:
   MrtObserver & operator=(MrtObserver &&) = delete;
 
   /**
-   * This method is called as part of MRT_BASE::updatePolicy().
-   * It allows the user to modify the policy that will become in-use after the updatePolicy function returns.
+   * This method is called as part of MrtBase::update_policy().
+   * It allows the user to modify the policy that will become in-use after the update_policy function returns.
    *
-   * This function is executed sequentially with updatePolicy and thus blocks the main thread. Computationally expensive modifications
-   * should therefore rather be done in "modifyBufferedSolution".
+   * This function is executed sequentially with update_policy and thus blocks the main thread. Computationally expensive modifications
+   * should therefore rather be done in "modify_buffered_solution".
    *
-   * A call to this function is protected by the same mutex as modifyBufferedSolution.
+   * A call to this function is protected by the same mutex as modify_buffered_solution.
    */
-  virtual void modifyActiveSolution(const CommandData & command, PrimalSolution & primalSolution) {}
+  virtual void modify_active_solution(const CommandData & command, PrimalSolution & primalSolution) {}
 
   /**
    * This method is called by the MRT when a new policy is loaded into the buffer.
-   * It allows the user to modify the buffered solution before it can be swapped during the updatePolicy call.
+   * It allows the user to modify the buffered solution before it can be swapped during the update_policy call.
    *
    * When using a multi-threaded MRT, this function does not block the main thread.
    *
-   * A call to this function is protected by the same mutex as modifyActiveSolution.
+   * A call to this function is protected by the same mutex as modify_active_solution.
    */
-  virtual void modifyBufferedSolution(
+  virtual void modify_buffered_solution(
     const CommandData & commandBuffer, PrimalSolution & primalSolutionBuffer)
   {
   }

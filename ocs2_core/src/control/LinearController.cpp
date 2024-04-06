@@ -1,3 +1,4 @@
+// Copyright 2024 Homalozoa. All rights reserved.
 // Copyright 2020 Farbod Farshidian. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -222,7 +223,7 @@ scalar_array_t LinearController::controllerEventTimes() const
     return scalar_array_t(0);
   }
 
-  scalar_array_t eventTimes{0.0};
+  scalar_array_t event_times{0.0};
   scalar_t lastevent = timeStamp_.front();
   for (int i = 0; i < timeStamp_.size() - 1; i++) {
     bool eventDetected =
@@ -231,18 +232,18 @@ scalar_array_t LinearController::controllerEventTimes() const
       timeStamp_[i] - lastevent > 2.0 * numeric_traits::weakEpsilon<scalar_t>();
 
     if (eventDetected && sufficientTimeSinceEvent) {  // push back event when event is detected
-      eventTimes.push_back(timeStamp_[i]);
-      lastevent = eventTimes.back();
+      event_times.push_back(timeStamp_[i]);
+      lastevent = event_times.back();
     } else if (eventDetected) {
       // if event is detected to close to the last event,
       // it is assumed that the earlier event was not an event
       // but was due to the refining steps taken in event detection
       // The last "detected event" is the time the event took place
-      eventTimes.back() = timeStamp_[i];
-      lastevent = eventTimes.back();
+      event_times.back() = timeStamp_[i];
+      lastevent = event_times.back();
     }
   }
-  return eventTimes;
+  return event_times;
 }
 
 void swap(LinearController & a, LinearController & b) noexcept

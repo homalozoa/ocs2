@@ -22,7 +22,7 @@ void quadrupedLoopshapingDummyNode(ros::NodeHandle& nodeHandle, const QuadrupedL
 
   // MRT
   ocs2::MRT_ROS_Interface mrt(robotName);
-  mrt.initRollout(&quadrupedInterface.getRollout());
+  mrt.init_rollout(&quadrupedInterface.getRollout());
   mrt.launchNodes(nodeHandle);
 
   // Visualization
@@ -40,7 +40,7 @@ void quadrupedLoopshapingDummyNode(ros::NodeHandle& nodeHandle, const QuadrupedL
 
   // Dummy MRT
   ocs2::MRT_ROS_Dummy_Loop dummySimulator(mrt, mrtDesiredFrequency, mpcDesiredFrequency);
-  dummySimulator.subscribeObservers({loopshapingObservers});
+  dummySimulator.subscribe_observers({loopshapingObservers});
 
   // initial state
   ocs2::SystemObservation initObservation;

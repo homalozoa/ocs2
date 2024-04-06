@@ -16,7 +16,7 @@
 
 namespace switched_model {
 
-void quadrupedMpcNode(ros::NodeHandle& nodeHandle, const QuadrupedInterface& quadrupedInterface, std::unique_ptr<ocs2::MPC_BASE> mpcPtr) {
+void quadrupedMpcNode(ros::NodeHandle& nodeHandle, const QuadrupedInterface& quadrupedInterface, std::unique_ptr<ocs2::MpcBase> mpcPtr) {
   const std::string robotName = "anymal";
 
   auto solverModules = quadrupedInterface.getSynchronizedModules();

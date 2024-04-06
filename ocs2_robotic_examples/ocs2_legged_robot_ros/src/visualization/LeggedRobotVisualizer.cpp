@@ -109,7 +109,7 @@ void LeggedRobotVisualizer::update(const SystemObservation& observation, const P
     publishObservation(timeStamp, observation);
     publishDesiredTrajectory(timeStamp, command.mpcTargetTrajectories_);
     publishOptimizedStateTrajectory(timeStamp, primalSolution.timeTrajectory_, primalSolution.stateTrajectory_,
-                                    primalSolution.modeSchedule_);
+                                    primalSolution.mode_schedule_);
     lastTime_ = observation.time;
   }
 }
@@ -278,7 +278,7 @@ void LeggedRobotVisualizer::publishDesiredTrajectory(ros::Time timeStamp, const 
 /******************************************************************************************************/
 /******************************************************************************************************/
 void LeggedRobotVisualizer::publishOptimizedStateTrajectory(ros::Time timeStamp, const scalar_array_t& mpcTimeTrajectory,
-                                                            const vector_array_t& mpcStateTrajectory, const ModeSchedule& modeSchedule) {
+                                                            const vector_array_t& mpcStateTrajectory, const ModeSchedule& mode_schedule) {
   if (mpcTimeTrajectory.empty() || mpcStateTrajectory.empty()) {
     return;  // Nothing to publish
   }
@@ -332,15 +332,15 @@ void LeggedRobotVisualizer::publishOptimizedStateTrajectory(ros::Time timeStamp,
   sphereList.scale.z = footMarkerDiameter_;
   sphereList.ns = "Future footholds";
   sphereList.pose.orientation = getOrientationMsg({1., 0., 0., 0.});
-  const auto& eventTimes = modeSchedule.eventTimes;
-  const auto& subsystemSequence = modeSchedule.modeSequence;
+  const auto& event_times = mode_schedule.event_times;
+  const auto& subsystemSequence = mode_schedule.mode_sequence;
   const auto tStart = mpcTimeTrajectory.front();
   const auto tEnd = mpcTimeTrajectory.back();
-  for (size_t event = 0; event < eventTimes.size(); ++event) {
-    if (tStart < eventTimes[event] && eventTimes[event] < tEnd) {  // Only publish future footholds within the optimized horizon
+  for (size_t event = 0; event < event_times.size(); ++event) {
+    if (tStart < event_times[event] && event_times[event] < tEnd) {  // Only publish future footholds within the optimized horizon
       const auto preEventContactFlags = modeNumber2StanceLeg(subsystemSequence[event]);
       const auto postEventContactFlags = modeNumber2StanceLeg(subsystemSequence[event + 1]);
-      const auto postEventState = LinearInterpolation::interpolate(eventTimes[event], mpcTimeTrajectory, mpcStateTrajectory);
+      const auto postEventState = LinearInterpolation::interpolate(event_times[event], mpcTimeTrajectory, mpcStateTrajectory);
 
       const auto& model = pinocchioInterface_.getModel();
       auto& data = pinocchioInterface_.getData();

@@ -58,7 +58,8 @@ add_dependencies(${PROJECT_NAME}
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
 )
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(
+  ${PROJECT_NAME}
   ${catkin_LIBRARIES}
    dl
 )
@@ -88,7 +89,8 @@ install(DIRECTORY launch
 catkin_add_gtest(${PROJECT_NAME}_switched_model_test
   test/TestDynamicsHelpers.cpp
 )
-target_link_libraries(${PROJECT_NAME}_switched_model_test
+target_link_libraries(
+  ${PROJECT_NAME}_switched_model_test
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
   gtest_main

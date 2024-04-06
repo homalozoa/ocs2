@@ -27,27 +27,32 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <ocs2_ddp/DDP_DataCollector.h>
+#include "ocs2_ddp/DDP_DataCollector.hpp"
 
-namespace ocs2 {
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-DDP_DataCollector::DDP_DataCollector(const RolloutBase* rolloutPtr, const SystemDynamicsBase* systemDynamicsPtr,
-                                     const ConstraintBase* systemConstraintsPtr, const CostFunctionBase* costFunctionPtr)
-
-    : rolloutPtr_(rolloutPtr->clone()),
-      systemDynamicsPtr_(systemDynamicsPtr->clone()),
-      systemConstraintsPtr_(systemConstraintsPtr->clone()),
-      costFunctionPtr_(costFunctionPtr->clone()) {}
+namespace ocs2
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void DDP_DataCollector::collect(const GaussNewtonDDP* constDdpPtr) {
+DDP_DataCollector::DDP_DataCollector(
+  const RolloutBase * rolloutPtr, const SystemDynamicsBase * systemDynamicsPtr,
+  const ConstraintBase * systemConstraintsPtr, const CostFunctionBase * costFunctionPtr)
+
+: rolloutPtr_(rolloutPtr->clone()),
+  systemDynamicsPtr_(systemDynamicsPtr->clone()),
+  systemConstraintsPtr_(systemConstraintsPtr->clone()),
+  costFunctionPtr_(costFunctionPtr->clone())
+{
+}
+
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
+void DDP_DataCollector::collect(const GaussNewtonDDP * constDdpPtr)
+{
   // TODO(mspieler): avoid const_cast
-  auto* ddpPtr = const_cast<GaussNewtonDDP*>(constDdpPtr);
+  auto * ddpPtr = const_cast<GaussNewtonDDP *>(constDdpPtr);
 
   /*
    * Data which should be copied
@@ -72,7 +77,7 @@ void DDP_DataCollector::collect(const GaussNewtonDDP* constDdpPtr) {
 
   rewindCounter_ = ddpPtr->rewindCounter_;
 
-  modeSchedule_ = ddpPtr->getReferenceManager().getModeSchedule();
+  mode_schedule_ = ddpPtr->getReferenceManager().getModeSchedule();
 
   // optimized controller
   optimizedControllersStock_ = ddpPtr->nominalControllersStock_;
@@ -111,27 +116,29 @@ void DDP_DataCollector::collect(const GaussNewtonDDP* constDdpPtr) {
   sTrajectoriesStock_.swap(ddpPtr->sTrajectoryStock_);
 
   // state-input constraints derivatives w.r.t. to the event times
-  calculateStateInputConstraintsSensitivity(constDdpPtr, nominalTimeTrajectoriesStock_, nominalStateTrajectoriesStock_,
-                                            nominalInputTrajectoriesStock_, EvDevEventTimesTrajectoryStockSet_,
-                                            EvDevEventTimesProjectedTrajectoryStockSet_);
+  calculateStateInputConstraintsSensitivity(
+    constDdpPtr, nominalTimeTrajectoriesStock_, nominalStateTrajectoriesStock_,
+    nominalInputTrajectoriesStock_, EvDevEventTimesTrajectoryStockSet_,
+    EvDevEventTimesProjectedTrajectoryStockSet_);
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void DDP_DataCollector::calculateStateInputConstraintsSensitivity(const GaussNewtonDDP* constDdpPtr,
-                                                                  const std::vector<scalar_array_t>& timeTrajectoriesStock,
-                                                                  const vector_array2_t& stateTrajectoriesStock,
-                                                                  const vector_array2_t& inputTrajectoriesStock,
-                                                                  vector_array3_t& EvDevEventTimesTrajectoriesStockSet,
-                                                                  vector_array3_t& EvDevEventTimesProjectedTrajectoriesStockSet) {
-  auto* ddpPtr = const_cast<GaussNewtonDDP*>(constDdpPtr);
+void DDP_DataCollector::calculateStateInputConstraintsSensitivity(
+  const GaussNewtonDDP * constDdpPtr, const std::vector<scalar_array_t> & timeTrajectoriesStock,
+  const vector_array2_t & stateTrajectoriesStock, const vector_array2_t & inputTrajectoriesStock,
+  vector_array3_t & EvDevEventTimesTrajectoriesStockSet,
+  vector_array3_t & EvDevEventTimesProjectedTrajectoriesStockSet)
+{
+  auto * ddpPtr = const_cast<GaussNewtonDDP *>(constDdpPtr);
 
-  const size_t numEventTimes = constDdpPtr->getReferenceManager().getModeSchedule().eventTimes.size();
+  const size_t numEventTimes =
+    constDdpPtr->getReferenceManager().getModeSchedule().event_times.size();
 
   // resizing EvDev container
   EvDevEventTimesTrajectoriesStockSet.resize(numEventTimes);
-  for (auto& EvDevEventTimesTrajectoryStock : EvDevEventTimesTrajectoriesStockSet) {
+  for (auto & EvDevEventTimesTrajectoryStock : EvDevEventTimesTrajectoriesStockSet) {
     EvDevEventTimesTrajectoryStock.resize(constDdpPtr->numPartitions_);
     for (size_t i = 0; i < constDdpPtr->numPartitions_; i++) {
       EvDevEventTimesTrajectoryStock[i].resize(timeTrajectoriesStock[i].size());
@@ -139,7 +146,8 @@ void DDP_DataCollector::calculateStateInputConstraintsSensitivity(const GaussNew
   }
   // resizing EvDevProjected container
   EvDevEventTimesProjectedTrajectoriesStockSet.resize(numEventTimes);
-  for (auto& EvDevEventTimesProjectedTrajectoriesStock : EvDevEventTimesProjectedTrajectoriesStockSet) {
+  for (auto & EvDevEventTimesProjectedTrajectoriesStock :
+       EvDevEventTimesProjectedTrajectoriesStockSet) {
     EvDevEventTimesProjectedTrajectoriesStock.resize(constDdpPtr->numPartitions_);
     for (size_t i = 0; i < constDdpPtr->numPartitions_; i++) {
       EvDevEventTimesProjectedTrajectoriesStock[i].resize(timeTrajectoriesStock[i].size());
@@ -149,19 +157,22 @@ void DDP_DataCollector::calculateStateInputConstraintsSensitivity(const GaussNew
   for (size_t i = 0; i < constDdpPtr->numPartitions_; i++) {
     for (size_t k = 0; k < timeTrajectoriesStock[i].size(); k++) {
       // evaluation
-      vector_array_t g1DevArray = systemConstraintsPtr_->stateInputEqualityConstraintDerivativesEventTimes(
+      vector_array_t g1DevArray =
+        systemConstraintsPtr_->stateInputEqualityConstraintDerivativesEventTimes(
           timeTrajectoriesStock[i][k], stateTrajectoriesStock[i][k], inputTrajectoriesStock[i][k]);
 
       // if derivatives where available
       if (!g1DevArray.empty()) {
         if (g1DevArray.size() != numEventTimes) {
-          throw std::runtime_error("Incorrect array dimension for constraint1 derivatives w.r.t. event times.");
+          throw std::runtime_error(
+            "Incorrect array dimension for constraint1 derivatives w.r.t. event times.");
         }
 
         for (size_t j = 0; j < numEventTimes; j++) {
           EvDevEventTimesTrajectoriesStockSet[j][i][k] = g1DevArray[j];
           EvDevEventTimesProjectedTrajectoriesStockSet[j][i][k] =
-              riccatiModificationTrajectoriesStock_[i][k].constraintRangeProjector_ * EvDevEventTimesTrajectoriesStockSet[j][i][k];
+            riccatiModificationTrajectoriesStock_[i][k].constraintRangeProjector_ *
+            EvDevEventTimesTrajectoriesStockSet[j][i][k];
         }  // end of j loop
 
       } else {
@@ -179,7 +190,8 @@ void DDP_DataCollector::calculateStateInputConstraintsSensitivity(const GaussNew
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void DDP_DataCollector::resizeDataContainer(size_t numPartitions) {
+void DDP_DataCollector::resizeDataContainer(size_t numPartitions)
+{
   if (numPartitions == 0) {
     throw std::runtime_error("The number of Partitions cannot be zero!");
   }

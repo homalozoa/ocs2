@@ -27,19 +27,19 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+#include "ocs2_ddp/test/bouncingmass/Reference.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <vector>
 
-#include <boost/numeric/odeint.hpp>
+#include "boost/numeric/odeint.hpp"
+#include "ocs2_core/Types.hpp"
+#include "ocs2_core/integration/eigenIntegration.hpp"
 
-#include <ocs2_core/Types.h>
-#include <ocs2_core/integration/eigenIntegration.h>
-
-#include "ocs2_ddp/test/bouncingmass/Reference.h"
-
-Reference::Reference(scalar_t t0, scalar_t t1, const vector_t& p0, const vector_t& p1) {
+Reference::Reference(scalar_t t0, scalar_t t1, const vector_t & p0, const vector_t & p1)
+{
   polX_ = Create5thOrdPol(t0, t1, p0, p1);
   polV_ = polyder(polX_);
   polU_ = polyder(polV_);
@@ -48,7 +48,8 @@ Reference::Reference(scalar_t t0, scalar_t t1, const vector_t& p0, const vector_
   t1_ = t1;
 }
 
-vector_t Reference::getInput(scalar_t time) const {
+vector_t Reference::getInput(scalar_t time) const
+{
   vector_t input = vector_t::Zero(1);
   for (int i = 0; i < polU_.size(); i++) {
     input[0] += polU_[i] * std::pow(time, i);
@@ -56,7 +57,8 @@ vector_t Reference::getInput(scalar_t time) const {
   return input;
 }
 
-vector_t Reference::getState(scalar_t time) const {
+vector_t Reference::getState(scalar_t time) const
+{
   vector_t x;
   if (time <= t1_ && time >= t0_) {
     x.setZero(3);
@@ -70,22 +72,29 @@ vector_t Reference::getState(scalar_t time) const {
   return x;
 }
 
-void Reference::extendref(scalar_t delta, Reference* refPre, Reference* refPost) {
+void Reference::extendref(scalar_t delta, Reference * refPre, Reference * refPost)
+{
   constexpr scalar_t dt = 1e-3;
 
-  boost::numeric::odeint::runge_kutta_dopri5<vector_t, scalar_t, vector_t, scalar_t, boost::numeric::odeint::vector_space_algebra> stepper;
+  boost::numeric::odeint::runge_kutta_dopri5<
+    vector_t, scalar_t, vector_t, scalar_t, boost::numeric::odeint::vector_space_algebra>
+    stepper;
 
   // Lambda for general system dynamics, assuming that the reference input is available
   const matrix_t A = (matrix_t(3, 3) << 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0).finished();
   const matrix_t B = (matrix_t(3, 1) << 0.0, 1.0, 0.0).finished();
-  auto model = [&](const vector_t& x, const vector_t& uref, vector_t& dxdt, const scalar_t t) { dxdt = A * x + B * uref; };
+  auto model = [&](const vector_t & x, const vector_t & uref, vector_t & dxdt, const scalar_t t) {
+    dxdt = A * x + B * uref;
+  };
 
   // pre-part of extension
   if (refPre != nullptr) {
     // Construct Lambda to represent System Dynamics with correct reference input
-    auto preModel = [&](const vector_t& x, vector_t& dxdt, const scalar_t t) { model(x, refPre->getInput(t), dxdt, t); };
+    auto preModel = [&](const vector_t & x, vector_t & dxdt, const scalar_t t) {
+      model(x, refPre->getInput(t), dxdt, t);
+    };
     // Construct lambda to act as observer, which will store the time and state trajectories
-    auto preObserver = [&](const vector_t& x, scalar_t t) {
+    auto preObserver = [&](const vector_t & x, scalar_t t) {
       tPre_.push_back(t);
       xPre_.push_back(x);
     };
@@ -101,9 +110,11 @@ void Reference::extendref(scalar_t delta, Reference* refPre, Reference* refPost)
   // post-part of extension
   if (refPost != nullptr) {
     // Construct Lambda to represent System Dynamics with correct reference input
-    auto postModel = [&](const vector_t& x, vector_t& dxdt, const scalar_t t) { model(x, refPost->getInput(t), dxdt, t); };
+    auto postModel = [&](const vector_t & x, vector_t & dxdt, const scalar_t t) {
+      model(x, refPost->getInput(t), dxdt, t);
+    };
     // Construct lambda to act as observer, which will store the time and state trajectories
-    auto postObserver = [&](const vector_t& x, scalar_t t) {
+    auto postObserver = [&](const vector_t & x, scalar_t t) {
       tPost_.push_back(t);
       xPost_.push_back(x);
     };
@@ -115,12 +126,15 @@ void Reference::extendref(scalar_t delta, Reference* refPre, Reference* refPost)
   }
 }
 
-Eigen::Matrix<scalar_t, 6, 1> Reference::Create5thOrdPol(scalar_t t0, scalar_t t1, const vector_t& p0, const vector_t& p1) const {
+Eigen::Matrix<scalar_t, 6, 1> Reference::Create5thOrdPol(
+  scalar_t t0, scalar_t t1, const vector_t & p0, const vector_t & p1) const
+{
   Eigen::Matrix<scalar_t, 6, 6> A;
-  A << 1, t0, std::pow(t0, 2), std::pow(t0, 3), std::pow(t0, 4), std::pow(t0, 5), 0, 1, 2 * t0, 3 * std::pow(t0, 2), 4 * std::pow(t0, 3),
-      5 * std::pow(t0, 4), 0, 0, 2, 6 * t0, 12 * std::pow(t0, 2), 20 * std::pow(t0, 3), 1, t1, std::pow(t1, 2), std::pow(t1, 3),
-      std::pow(t1, 4), std::pow(t1, 5), 0, 1, 2 * t1, 3 * std::pow(t1, 2), 4 * std::pow(t1, 3), 5 * std::pow(t1, 4), 0, 0, 2, 6 * t1,
-      12 * std::pow(t1, 2), 20 * std::pow(t1, 3);
+  A << 1, t0, std::pow(t0, 2), std::pow(t0, 3), std::pow(t0, 4), std::pow(t0, 5), 0, 1, 2 * t0,
+    3 * std::pow(t0, 2), 4 * std::pow(t0, 3), 5 * std::pow(t0, 4), 0, 0, 2, 6 * t0,
+    12 * std::pow(t0, 2), 20 * std::pow(t0, 3), 1, t1, std::pow(t1, 2), std::pow(t1, 3),
+    std::pow(t1, 4), std::pow(t1, 5), 0, 1, 2 * t1, 3 * std::pow(t1, 2), 4 * std::pow(t1, 3),
+    5 * std::pow(t1, 4), 0, 0, 2, 6 * t1, 12 * std::pow(t1, 2), 20 * std::pow(t1, 3);
 
   Eigen::Matrix<scalar_t, 6, 1> b;
   b << p0, p1;
@@ -128,9 +142,10 @@ Eigen::Matrix<scalar_t, 6, 1> Reference::Create5thOrdPol(scalar_t t0, scalar_t t
   return A.colPivHouseholderQr().solve(b);
 }
 
-void Reference::interpolate_ext(scalar_t time, vector_t& x) const {
-  const scalar_array_t* tVec;
-  const vector_array_t* xVec;
+void Reference::interpolate_ext(scalar_t time, vector_t & x) const
+{
+  const scalar_array_t * tVec;
+  const vector_array_t * xVec;
   if (time < t0_) {
     tVec = &tPre_;
     xVec = &xPre_;
@@ -152,7 +167,8 @@ void Reference::interpolate_ext(scalar_t time, vector_t& x) const {
   }
 }
 
-void Reference::display() {
+void Reference::display()
+{
   std::cerr << "#########################" << std::endl;
   std::cerr << "#Pre-Extended-Trajectory#" << std::endl;
   std::cerr << "#########################" << std::endl;
@@ -180,7 +196,8 @@ void Reference::display() {
   }
 }
 
-Eigen::Matrix<scalar_t, 6, 1> Reference::polyder(Eigen::Matrix<scalar_t, 6, 1> pol) {
+Eigen::Matrix<scalar_t, 6, 1> Reference::polyder(Eigen::Matrix<scalar_t, 6, 1> pol)
+{
   Eigen::Matrix<scalar_t, 6, 1> polOld = pol;
 
   for (int i = 0; i < pol.size(); i++) {

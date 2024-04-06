@@ -27,23 +27,27 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <pinocchio/fwd.hpp>  // forward declarations must be included first.
+#include "ocs2_centroidal_model/FactoryFunctions.hpp"
 
-#include "ocs2_centroidal_model/FactoryFunctions.h"
-
+// clang-format off
+#include "pinocchio/fwd.hpp"
+// clang-format on
 #include <pinocchio/algorithm/center-of-mass.hpp>
 #include <pinocchio/algorithm/centroidal.hpp>
 
-#include <ocs2_core/misc/LoadData.h>
-#include <ocs2_pinocchio_interface/urdf.h>
+#include "ocs2_core/misc/LoadData.hpp"
+#include "ocs2_pinocchio_interface/urdf.hpp"
 
-namespace ocs2 {
-namespace centroidal_model {
+namespace ocs2
+{
+namespace centroidal_model
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-PinocchioInterface createPinocchioInterface(const std::string& urdfFilePath) {
+PinocchioInterface createPinocchioInterface(const std::string & urdfFilePath)
+{
   // add 6 DoF for the floating base
   pinocchio::JointModelComposite jointComposite(2);
   jointComposite.addJoint(pinocchio::JointModelTranslation());
@@ -55,17 +59,20 @@ PinocchioInterface createPinocchioInterface(const std::string& urdfFilePath) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-PinocchioInterface createPinocchioInterface(const std::string& urdfFilePath, const std::vector<std::string>& jointNames) {
+PinocchioInterface createPinocchioInterface(
+  const std::string & urdfFilePath, const std::vector<std::string> & jointNames)
+{
   using joint_pair_t = std::pair<const std::string, std::shared_ptr<::urdf::Joint>>;
 
   ::urdf::ModelInterfaceSharedPtr urdfTree = ::urdf::parseURDFFile(urdfFilePath);
   if (urdfTree == nullptr) {
-    throw std::invalid_argument("The file " + urdfFilePath + " does not contain a valid URDF model!");
+    throw std::invalid_argument(
+      "The file " + urdfFilePath + " does not contain a valid URDF model!");
   }
 
   // remove extraneous joints from urdf
   ::urdf::ModelInterfaceSharedPtr newModel = std::make_shared<::urdf::ModelInterface>(*urdfTree);
-  for (joint_pair_t& jointPair : newModel->joints_) {
+  for (joint_pair_t & jointPair : newModel->joints_) {
     if (std::find(jointNames.begin(), jointNames.end(), jointPair.first) == jointNames.end()) {
       jointPair.second->type = urdf::Joint::FIXED;
     }
@@ -82,15 +89,19 @@ PinocchioInterface createPinocchioInterface(const std::string& urdfFilePath, con
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-CentroidalModelInfo createCentroidalModelInfo(const PinocchioInterface& interface, const CentroidalModelType& type,
-                                              const vector_t& nominalJointAngles, const std::vector<std::string>& threeDofContactNames,
-                                              const std::vector<std::string>& sixDofContactNames) {
-  const auto& model = interface.getModel();
+CentroidalModelInfo createCentroidalModelInfo(
+  const PinocchioInterface & interface, const CentroidalModelType & type,
+  const vector_t & nominalJointAngles, const std::vector<std::string> & threeDofContactNames,
+  const std::vector<std::string> & sixDofContactNames)
+{
+  const auto & model = interface.getModel();
   auto data = interface.getData();
 
   if (model.nq != nominalJointAngles.size() + 6) {
     const int expaectedNumJoints = model.nq - 6;
-    throw std::runtime_error("[CentroidalModelInfo] nominalJointAngles.size() should be " + std::to_string(expaectedNumJoints));
+    throw std::runtime_error(
+      "[CentroidalModelInfo] nominalJointAngles.size() should be " +
+      std::to_string(expaectedNumJoints));
   }
 
   CentroidalModelInfoTpl<scalar_t> info;
@@ -103,11 +114,11 @@ CentroidalModelInfo createCentroidalModelInfo(const PinocchioInterface& interfac
   info.inputDim = info.actuatedDofNum + 3 * info.numThreeDofContacts + 6 * info.numSixDofContacts;
   info.robotMass = pinocchio::computeTotalMass(model);
 
-  for (const auto& name : threeDofContactNames) {
+  for (const auto & name : threeDofContactNames) {
     info.endEffectorFrameIndices.push_back(model.getBodyId(name));
   }
 
-  for (const auto& name : sixDofContactNames) {
+  for (const auto & name : sixDofContactNames) {
     info.endEffectorFrameIndices.push_back(model.getBodyId(name));
   }
 
@@ -129,7 +140,9 @@ CentroidalModelInfo createCentroidalModelInfo(const PinocchioInterface& interfac
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-CentroidalModelType loadCentroidalType(const std::string& configFilePath, const std::string& fieldName) {
+CentroidalModelType loadCentroidalType(
+  const std::string & configFilePath, const std::string & fieldName)
+{
   boost::property_tree::ptree pt;
   boost::property_tree::read_info(configFilePath, pt);
   const size_t type = pt.template get<size_t>(fieldName);
@@ -139,7 +152,9 @@ CentroidalModelType loadCentroidalType(const std::string& configFilePath, const 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-vector_t loadDefaultJointState(size_t numJointState, const std::string& configFilePath, const std::string& fieldName) {
+vector_t loadDefaultJointState(
+  size_t numJointState, const std::string & configFilePath, const std::string & fieldName)
+{
   vector_t defaultJoints(numJointState);
   ocs2::loadData::loadEigenMatrix(configFilePath, fieldName, defaultJoints);
   return defaultJoints;

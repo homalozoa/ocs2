@@ -1,3 +1,4 @@
+// Copyright 2024 Homalozoa. All rights reserved.
 // Copyright 2020 Farbod Farshidian. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without

@@ -27,37 +27,43 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
-
-#include "ocs2_ipm/IpmSolver.h"
-
-#include <ocs2_core/constraint/LinearStateConstraint.h>
-#include <ocs2_core/constraint/LinearStateInputConstraint.h>
-#include <ocs2_core/initialization/DefaultInitializer.h>
-#include <ocs2_oc/test/circular_kinematics.h>
+#include "gtest/gtest.h"
+#include "ocs2_core/constraint/LinearStateConstraint.hpp"
+#include "ocs2_core/constraint/LinearStateInputConstraint.hpp"
+#include "ocs2_core/initialization/DefaultInitializer.hpp"
+#include "ocs2_ipm/IpmSolver.hpp"
+#include "ocs2_oc/test/circular_kinematics.hpp"
 
 using namespace ocs2;
 
-class CircleKinematics_MixedStateInputIneqConstraints final : public StateInputConstraint {
- public:
+class CircleKinematics_MixedStateInputIneqConstraints final : public StateInputConstraint
+{
+public:
   CircleKinematics_MixedStateInputIneqConstraints(scalar_t xumin, scalar_t xumax)
-      : StateInputConstraint(ConstraintOrder::Linear), xumin_(xumin), xumax_(xumax) {}
+  : StateInputConstraint(ConstraintOrder::Linear), xumin_(xumin), xumax_(xumax)
+  {
+  }
   ~CircleKinematics_MixedStateInputIneqConstraints() override = default;
 
-  CircleKinematics_MixedStateInputIneqConstraints* clone() const override {
+  CircleKinematics_MixedStateInputIneqConstraints * clone() const override
+  {
     return new CircleKinematics_MixedStateInputIneqConstraints(*this);
   }
 
   size_t getNumConstraints(scalar_t time) const override { return 2; }
 
-  vector_t getValue(scalar_t t, const vector_t& x, const vector_t& u, const PreComputation&) const override {
+  vector_t getValue(
+    scalar_t t, const vector_t & x, const vector_t & u, const PreComputation &) const override
+  {
     vector_t e(2);
     e << (x(0) * u(0) - xumin_), (xumax_ - x(1) * u(1));
     return e;
   }
 
-  VectorFunctionLinearApproximation getLinearApproximation(scalar_t t, const vector_t& x, const vector_t& u,
-                                                           const PreComputation& preComp) const override {
+  VectorFunctionLinearApproximation getLinearApproximation(
+    scalar_t t, const vector_t & x, const vector_t & u,
+    const PreComputation & preComp) const override
+  {
     VectorFunctionLinearApproximation e(2, x.size(), u.size());
     e.f = getValue(t, x, u, preComp);
     e.dfdx << u(0), 0, 0, -u(1);
@@ -65,11 +71,12 @@ class CircleKinematics_MixedStateInputIneqConstraints final : public StateInputC
     return e;
   }
 
- private:
+private:
   const scalar_t xumin_, xumax_;
 };
 
-TEST(test_circular_kinematics, solve_projected_EqConstraints) {
+TEST(test_circular_kinematics, solve_projected_EqConstraints)
+{
   // optimal control problem
   OptimalControlProblem problem = createCircularKinematicsProblem("/tmp/ocs2/ipm_test_generated");
 
@@ -121,36 +128,39 @@ TEST(test_circular_kinematics, solve_projected_EqConstraints) {
   // Check feedback controller
   for (int i = 0; i < primalSolution.timeTrajectory_.size() - 1; i++) {
     const auto t = primalSolution.timeTrajectory_[i];
-    const auto& x = primalSolution.stateTrajectory_[i];
-    const auto& u = primalSolution.inputTrajectory_[i];
+    const auto & x = primalSolution.stateTrajectory_[i];
+    const auto & u = primalSolution.inputTrajectory_[i];
     // Feed forward part
     ASSERT_TRUE(u.isApprox(primalSolution.controllerPtr_->computeInput(t, x)));
   }
 }
 
-TEST(test_circular_kinematics, solve_projected_EqConstraints_IneqConstraints) {
+TEST(test_circular_kinematics, solve_projected_EqConstraints_IneqConstraints)
+{
   constexpr size_t STATE_DIM = 2;
   constexpr size_t INPUT_DIM = 2;
 
   // optimal control problem
   OptimalControlProblem problem = createCircularKinematicsProblem("/tmp/ocs2/ipm_test_generated");
 
-  auto getStateBoxConstraint = [&](const vector_t& minState, const vector_t& maxState) {
+  auto getStateBoxConstraint = [&](const vector_t & minState, const vector_t & maxState) {
     constexpr size_t numIneqConstraint = 2 * STATE_DIM;
     const vector_t e = (vector_t(numIneqConstraint) << -minState, maxState).finished();
     const matrix_t C =
-        (matrix_t(numIneqConstraint, STATE_DIM) << matrix_t::Identity(STATE_DIM, STATE_DIM), -matrix_t::Identity(STATE_DIM, STATE_DIM))
-            .finished();
+      (matrix_t(numIneqConstraint, STATE_DIM) << matrix_t::Identity(STATE_DIM, STATE_DIM),
+       -matrix_t::Identity(STATE_DIM, STATE_DIM))
+        .finished();
     return std::make_unique<LinearStateConstraint>(std::move(e), std::move(C));
   };
 
-  auto getInputBoxConstraint = [&](const vector_t& minInput, const vector_t& maxInput) {
+  auto getInputBoxConstraint = [&](const vector_t & minInput, const vector_t & maxInput) {
     constexpr size_t numIneqConstraint = 2 * INPUT_DIM;
     const vector_t e = (vector_t(numIneqConstraint) << -minInput, maxInput).finished();
     const matrix_t C = matrix_t::Zero(numIneqConstraint, STATE_DIM);
     const matrix_t D =
-        (matrix_t(numIneqConstraint, INPUT_DIM) << matrix_t::Identity(INPUT_DIM, INPUT_DIM), -matrix_t::Identity(INPUT_DIM, INPUT_DIM))
-            .finished();
+      (matrix_t(numIneqConstraint, INPUT_DIM) << matrix_t::Identity(INPUT_DIM, INPUT_DIM),
+       -matrix_t::Identity(INPUT_DIM, INPUT_DIM))
+        .finished();
     return std::make_unique<LinearStateInputConstraint>(std::move(e), std::move(C), std::move(D));
   };
 
@@ -201,19 +211,20 @@ TEST(test_circular_kinematics, solve_projected_EqConstraints_IneqConstraints) {
   // check constraint satisfaction
   for (int i = 0; i < primalSolution.timeTrajectory_.size() - 1; i++) {
     if (primalSolution.inputTrajectory_[i].size() > 0) {
-      const scalar_t projectionConstraintViolation = primalSolution.stateTrajectory_[i].dot(primalSolution.inputTrajectory_[i]);
+      const scalar_t projectionConstraintViolation =
+        primalSolution.stateTrajectory_[i].dot(primalSolution.inputTrajectory_[i]);
       EXPECT_LT(std::abs(projectionConstraintViolation), 1.0e-06);
     }
   }
 
   // check constraint satisfaction
-  for (const auto& x : primalSolution.stateTrajectory_) {
+  for (const auto & x : primalSolution.stateTrajectory_) {
     if (x.size() > 0) {
       ASSERT_TRUE((x - xmin).minCoeff() >= 0);
       ASSERT_TRUE((xmax - x).minCoeff() >= 0);
     }
   }
-  for (const auto& u : primalSolution.inputTrajectory_) {
+  for (const auto & u : primalSolution.inputTrajectory_) {
     if (u.size() > 0) {
       ASSERT_TRUE((u - umin).minCoeff() >= 0);
       ASSERT_TRUE((umax - u).minCoeff() >= 0);
@@ -233,8 +244,8 @@ TEST(test_circular_kinematics, solve_projected_EqConstraints_IneqConstraints) {
   // Check feedback controller
   for (int i = 0; i < primalSolution.timeTrajectory_.size() - 1; i++) {
     const auto t = primalSolution.timeTrajectory_[i];
-    const auto& x = primalSolution.stateTrajectory_[i];
-    const auto& u = primalSolution.inputTrajectory_[i];
+    const auto & x = primalSolution.stateTrajectory_[i];
+    const auto & u = primalSolution.inputTrajectory_[i];
     // Feed forward part
     ASSERT_TRUE(u.isApprox(primalSolution.controllerPtr_->computeInput(t, x)));
   }
@@ -246,14 +257,16 @@ TEST(test_circular_kinematics, solve_projected_EqConstraints_IneqConstraints) {
   }
 }
 
-TEST(test_circular_kinematics, solve_projected_EqConstraints_MixedIneqConstraints) {
+TEST(test_circular_kinematics, solve_projected_EqConstraints_MixedIneqConstraints)
+{
   // optimal control problem
   OptimalControlProblem problem = createCircularKinematicsProblem("/tmp/ocs2/ipm_test_generated");
 
   // inequality constraints
   const scalar_t xumin = -2.0;
   const scalar_t xumax = 2.0;
-  auto stateInputIneqConstraint = std::make_unique<CircleKinematics_MixedStateInputIneqConstraints>(xumin, xumax);
+  auto stateInputIneqConstraint =
+    std::make_unique<CircleKinematics_MixedStateInputIneqConstraints>(xumin, xumax);
   auto stateInputIneqConstraintCloned = stateInputIneqConstraint->clone();
   problem.inequalityConstraintPtr->add("xubound", std::move(stateInputIneqConstraint));
 
@@ -296,7 +309,8 @@ TEST(test_circular_kinematics, solve_projected_EqConstraints_MixedIneqConstraint
   // check constraint satisfaction
   for (int i = 0; i < primalSolution.timeTrajectory_.size() - 1; i++) {
     if (primalSolution.inputTrajectory_[i].size() > 0) {
-      const scalar_t projectionConstraintViolation = primalSolution.stateTrajectory_[i].dot(primalSolution.inputTrajectory_[i]);
+      const scalar_t projectionConstraintViolation =
+        primalSolution.stateTrajectory_[i].dot(primalSolution.inputTrajectory_[i]);
       EXPECT_LT(std::abs(projectionConstraintViolation), 1.0e-06);
     }
   }
@@ -305,9 +319,10 @@ TEST(test_circular_kinematics, solve_projected_EqConstraints_MixedIneqConstraint
   const size_t N = primalSolution.inputTrajectory_.size();
   for (size_t i = 0; i < N; ++i) {
     const auto t = primalSolution.timeTrajectory_[i];
-    const auto& x = primalSolution.stateTrajectory_[i];
-    const auto& u = primalSolution.inputTrajectory_[i];
-    const auto constraintValue = stateInputIneqConstraintCloned->getValue(t, x, u, PreComputation());
+    const auto & x = primalSolution.stateTrajectory_[i];
+    const auto & u = primalSolution.inputTrajectory_[i];
+    const auto constraintValue =
+      stateInputIneqConstraintCloned->getValue(t, x, u, PreComputation());
     ASSERT_TRUE(constraintValue.minCoeff() >= 0.0);
   }
 
@@ -324,8 +339,8 @@ TEST(test_circular_kinematics, solve_projected_EqConstraints_MixedIneqConstraint
   // Check feedback controller
   for (int i = 0; i < primalSolution.timeTrajectory_.size() - 1; i++) {
     const auto t = primalSolution.timeTrajectory_[i];
-    const auto& x = primalSolution.stateTrajectory_[i];
-    const auto& u = primalSolution.inputTrajectory_[i];
+    const auto & x = primalSolution.stateTrajectory_[i];
+    const auto & u = primalSolution.inputTrajectory_[i];
     // Feed forward part
     ASSERT_TRUE(u.isApprox(primalSolution.controllerPtr_->computeInput(t, x)));
   }
@@ -333,9 +348,10 @@ TEST(test_circular_kinematics, solve_projected_EqConstraints_MixedIneqConstraint
   // Check Lagrange multipliers
   for (int i = 0; i < primalSolution.timeTrajectory_.size() - 1; i++) {
     const auto t = primalSolution.timeTrajectory_[i];
-    const auto& x = primalSolution.stateTrajectory_[i];
-    const auto& u = primalSolution.inputTrajectory_[i];
-    ASSERT_NO_THROW(const auto multiplier = solver.getStateInputEqualityConstraintLagrangian(t, x););
+    const auto & x = primalSolution.stateTrajectory_[i];
+    const auto & u = primalSolution.inputTrajectory_[i];
+    ASSERT_NO_THROW(const auto multiplier =
+                      solver.getStateInputEqualityConstraintLagrangian(t, x););
   }
 
   // solve with shifted horizon

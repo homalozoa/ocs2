@@ -54,7 +54,7 @@ StateTriggeredRollout::StateTriggeredRollout(
 /******************************************************************************************************/
 vector_t StateTriggeredRollout::run(
   scalar_t initTime, const vector_t & initState, scalar_t finalTime, ControllerBase * controller,
-  ModeSchedule & modeSchedule, scalar_array_t & timeTrajectory, size_array_t & postEventIndices,
+  ModeSchedule & mode_schedule, scalar_array_t & timeTrajectory, size_array_t & postEventIndices,
   vector_array_t & stateTrajectory, vector_array_t & inputTrajectory)
 {
   if (initTime > finalTime) {
@@ -70,7 +70,7 @@ vector_t StateTriggeredRollout::run(
     this->settings().maxNumStepsPerSecond * std::max(1.0, finalTime - initTime));
 
   // clearing the output trajectories
-  modeSchedule.clear();
+  mode_schedule.clear();
   timeTrajectory.clear();
   timeTrajectory.reserve(maxNumSteps + 1);
   stateTrajectory.clear();
@@ -101,7 +101,7 @@ vector_t StateTriggeredRollout::run(
   scalar_t t0 = initTime;
   scalar_t t1 = finalTime;
   vector_t x0 = initState;
-  modeSchedule.modeSequence.push_back(eventID);
+  mode_schedule.mode_sequence.push_back(eventID);
 
   bool refining = false;
   int k_u = 0;                    // control input iterator
@@ -167,9 +167,9 @@ vector_t StateTriggeredRollout::run(
       // append the event to array with event indices
       postEventIndices.push_back(stateTrajectory.size());
 
-      // append to modeSchedule
-      modeSchedule.eventTimes.push_back(queryTime);
-      modeSchedule.modeSequence.push_back(eventID);
+      // append to mode_schedule
+      mode_schedule.event_times.push_back(queryTime);
+      mode_schedule.mode_sequence.push_back(eventID);
 
       // determine guard surface cross value and update the eventHandler
       vector_t guardSurfacesCross = systemDynamicsPtr_->computeGuardSurfaces(t0, x0);

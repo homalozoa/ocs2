@@ -27,31 +27,34 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <pinocchio/fwd.hpp>
+#include "ocs2_sphere_approximation/PinocchioSphereInterface.hpp"
 
 #include <pinocchio/algorithm/geometry.hpp>
+#include <pinocchio/fwd.hpp>
 #include <pinocchio/multibody/geometry.hpp>
 #include <pinocchio/parsers/urdf.hpp>
 
-#include <urdf_parser/urdf_parser.h>
+#include "urdf_parser/urdf_parser.h"
 
-#include <ocs2_sphere_approximation/PinocchioSphereInterface.h>
-
-namespace ocs2 {
+namespace ocs2
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-PinocchioSphereInterface::PinocchioSphereInterface(const PinocchioInterface& pinocchioInterface, std::vector<std::string> collisionLinks,
-                                                   const std::vector<scalar_t>& maxExcesses, scalar_t shrinkRatio)
-    : geometryModelPtr_(new pinocchio::GeometryModel), collisionLinks_(std::move(collisionLinks)) {
+PinocchioSphereInterface::PinocchioSphereInterface(
+  const PinocchioInterface & pinocchioInterface, std::vector<std::string> collisionLinks,
+  const std::vector<scalar_t> & maxExcesses, scalar_t shrinkRatio)
+: geometryModelPtr_(new pinocchio::GeometryModel), collisionLinks_(std::move(collisionLinks))
+{
   buildGeomFromPinocchioInterface(pinocchioInterface, *geometryModelPtr_);
 
   for (size_t i = 0; i < collisionLinks_.size(); i++) {
-    const auto& link = collisionLinks_[i];
+    const auto & link = collisionLinks_[i];
     for (size_t j = 0; j < geometryModelPtr_->geometryObjects.size(); ++j) {
-      const pinocchio::GeometryObject& object = geometryModelPtr_->geometryObjects[j];
-      const std::string parentFrameName = pinocchioInterface.getModel().frames[object.parentFrame].name;
+      const pinocchio::GeometryObject & object = geometryModelPtr_->geometryObjects[j];
+      const std::string parentFrameName =
+        pinocchioInterface.getModel().frames[object.parentFrame].name;
       if (parentFrameName == link) {
         sphereApproximations_.emplace_back(*object.geometry, j, maxExcesses[i], shrinkRatio);
         collisionLinkOfEachPrimitiveShape_.emplace_back(link);
@@ -62,7 +65,7 @@ PinocchioSphereInterface::PinocchioSphereInterface(const PinocchioInterface& pin
   numPrimitiveShapes_ = sphereApproximations_.size();
   numSpheres_.reserve(numPrimitiveShapes_);
   geomObjIds_.reserve(numPrimitiveShapes_);
-  for (const auto& sphereApprox : sphereApproximations_) {
+  for (const auto & sphereApprox : sphereApproximations_) {
     const size_t numSpheres = sphereApprox.getNumSpheres();
     numSpheresInTotal_ += numSpheres;
     numSpheres_.emplace_back(numSpheres);
@@ -82,61 +85,71 @@ PinocchioSphereInterface::~PinocchioSphereInterface() = default;
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-PinocchioSphereInterface::PinocchioSphereInterface(const PinocchioSphereInterface& rhs)
-    : geometryModelPtr_(new pinocchio::GeometryModel(*rhs.geometryModelPtr_)),
-      collisionLinks_(rhs.collisionLinks_),
-      collisionLinkOfEachPrimitiveShape_(rhs.collisionLinkOfEachPrimitiveShape_),
-      sphereApproximations_(rhs.sphereApproximations_),
-      numPrimitiveShapes_(rhs.numPrimitiveShapes_),
-      numSpheresInTotal_(rhs.numSpheresInTotal_),
-      numSpheres_(rhs.numSpheres_),
-      geomObjIds_(rhs.geomObjIds_),
-      sphereRadii_(rhs.sphereRadii_) {}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-PinocchioSphereInterface::PinocchioSphereInterface(PinocchioSphereInterface&& rhs) = default;
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void PinocchioSphereInterface::buildGeomFromPinocchioInterface(const PinocchioInterface& pinocchioInterface,
-                                                               pinocchio::GeometryModel& geomModel) {
-  if (!pinocchioInterface.getUrdfModelPtr()) {
-    throw std::runtime_error(
-        "[PinocchioSphereInterface::buildGeomFromPinocchioInterface]: The PinocchioInterface passed to PinocchioGeometryInterface(...) "
-        "does not contain a urdf model!");
-  }
-
-  // TODO: Replace with pinocchio function that uses the ModelInterface directly
-  // As of 19-04-21 there is no buildGeom that takes a ModelInterface, so we deconstruct the modelInterface into a std::stringstream first
-  const std::unique_ptr<const TiXmlDocument> urdfAsXml(urdf::exportURDF(*pinocchioInterface.getUrdfModelPtr()));
-  TiXmlPrinter printer;
-  urdfAsXml->Accept(&printer);
-  const std::stringstream urdfAsStringStream(printer.Str());
-
-  pinocchio::urdf::buildGeom(pinocchioInterface.getModel(), urdfAsStringStream, pinocchio::COLLISION, geomModel);
+PinocchioSphereInterface::PinocchioSphereInterface(const PinocchioSphereInterface & rhs)
+: geometryModelPtr_(new pinocchio::GeometryModel(*rhs.geometryModelPtr_)),
+  collisionLinks_(rhs.collisionLinks_),
+  collisionLinkOfEachPrimitiveShape_(rhs.collisionLinkOfEachPrimitiveShape_),
+  sphereApproximations_(rhs.sphereApproximations_),
+  numPrimitiveShapes_(rhs.numPrimitiveShapes_),
+  numSpheresInTotal_(rhs.numSpheresInTotal_),
+  numSpheres_(rhs.numSpheres_),
+  geomObjIds_(rhs.geomObjIds_),
+  sphereRadii_(rhs.sphereRadii_)
+{
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-auto PinocchioSphereInterface::computeSphereCentersInWorldFrame(const PinocchioInterface& pinocchioInterface) const
-    -> std::vector<vector3_t> {
+PinocchioSphereInterface::PinocchioSphereInterface(PinocchioSphereInterface && rhs) = default;
+
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
+void PinocchioSphereInterface::buildGeomFromPinocchioInterface(
+  const PinocchioInterface & pinocchioInterface, pinocchio::GeometryModel & geomModel)
+{
+  if (!pinocchioInterface.getUrdfModelPtr()) {
+    throw std::runtime_error(
+      "[PinocchioSphereInterface::buildGeomFromPinocchioInterface]: The PinocchioInterface passed "
+      "to PinocchioGeometryInterface(...) "
+      "does not contain a urdf model!");
+  }
+
+  // TODO: Replace with pinocchio function that uses the ModelInterface directly
+  // As of 19-04-21 there is no buildGeom that takes a ModelInterface, so we deconstruct the modelInterface into a std::stringstream first
+  const std::unique_ptr<const TiXmlDocument> urdfAsXml(
+    urdf::exportURDF(*pinocchioInterface.getUrdfModelPtr()));
+  TiXmlPrinter printer;
+  urdfAsXml->Accept(&printer);
+  const std::stringstream urdfAsStringStream(printer.Str());
+
+  pinocchio::urdf::buildGeom(
+    pinocchioInterface.getModel(), urdfAsStringStream, pinocchio::COLLISION, geomModel);
+}
+
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
+auto PinocchioSphereInterface::computeSphereCentersInWorldFrame(
+  const PinocchioInterface & pinocchioInterface) const -> std::vector<vector3_t>
+{
   pinocchio::GeometryData geometryData(*geometryModelPtr_);
 
-  pinocchio::updateGeometryPlacements(pinocchioInterface.getModel(), pinocchioInterface.getData(), *geometryModelPtr_, geometryData);
+  pinocchio::updateGeometryPlacements(
+    pinocchioInterface.getModel(), pinocchioInterface.getData(), *geometryModelPtr_, geometryData);
 
   std::vector<vector3_t> sphereCentersInWorldFrame(numSpheresInTotal_);
 
   size_t count = 0;
   for (size_t i = 0; i < numPrimitiveShapes_; i++) {
-    const auto& objTransform = geometryData.oMg[geomObjIds_[i]];
-    const auto& sphereCentersToObjectCenter = sphereApproximations_[i].getSphereCentersToObjectCenter();
+    const auto & objTransform = geometryData.oMg[geomObjIds_[i]];
+    const auto & sphereCentersToObjectCenter =
+      sphereApproximations_[i].getSphereCentersToObjectCenter();
     for (size_t j = 0; j < numSpheres_[i]; j++) {
       sphereCentersInWorldFrame[count] = objTransform.translation();
-      sphereCentersInWorldFrame[count].noalias() += objTransform.rotation() * sphereCentersToObjectCenter[j];
+      sphereCentersInWorldFrame[count].noalias() +=
+        objTransform.rotation() * sphereCentersToObjectCenter[j];
       count++;
     }
   }

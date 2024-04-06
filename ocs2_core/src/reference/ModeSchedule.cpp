@@ -1,3 +1,4 @@
+// Copyright 2024 Homalozoa. All rights reserved.
 // Copyright 2020 Farbod Farshidian. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -36,29 +37,29 @@ namespace ocs2
 {
 
 ModeSchedule::ModeSchedule(
-  std::vector<scalar_t> eventTimesInput, std::vector<size_t> modeSequenceInput)
-: eventTimes(std::move(eventTimesInput)), modeSequence(std::move(modeSequenceInput))
+  std::vector<scalar_t> event_times_input, std::vector<size_t> mode_sequence_input)
+: event_times(std::move(event_times_input)), mode_sequence(std::move(mode_sequence_input))
 {
-  assert(!modeSequence.empty());
-  assert(eventTimes.size() + 1 == modeSequence.size());
+  assert(!mode_sequence.empty());
+  assert(event_times.size() + 1 == mode_sequence.size());
 }
 
 size_t ModeSchedule::modeAtTime(scalar_t time) const
 {
-  const auto ind = lookup::findIndexInTimeArray(eventTimes, time);
-  return modeSequence[ind];
+  const auto ind = lookup::findIndexInTimeArray(event_times, time);
+  return mode_sequence[ind];
 }
 
 void swap(ModeSchedule & lh, ModeSchedule & rh)
 {
-  lh.eventTimes.swap(rh.eventTimes);
-  lh.modeSequence.swap(rh.modeSequence);
+  lh.event_times.swap(rh.event_times);
+  lh.mode_sequence.swap(rh.mode_sequence);
 }
 
-std::ostream & operator<<(std::ostream & stream, const ModeSchedule & modeSchedule)
+std::ostream & operator<<(std::ostream & stream, const ModeSchedule & mode_schedule)
 {
-  stream << "event times:   {" << toDelimitedString(modeSchedule.eventTimes) << "}\n";
-  stream << "mode sequence: {" << toDelimitedString(modeSchedule.modeSequence) << "}\n";
+  stream << "event times:   {" << to_delimited_str(mode_schedule.event_times) << "}\n";
+  stream << "mode sequence: {" << to_delimited_str(mode_schedule.mode_sequence) << "}\n";
   return stream;
 }
 
@@ -86,7 +87,7 @@ size_t getNumberOfPrecedingEvents(
 }
 
 std::pair<scalar_t, scalar_t> findIntersectionToExtendableInterval(
-  const scalar_array_t & timeTrajectory, const scalar_array_t & eventTimes,
+  const scalar_array_t & timeTrajectory, const scalar_array_t & event_times,
   const std::pair<scalar_t, scalar_t> & timePeriod)
 {
   // no interpolation: a bit before initial time
@@ -98,15 +99,15 @@ std::pair<scalar_t, scalar_t> findIntersectionToExtendableInterval(
 
   } else {
     const auto pastEventItr = std::find_if(
-      eventTimes.crbegin(), eventTimes.crend(),
+      event_times.crbegin(), event_times.crend(),
       [&](const scalar_t & te) { return te <= timeTrajectory.front(); });
-    const auto initialTime = (pastEventItr != eventTimes.crend())
+    const auto initialTime = (pastEventItr != event_times.crend())
                                ? std::max(*pastEventItr, timePeriod.first)
                                : timePeriod.first;
 
     const auto nextEventItr =
-      std::lower_bound(eventTimes.cbegin(), eventTimes.cend(), timeTrajectory.back());
-    const auto finalTime = (nextEventItr != eventTimes.cend())
+      std::lower_bound(event_times.cbegin(), event_times.cend(), timeTrajectory.back());
+    const auto finalTime = (nextEventItr != event_times.cend())
                              ? std::min(*nextEventItr, timePeriod.second)
                              : timePeriod.second;
 

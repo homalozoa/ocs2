@@ -27,37 +27,44 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_centroidal_model/PinocchioCentroidalDynamics.h"
+#include "ocs2_centroidal_model/PinocchioCentroidalDynamics.hpp"
 
-#include <ocs2_robotic_tools/common/SkewSymmetricMatrix.h>
+#include "ocs2_centroidal_model/AccessHelperFunctions.hpp"
+#include "ocs2_centroidal_model/ModelHelperFunctions.hpp"
+#include "ocs2_robotic_tools/common/SkewSymmetricMatrix.hpp"
 
-#include "ocs2_centroidal_model/AccessHelperFunctions.h"
-#include "ocs2_centroidal_model/ModelHelperFunctions.h"
-
-namespace ocs2 {
+namespace ocs2
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
 PinocchioCentroidalDynamics::PinocchioCentroidalDynamics(CentroidalModelInfo info)
-    : pinocchioInterfacePtr_(nullptr), mapping_(std::move(info)) {}
+: pinocchioInterfacePtr_(nullptr), mapping_(std::move(info))
+{
+}
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-PinocchioCentroidalDynamics::PinocchioCentroidalDynamics(const PinocchioCentroidalDynamics& rhs)
-    : pinocchioInterfacePtr_(nullptr), mapping_(rhs.mapping_.getCentroidalModelInfo()) {}
+PinocchioCentroidalDynamics::PinocchioCentroidalDynamics(const PinocchioCentroidalDynamics & rhs)
+: pinocchioInterfacePtr_(nullptr), mapping_(rhs.mapping_.getCentroidalModelInfo())
+{
+}
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-vector_t PinocchioCentroidalDynamics::getValue(scalar_t time, const vector_t& state, const vector_t& input) {
-  const auto& interface = *pinocchioInterfacePtr_;
-  const auto& info = mapping_.getCentroidalModelInfo();
+vector_t PinocchioCentroidalDynamics::getValue(
+  scalar_t time, const vector_t & state, const vector_t & input)
+{
+  const auto & interface = *pinocchioInterfacePtr_;
+  const auto & info = mapping_.getCentroidalModelInfo();
   assert(info.stateDim == state.rows());
 
   vector_t f(info.stateDim);
-  f << getNormalizedCentroidalMomentumRate(interface, info, input), mapping_.getPinocchioJointVelocity(state, input);
+  f << getNormalizedCentroidalMomentumRate(interface, info, input),
+    mapping_.getPinocchioJointVelocity(state, input);
 
   return f;
 }
@@ -65,13 +72,15 @@ vector_t PinocchioCentroidalDynamics::getValue(scalar_t time, const vector_t& st
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-VectorFunctionLinearApproximation PinocchioCentroidalDynamics::getLinearApproximation(scalar_t time, const vector_t& state,
-                                                                                      const vector_t& input) {
-  const auto& info = mapping_.getCentroidalModelInfo();
+VectorFunctionLinearApproximation PinocchioCentroidalDynamics::getLinearApproximation(
+  scalar_t time, const vector_t & state, const vector_t & input)
+{
+  const auto & info = mapping_.getCentroidalModelInfo();
   assert(info.stateDim == state.rows());
   assert(info.inputDim == input.rows());
 
-  auto dynamics = ocs2::VectorFunctionLinearApproximation::Zero(info.stateDim, info.stateDim, info.inputDim);
+  auto dynamics =
+    ocs2::VectorFunctionLinearApproximation::Zero(info.stateDim, info.stateDim, info.inputDim);
   dynamics.f = getValue(time, state, input);
 
   // Partial derivatives of the normalized momentum rates
@@ -79,7 +88,8 @@ VectorFunctionLinearApproximation PinocchioCentroidalDynamics::getLinearApproxim
 
   matrix_t dfdq = matrix_t::Zero(info.stateDim, info.generalizedCoordinatesNum);
   matrix_t dfdv = matrix_t::Zero(info.stateDim, info.generalizedCoordinatesNum);
-  dfdq.topRows<6>() << normalizedLinearMomentumRateDerivativeQ_, normalizedAngularMomentumRateDerivativeQ_;
+  dfdq.topRows<6>() << normalizedLinearMomentumRateDerivativeQ_,
+    normalizedAngularMomentumRateDerivativeQ_;
   dfdv.bottomRows(info.generalizedCoordinatesNum).setIdentity();
 
   std::tie(dynamics.dfdx, dynamics.dfdu) = mapping_.getOcs2Jacobian(state, dfdq, dfdv);
@@ -94,9 +104,11 @@ VectorFunctionLinearApproximation PinocchioCentroidalDynamics::getLinearApproxim
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void PinocchioCentroidalDynamics::computeNormalizedCentroidalMomentumRateGradients(const vector_t& state, const vector_t& input) {
-  const auto& interface = *pinocchioInterfacePtr_;
-  const auto& info = mapping_.getCentroidalModelInfo();
+void PinocchioCentroidalDynamics::computeNormalizedCentroidalMomentumRateGradients(
+  const vector_t & state, const vector_t & input)
+{
+  const auto & interface = *pinocchioInterfacePtr_;
+  const auto & info = mapping_.getCentroidalModelInfo();
   assert(info.stateDim == state.rows());
   assert(info.inputDim == input.rows());
 
@@ -112,21 +124,28 @@ void PinocchioCentroidalDynamics::computeNormalizedCentroidalMomentumRateGradien
     f_hat = skewSymmetricMatrix(contactForceInWorldFrame) / info.robotMass;
     const auto J = getTranslationalJacobianComToContactPointInWorldFrame(interface, info, i);
     normalizedAngularMomentumRateDerivativeQ_.noalias() -= f_hat * J;
-    normalizedLinearMomentumRateDerivativeInput_.block<3, 3>(0, 3 * i).diagonal().array() = 1.0 / info.robotMass;
-    p_hat = skewSymmetricMatrix(getPositionComToContactPointInWorldFrame(interface, info, i)) / info.robotMass;
+    normalizedLinearMomentumRateDerivativeInput_.block<3, 3>(0, 3 * i).diagonal().array() =
+      1.0 / info.robotMass;
+    p_hat = skewSymmetricMatrix(getPositionComToContactPointInWorldFrame(interface, info, i)) /
+            info.robotMass;
     normalizedAngularMomentumRateDerivativeInput_.block<3, 3>(0, 3 * i) = p_hat;
   }
 
-  for (size_t i = info.numThreeDofContacts; i < info.numThreeDofContacts + info.numSixDofContacts; i++) {
+  for (size_t i = info.numThreeDofContacts; i < info.numThreeDofContacts + info.numSixDofContacts;
+       i++) {
     const size_t inputIdx = 3 * info.numThreeDofContacts + 6 * (i - info.numThreeDofContacts);
     const Vector3 contactForceInWorldFrame = centroidal_model::getContactForces(input, i, info);
     f_hat = skewSymmetricMatrix(contactForceInWorldFrame) / info.robotMass;
     const auto J = getTranslationalJacobianComToContactPointInWorldFrame(interface, info, i);
     normalizedAngularMomentumRateDerivativeQ_.noalias() -= f_hat * J;
-    normalizedLinearMomentumRateDerivativeInput_.block<3, 3>(0, inputIdx).diagonal().array() = 1.0 / info.robotMass;
-    p_hat = skewSymmetricMatrix(getPositionComToContactPointInWorldFrame(interface, info, i)) / info.robotMass;
+    normalizedLinearMomentumRateDerivativeInput_.block<3, 3>(0, inputIdx).diagonal().array() =
+      1.0 / info.robotMass;
+    p_hat = skewSymmetricMatrix(getPositionComToContactPointInWorldFrame(interface, info, i)) /
+            info.robotMass;
     normalizedAngularMomentumRateDerivativeInput_.block<3, 3>(0, 3 * inputIdx) = p_hat;
-    normalizedAngularMomentumRateDerivativeInput_.block<3, 3>(0, 3 * inputIdx + 3).diagonal().array() = 1.0 / info.robotMass;
+    normalizedAngularMomentumRateDerivativeInput_.block<3, 3>(0, 3 * inputIdx + 3)
+      .diagonal()
+      .array() = 1.0 / info.robotMass;
   }
 }
 

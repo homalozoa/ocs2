@@ -27,32 +27,33 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
 
-#include <ocs2_core/control/FeedforwardController.h>
-#include <ocs2_core/initialization/DefaultInitializer.h>
-#include <ocs2_oc/rollout/TimeTriggeredRollout.h>
-#include <ocs2_oc/test/EXP0.h>
+#include "gtest/gtest.h"
+#include "ocs2_core/control/FeedforwardController.hpp"
+#include "ocs2_core/initialization/DefaultInitializer.hpp"
+#include "ocs2_ddp/ILQR.hpp"
+#include "ocs2_ddp/SLQ.hpp"
+#include "ocs2_oc/rollout/TimeTriggeredRollout.hpp"
+#include "ocs2_oc/test/EXP0.hpp"
 
-#include <ocs2_ddp/ILQR.h>
-#include <ocs2_ddp/SLQ.h>
-
-class Exp0 : public testing::Test {
- protected:
+class Exp0 : public testing::Test
+{
+protected:
   static constexpr size_t STATE_DIM = 2;
   static constexpr size_t INPUT_DIM = 1;
   static constexpr ocs2::scalar_t timeStep = 1e-2;
   static constexpr ocs2::scalar_t minRelCost = 1e-3;
   static constexpr ocs2::scalar_t expectedCost = 9.766;
 
-  Exp0() {
+  Exp0()
+  {
     // event times
-    const ocs2::scalar_array_t eventTimes{0.1897};
-    const std::vector<size_t> modeSequence{0, 1};
-    referenceManagerPtr = ocs2::getExp0ReferenceManager(eventTimes, modeSequence);
+    const ocs2::scalar_array_t event_times{0.1897};
+    const std::vector<size_t> mode_sequence{0, 1};
+    referenceManagerPtr = ocs2::getExp0ReferenceManager(event_times, mode_sequence);
 
     // optimal control problem
     problem = ocs2::createExp0Problem(referenceManagerPtr);
@@ -62,7 +63,8 @@ class Exp0 : public testing::Test {
   }
 
   // rollout settings
-  ocs2::rollout::Settings rolloutSettings() const {
+  ocs2::rollout::Settings rolloutSettings() const
+  {
     ocs2::rollout::Settings rolloutSettings;
     rolloutSettings.absTolODE = 1e-10;
     rolloutSettings.relTolODE = 1e-7;
@@ -72,8 +74,10 @@ class Exp0 : public testing::Test {
     return rolloutSettings;
   };
 
-  ocs2::ddp::Settings getSettings(ocs2::ddp::Algorithm algorithmType, size_t numThreads, ocs2::search_strategy::Type strategy,
-                                  bool display = false) const {
+  ocs2::ddp::Settings getSettings(
+    ocs2::ddp::Algorithm algorithmType, size_t numThreads, ocs2::search_strategy::Type strategy,
+    bool display = false) const
+  {
     ocs2::ddp::Settings ddpSettings;
     ddpSettings.algorithm_ = algorithmType;
     ddpSettings.nThreads_ = numThreads;
@@ -95,7 +99,8 @@ class Exp0 : public testing::Test {
     return ddpSettings;
   }
 
-  std::string getTestName(const ocs2::ddp::Settings& ddpSettings) const {
+  std::string getTestName(const ocs2::ddp::Settings & ddpSettings) const
+  {
     std::string testName;
     testName += "EXP0 Test { ";
     testName += "Algorithm: " + ocs2::ddp::toAlgorithmName(ddpSettings.algorithm_) + ",  ";
@@ -104,11 +109,15 @@ class Exp0 : public testing::Test {
     return testName;
   }
 
-  void performanceIndexTest(const ocs2::ddp::Settings& ddpSettings, const ocs2::PerformanceIndex& performanceIndex) const {
+  void performanceIndexTest(
+    const ocs2::ddp::Settings & ddpSettings, const ocs2::PerformanceIndex & performanceIndex) const
+  {
     const auto testName = getTestName(ddpSettings);
-    EXPECT_NEAR(performanceIndex.cost, expectedCost, 10.0 * minRelCost) << "MESSAGE: " << testName << ": failed in the total cost test!";
-    EXPECT_NEAR(performanceIndex.equalityConstraintsSSE, 0.0, 10.0 * ddpSettings.constraintTolerance_)
-        << "MESSAGE: " << testName << ": failed in state-input equality constraint ISE test!";
+    EXPECT_NEAR(performanceIndex.cost, expectedCost, 10.0 * minRelCost)
+      << "MESSAGE: " << testName << ": failed in the total cost test!";
+    EXPECT_NEAR(
+      performanceIndex.equalityConstraintsSSE, 0.0, 10.0 * ddpSettings.constraintTolerance_)
+      << "MESSAGE: " << testName << ": failed in state-input equality constraint ISE test!";
   }
 
   const ocs2::scalar_t startTime = 0.0;
@@ -129,9 +138,11 @@ constexpr ocs2::scalar_t Exp0::expectedCost;
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-TEST_F(Exp0, ddp_feedback_policy) {
+TEST_F(Exp0, ddp_feedback_policy)
+{
   // ddp settings
-  auto ddpSettings = getSettings(ocs2::ddp::Algorithm::SLQ, 2, ocs2::search_strategy::Type::LINE_SEARCH);
+  auto ddpSettings =
+    getSettings(ocs2::ddp::Algorithm::SLQ, 2, ocs2::search_strategy::Type::LINE_SEARCH);
   ddpSettings.useFeedbackPolicy_ = true;
 
   // dynamics and rollout
@@ -146,19 +157,24 @@ TEST_F(Exp0, ddp_feedback_policy) {
   ddp.run(startTime, initState, finalTime);
   // get solution
   const auto solution = ddp.primalSolution(finalTime);
-  const auto* ctrlPtr = dynamic_cast<ocs2::LinearController*>(solution.controllerPtr_.get());
+  const auto * ctrlPtr = dynamic_cast<ocs2::LinearController *>(solution.controllerPtr_.get());
 
-  EXPECT_TRUE(ctrlPtr != nullptr) << "MESSAGE: SLQ solution does not contain a linear feedback policy!";
-  EXPECT_DOUBLE_EQ(ctrlPtr->timeStamp_.back(), finalTime) << "MESSAGE: SLQ failed in policy final time of controller!";
-  EXPECT_DOUBLE_EQ(solution.timeTrajectory_.back(), finalTime) << "MESSAGE: SLQ failed in policy final time of trajectory!";
+  EXPECT_TRUE(ctrlPtr != nullptr)
+    << "MESSAGE: SLQ solution does not contain a linear feedback policy!";
+  EXPECT_DOUBLE_EQ(ctrlPtr->timeStamp_.back(), finalTime)
+    << "MESSAGE: SLQ failed in policy final time of controller!";
+  EXPECT_DOUBLE_EQ(solution.timeTrajectory_.back(), finalTime)
+    << "MESSAGE: SLQ failed in policy final time of trajectory!";
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-TEST_F(Exp0, ddp_feedforward_policy) {
+TEST_F(Exp0, ddp_feedforward_policy)
+{
   // ddp settings
-  auto ddpSettings = getSettings(ocs2::ddp::Algorithm::SLQ, 2, ocs2::search_strategy::Type::LINE_SEARCH);
+  auto ddpSettings =
+    getSettings(ocs2::ddp::Algorithm::SLQ, 2, ocs2::search_strategy::Type::LINE_SEARCH);
   ddpSettings.useFeedbackPolicy_ = false;
 
   // dynamics and rollout
@@ -173,25 +189,29 @@ TEST_F(Exp0, ddp_feedforward_policy) {
   ddp.run(startTime, initState, finalTime);
   // get solution
   const auto solution = ddp.primalSolution(finalTime);
-  const auto* ctrlPtr = dynamic_cast<ocs2::FeedforwardController*>(solution.controllerPtr_.get());
+  const auto * ctrlPtr = dynamic_cast<ocs2::FeedforwardController *>(solution.controllerPtr_.get());
 
   EXPECT_TRUE(ctrlPtr != nullptr) << "MESSAGE: SLQ solution does not contain a feedforward policy!";
-  EXPECT_DOUBLE_EQ(ctrlPtr->timeStamp_.back(), finalTime) << "MESSAGE: SLQ failed in policy final time of controller!";
-  EXPECT_DOUBLE_EQ(solution.timeTrajectory_.back(), finalTime) << "MESSAGE: SLQ failed in policy final time of trajectory!";
+  EXPECT_DOUBLE_EQ(ctrlPtr->timeStamp_.back(), finalTime)
+    << "MESSAGE: SLQ failed in policy final time of controller!";
+  EXPECT_DOUBLE_EQ(solution.timeTrajectory_.back(), finalTime)
+    << "MESSAGE: SLQ failed in policy final time of trajectory!";
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-TEST_F(Exp0, ddp_moving_horizon) {
+TEST_F(Exp0, ddp_moving_horizon)
+{
   // ddp settings
   constexpr size_t numThreads = 2;
-  const auto ddpSettings = getSettings(ocs2::ddp::Algorithm::SLQ, numThreads, ocs2::search_strategy::Type::LINE_SEARCH);
+  const auto ddpSettings =
+    getSettings(ocs2::ddp::Algorithm::SLQ, numThreads, ocs2::search_strategy::Type::LINE_SEARCH);
 
   // event times
-  const ocs2::scalar_array_t eventTimes{1.0};
-  const ocs2::size_array_t modeSequence{0, 1};
-  referenceManagerPtr = ocs2::getExp0ReferenceManager(eventTimes, modeSequence);
+  const ocs2::scalar_array_t event_times{1.0};
+  const ocs2::size_array_t mode_sequence{0, 1};
+  referenceManagerPtr = ocs2::getExp0ReferenceManager(event_times, mode_sequence);
 
   // dynamics and rollout
   ocs2::EXP0_System systemDynamics(referenceManagerPtr);
@@ -225,13 +245,16 @@ TEST_F(Exp0, ddp_moving_horizon) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-TEST_F(Exp0, ddp_hamiltonian) {
+TEST_F(Exp0, ddp_hamiltonian)
+{
   // ddp settings
   constexpr size_t numThreads = 2;
-  auto ddpSettings = getSettings(ocs2::ddp::Algorithm::SLQ, numThreads, ocs2::search_strategy::Type::LINE_SEARCH);
+  auto ddpSettings =
+    getSettings(ocs2::ddp::Algorithm::SLQ, numThreads, ocs2::search_strategy::Type::LINE_SEARCH);
   ddpSettings.useFeedbackPolicy_ = true;
   ddpSettings.maxNumIterations_ = 50;
-  ddpSettings.minRelCost_ = 1e-9;  // to allow more iterations that the effect of final linesearch is negligible
+  ddpSettings.minRelCost_ =
+    1e-9;  // to allow more iterations that the effect of final linesearch is negligible
 
   // dynamics and rollout
   ocs2::EXP0_System systemDynamics(referenceManagerPtr);
@@ -256,7 +279,9 @@ TEST_F(Exp0, ddp_hamiltonian) {
   ocs2::vector_t input = solution.controllerPtr_->computeInput(time, state);
   auto hamiltonian = ddp.getHamiltonian(time, state, input);
   const ocs2::vector_t dHdu1a = hamiltonian.dfdu;
-  EXPECT_TRUE(dHdu1a.isZero(precision)) << "MESSAGE for test 1a: Derivative of Hamiltonian w.r.t. to u is not zero: " << dHdu1a.transpose();
+  EXPECT_TRUE(dHdu1a.isZero(precision))
+    << "MESSAGE for test 1a: Derivative of Hamiltonian w.r.t. to u is not zero: "
+    << dHdu1a.transpose();
 
   // evaluate Hamiltonian at different state (but using feedback policy)
   // expected outcome: true, because for a linear system the LQ approximation of H is exact and the linear feedback policy is globally
@@ -264,16 +289,21 @@ TEST_F(Exp0, ddp_hamiltonian) {
   ocs2::scalar_t querryTime = solution.timeTrajectory_.front();
   ocs2::vector_t querryState = ocs2::vector_t::Random(solution.stateTrajectory_.front().size());
   ocs2::vector_t querryInput = solution.controllerPtr_->computeInput(querryTime, querryState);
-  const ocs2::vector_t dHdu1b = hamiltonian.dfdux * (querryState - state) + hamiltonian.dfduu * (querryInput - input) + hamiltonian.dfdu;
-  EXPECT_TRUE(dHdu1b.isZero(precision)) << "MESSAGE for test 1b: Derivative of Hamiltonian w.r.t. to u is not zero: " << dHdu1b.transpose();
+  const ocs2::vector_t dHdu1b = hamiltonian.dfdux * (querryState - state) +
+                                hamiltonian.dfduu * (querryInput - input) + hamiltonian.dfdu;
+  EXPECT_TRUE(dHdu1b.isZero(precision))
+    << "MESSAGE for test 1b: Derivative of Hamiltonian w.r.t. to u is not zero: "
+    << dHdu1b.transpose();
 
   // evaluate Hamiltonian at different input
   // expected outcome: false, because for a linear system the LQ approximation of H is exact and a random input is not optimal
   querryTime = solution.timeTrajectory_.front();
   querryState = solution.stateTrajectory_.front();
   querryInput = ocs2::vector_t::Random(solution.inputTrajectory_.front().size());
-  const ocs2::vector_t dHdu1c = hamiltonian.dfdux * (querryState - state) + hamiltonian.dfduu * (querryInput - input) + hamiltonian.dfdu;
-  EXPECT_FALSE(dHdu1c.isZero(precision)) << "MESSAGE for test 1c: Derivative of Hamiltonian w.r.t. to u is zero: " << dHdu1c.transpose();
+  const ocs2::vector_t dHdu1c = hamiltonian.dfdux * (querryState - state) +
+                                hamiltonian.dfduu * (querryInput - input) + hamiltonian.dfdu;
+  EXPECT_FALSE(dHdu1c.isZero(precision))
+    << "MESSAGE for test 1c: Derivative of Hamiltonian w.r.t. to u is zero: " << dHdu1c.transpose();
 
   // get Hamiltonian at different state (but using feedback policy)
   // expected outcome: true, because for a linear system the linear feedback policy is globally optimal
@@ -282,7 +312,9 @@ TEST_F(Exp0, ddp_hamiltonian) {
   input = solution.controllerPtr_->computeInput(time, state);
   hamiltonian = ddp.getHamiltonian(time, state, input);
   const ocs2::vector_t dHdu2 = hamiltonian.dfdu;
-  EXPECT_TRUE(dHdu2.isZero(precision)) << "MESSAGE for test 2: Derivative of Hamiltonian w.r.t. to u is not zero: " << dHdu2.transpose();
+  EXPECT_TRUE(dHdu2.isZero(precision))
+    << "MESSAGE for test 2: Derivative of Hamiltonian w.r.t. to u is not zero: "
+    << dHdu2.transpose();
 
   // get Hamiltonian at different input
   // expected outcome: false, because a random input is not optimal
@@ -291,15 +323,19 @@ TEST_F(Exp0, ddp_hamiltonian) {
   input = ocs2::vector_t::Random(solution.inputTrajectory_.front().size());
   hamiltonian = ddp.getHamiltonian(time, state, input);
   const ocs2::vector_t dHdu3 = hamiltonian.dfdu;
-  EXPECT_FALSE(dHdu3.isZero(precision)) << "MESSAGE for test 3: Derivative of Hamiltonian w.r.t. to u is zero: " << dHdu3.transpose();
+  EXPECT_FALSE(dHdu3.isZero(precision))
+    << "MESSAGE for test 3: Derivative of Hamiltonian w.r.t. to u is zero: " << dHdu3.transpose();
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
 /* Add parameterized test suite */
-class Exp0Param : public Exp0, public testing::WithParamInterface<std::tuple<ocs2::search_strategy::Type, size_t>> {
- protected:
+class Exp0Param
+: public Exp0,
+  public testing::WithParamInterface<std::tuple<ocs2::search_strategy::Type, size_t>>
+{
+protected:
   ocs2::search_strategy::Type getSearchStrategy() { return std::get<0>(GetParam()); }
 
   size_t getNumThreads() { return std::get<1>(GetParam()); }
@@ -308,9 +344,11 @@ class Exp0Param : public Exp0, public testing::WithParamInterface<std::tuple<ocs
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-TEST_P(Exp0Param, SLQ) {
+TEST_P(Exp0Param, SLQ)
+{
   // ddp settings
-  const auto ddpSettings = getSettings(ocs2::ddp::Algorithm::SLQ, getNumThreads(), getSearchStrategy());
+  const auto ddpSettings =
+    getSettings(ocs2::ddp::Algorithm::SLQ, getNumThreads(), getSearchStrategy());
 
   // dynamics and rollout
   ocs2::EXP0_System systemDynamics(referenceManagerPtr);
@@ -336,9 +374,11 @@ TEST_P(Exp0Param, SLQ) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-TEST_P(Exp0Param, ILQR) {
+TEST_P(Exp0Param, ILQR)
+{
   // ddp settings
-  const auto ddpSettings = getSettings(ocs2::ddp::Algorithm::ILQR, getNumThreads(), getSearchStrategy());
+  const auto ddpSettings =
+    getSettings(ocs2::ddp::Algorithm::ILQR, getNumThreads(), getSearchStrategy());
 
   // dynamics and rollout
   ocs2::EXP0_System systemDynamics(referenceManagerPtr);
@@ -364,14 +404,16 @@ TEST_P(Exp0Param, ILQR) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-INSTANTIATE_TEST_CASE_P(Exp0ParamCase, Exp0Param,
-                        testing::Combine(testing::ValuesIn({ocs2::search_strategy::Type::LINE_SEARCH,
-                                                            ocs2::search_strategy::Type::LEVENBERG_MARQUARDT}),
-                                         testing::ValuesIn({size_t(1), size_t(3)})), /* num threads */
-                        [](const testing::TestParamInfo<Exp0Param::ParamType>& info) {
-                          /* returns test name for gtest summary */
-                          std::string name;
-                          name += ocs2::search_strategy::toString(std::get<0>(info.param)) + "__";
-                          name += std::get<1>(info.param) == 1 ? "SINGLE_THREAD" : "MULTI_THREAD";
-                          return name;
-                        });
+INSTANTIATE_TEST_CASE_P(
+  Exp0ParamCase, Exp0Param,
+  testing::Combine(
+    testing::ValuesIn(
+      {ocs2::search_strategy::Type::LINE_SEARCH, ocs2::search_strategy::Type::LEVENBERG_MARQUARDT}),
+    testing::ValuesIn({size_t(1), size_t(3)})), /* num threads */
+  [](const testing::TestParamInfo<Exp0Param::ParamType> & info) {
+    /* returns test name for gtest summary */
+    std::string name;
+    name += ocs2::search_strategy::toString(std::get<0>(info.param)) + "__";
+    name += std::get<1>(info.param) == 1 ? "SINGLE_THREAD" : "MULTI_THREAD";
+    return name;
+  });

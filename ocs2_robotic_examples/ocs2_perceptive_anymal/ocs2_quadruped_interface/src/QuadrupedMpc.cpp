@@ -9,9 +9,9 @@
 
 namespace switched_model {
 
-std::unique_ptr<ocs2::MPC_BASE> getDdpMpc(const QuadrupedInterface& quadrupedInterface, const ocs2::mpc::Settings& mpcSettings,
+std::unique_ptr<ocs2::MpcBase> getDdpMpc(const QuadrupedInterface& quadrupedInterface, const ocs2::mpc::Settings& mpcSettings,
                                           const ocs2::ddp::Settings& ddpSettings) {
-  std::unique_ptr<ocs2::MPC_BASE> mpcPtr(new ocs2::GaussNewtonDDP_MPC(mpcSettings, ddpSettings, quadrupedInterface.getRollout(),
+  std::unique_ptr<ocs2::MpcBase> mpcPtr(new ocs2::GaussNewtonDDP_MPC(mpcSettings, ddpSettings, quadrupedInterface.getRollout(),
                                                                       quadrupedInterface.getOptimalControlProblem(),
                                                                       quadrupedInterface.getInitializer()));
   mpcPtr->getSolverPtr()->setReferenceManager(quadrupedInterface.getReferenceManagerPtr());
@@ -19,9 +19,9 @@ std::unique_ptr<ocs2::MPC_BASE> getDdpMpc(const QuadrupedInterface& quadrupedInt
   return mpcPtr;
 }
 
-std::unique_ptr<ocs2::MPC_BASE> getSqpMpc(const QuadrupedInterface& quadrupedInterface, const ocs2::mpc::Settings& mpcSettings,
+std::unique_ptr<ocs2::MpcBase> getSqpMpc(const QuadrupedInterface& quadrupedInterface, const ocs2::mpc::Settings& mpcSettings,
                                           const ocs2::sqp::Settings& sqpSettings) {
-  std::unique_ptr<ocs2::MPC_BASE> mpcPtr(
+  std::unique_ptr<ocs2::MpcBase> mpcPtr(
       new ocs2::SqpMpc(mpcSettings, sqpSettings, quadrupedInterface.getOptimalControlProblem(), quadrupedInterface.getInitializer()));
   mpcPtr->getSolverPtr()->setReferenceManager(quadrupedInterface.getReferenceManagerPtr());
   mpcPtr->getSolverPtr()->setSynchronizedModules(quadrupedInterface.getSynchronizedModules());

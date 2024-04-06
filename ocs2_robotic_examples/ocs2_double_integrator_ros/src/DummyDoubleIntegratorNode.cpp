@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
 
   // MRT
   ocs2::MRT_ROS_Interface mrt(robotName);
-  mrt.initRollout(&doubleIntegratorInterface.getRollout());
+  mrt.init_rollout(&doubleIntegratorInterface.getRollout());
   mrt.launchNodes(nodeHandle);
 
   // Visualization
@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
   // Dummy loop
   ocs2::MRT_ROS_Dummy_Loop dummyDoubleIntegrator(mrt, doubleIntegratorInterface.mpcSettings().mrtDesiredFrequency_,
                                                  doubleIntegratorInterface.mpcSettings().mpcDesiredFrequency_);
-  dummyDoubleIntegrator.subscribeObservers({doubleIntegratorDummyVisualization});
+  dummyDoubleIntegrator.subscribe_observers({doubleIntegratorDummyVisualization});
 
   // initial state
   ocs2::SystemObservation initObservation;

@@ -19,7 +19,7 @@ MotionCommandController::MotionCommandController(ros::NodeHandle& nodeHandle, co
 void MotionCommandController::publishMotion(const std::pair<ocs2::TargetTrajectories, Gait>& motion) {
   Gait stance;
   stance.duration = 1.0;
-  stance.modeSequence = {15};
+  stance.mode_sequence = {15};
 
   ocs2_switched_model_msgs::trajectory_request srv;
   srv.request.trajectory = ocs2::ros_msg_conversions::createTargetTrajectoriesMsg(motion.first);

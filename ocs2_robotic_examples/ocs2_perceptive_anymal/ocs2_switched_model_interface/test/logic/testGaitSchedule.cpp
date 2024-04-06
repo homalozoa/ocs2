@@ -47,9 +47,9 @@ TEST(TestGaitSchedule, setNextGaitSchedule) {
 
   // Check that the resulting mode schedule is equal
   auto checkModeSchedule = getModeSchedule(gaitSchedule.getCurrentPhase(), t0, timeHorizon, gaitSequence.begin(), gaitSequence.end());
-  auto modeSchedule = gaitSchedule.getModeSchedule(timeHorizon);
-  ASSERT_EQ(modeSchedule.eventTimes, checkModeSchedule.eventTimes);
-  ASSERT_EQ(modeSchedule.modeSequence, checkModeSchedule.modeSequence);
+  auto mode_schedule = gaitSchedule.getModeSchedule(timeHorizon);
+  ASSERT_EQ(mode_schedule.event_times, checkModeSchedule.event_times);
+  ASSERT_EQ(mode_schedule.mode_sequence, checkModeSchedule.mode_sequence);
 }
 
 TEST(TestGaitSchedule, setGaitScheduleAtTime) {
@@ -61,15 +61,15 @@ TEST(TestGaitSchedule, setGaitScheduleAtTime) {
 
   // Set a new gait way pass the end of the current schedule
   gaitSchedule.setGaitAtTime(Gait{1.5, {}, {21}}, tInsert);
-  auto modeSchedule = gaitSchedule.getModeSchedule((tInsert - t0) + 1.5);
+  auto mode_schedule = gaitSchedule.getModeSchedule((tInsert - t0) + 1.5);
 
   // Last gait was shrunk in duration
-  ASSERT_DOUBLE_EQ(*(modeSchedule.eventTimes.end() - 2), tInsert - 0.25);
-  ASSERT_DOUBLE_EQ(*(modeSchedule.eventTimes.end() - 3), tInsert - 0.5);
+  ASSERT_DOUBLE_EQ(*(mode_schedule.event_times.end() - 2), tInsert - 0.25);
+  ASSERT_DOUBLE_EQ(*(mode_schedule.event_times.end() - 3), tInsert - 0.5);
 
   // New gait inserted at the correct time
-  ASSERT_DOUBLE_EQ(modeSchedule.eventTimes.back(), tInsert);
-  ASSERT_EQ(modeSchedule.modeSequence.back(), 21);
+  ASSERT_DOUBLE_EQ(mode_schedule.event_times.back(), tInsert);
+  ASSERT_EQ(mode_schedule.mode_sequence.back(), 21);
 }
 
 TEST(TestGaitSchedule, setGaitScheduleAtTime_twice_current_gait) {
@@ -82,18 +82,18 @@ TEST(TestGaitSchedule, setGaitScheduleAtTime_twice_current_gait) {
 
   // Set a new gait at twice the current gait
   gaitSchedule.setGaitAtTime(Gait{1.5, {}, {21}}, tInsert);
-  auto modeSchedule = gaitSchedule.getModeSchedule((tInsert - t0) + 1.5);
+  auto mode_schedule = gaitSchedule.getModeSchedule((tInsert - t0) + 1.5);
 
   // Check expected mode schedule
-  ASSERT_EQ(modeSchedule.modeSequence[0], 0);
-  ASSERT_DOUBLE_EQ(modeSchedule.eventTimes[0], t0 + 0.5);
-  ASSERT_EQ(modeSchedule.modeSequence[1], 1);
-  ASSERT_DOUBLE_EQ(modeSchedule.eventTimes[1], t0 + 1.0);
-  ASSERT_EQ(modeSchedule.modeSequence[2], 0);
-  ASSERT_DOUBLE_EQ(modeSchedule.eventTimes[2], t0 + 1.5);
-  ASSERT_EQ(modeSchedule.modeSequence[3], 1);
-  ASSERT_DOUBLE_EQ(modeSchedule.eventTimes[3], t0 + 2.0);
-  ASSERT_EQ(modeSchedule.modeSequence[4], 21);
+  ASSERT_EQ(mode_schedule.mode_sequence[0], 0);
+  ASSERT_DOUBLE_EQ(mode_schedule.event_times[0], t0 + 0.5);
+  ASSERT_EQ(mode_schedule.mode_sequence[1], 1);
+  ASSERT_DOUBLE_EQ(mode_schedule.event_times[1], t0 + 1.0);
+  ASSERT_EQ(mode_schedule.mode_sequence[2], 0);
+  ASSERT_DOUBLE_EQ(mode_schedule.event_times[2], t0 + 1.5);
+  ASSERT_EQ(mode_schedule.mode_sequence[3], 1);
+  ASSERT_DOUBLE_EQ(mode_schedule.event_times[3], t0 + 2.0);
+  ASSERT_EQ(mode_schedule.mode_sequence[4], 21);
 }
 
 TEST(TestGaitSchedule, setGaitScheduleAtTime_currentTime) {
@@ -105,11 +105,11 @@ TEST(TestGaitSchedule, setGaitScheduleAtTime_currentTime) {
 
   // Set a new gait at t0
   gaitSchedule.setGaitAtTime(Gait{1.5, {}, {21}}, tInsert);
-  auto modeSchedule = gaitSchedule.getModeSchedule((tInsert - t0) + 1.5);
+  auto mode_schedule = gaitSchedule.getModeSchedule((tInsert - t0) + 1.5);
 
   // New gait is all that is left
-  ASSERT_TRUE(modeSchedule.eventTimes.empty());
-  ASSERT_EQ(modeSchedule.modeSequence.front(), 21);
+  ASSERT_TRUE(mode_schedule.event_times.empty());
+  ASSERT_EQ(mode_schedule.mode_sequence.front(), 21);
 }
 
 TEST(TestGaitSchedule, setGaitScheduleAtTime_shortenCurrentGait) {
@@ -126,11 +126,11 @@ TEST(TestGaitSchedule, setGaitScheduleAtTime_shortenCurrentGait) {
 
   // Set a new gait by interrupting the current gait
   gaitSchedule.setGaitAtTime(Gait{Tinsert, {}, {21}}, tInsert);
-  auto modeSchedule = gaitSchedule.getModeSchedule(Tinsert);
+  auto mode_schedule = gaitSchedule.getModeSchedule(Tinsert);
 
   // Change happens at requested time
   ASSERT_DOUBLE_EQ(gaitSchedule.timeLeftInCurrentGait(), tInsert - tcurr);
-  ASSERT_DOUBLE_EQ(modeSchedule.eventTimes.front(), tInsert);
+  ASSERT_DOUBLE_EQ(mode_schedule.event_times.front(), tInsert);
 }
 
 TEST(TestGaitSchedule, setGaitScheduleAfterTime) {
@@ -142,10 +142,10 @@ TEST(TestGaitSchedule, setGaitScheduleAfterTime) {
 
   // Set a new gait way pass the end of the current schedule
   gaitSchedule.setGaitAfterTime(Gait{1.0, {}, {1}}, tInsert);
-  auto modeSchedule = gaitSchedule.getModeSchedule((tInsert - t0) + 1.5);
+  auto mode_schedule = gaitSchedule.getModeSchedule((tInsert - t0) + 1.5);
 
   // New gait inserted at the correct time
-  ASSERT_DOUBLE_EQ(modeSchedule.eventTimes.back(), 22.6);
+  ASSERT_DOUBLE_EQ(mode_schedule.event_times.back(), 22.6);
 }
 
 TEST(TestGaitSchedule, setGaitScheduleAfterTimeWithNonzeroPhase) {
@@ -162,10 +162,10 @@ TEST(TestGaitSchedule, setGaitScheduleAfterTimeWithNonzeroPhase) {
   // Set a new gait way pass the end of the current schedule
   gaitSchedule.setGaitAfterTime(Gait{1.0, {}, {1}}, tInsert);
 
-  auto modeSchedule = gaitSchedule.getModeSchedule(2.0);
+  auto mode_schedule = gaitSchedule.getModeSchedule(2.0);
 
-  ASSERT_DOUBLE_EQ(modeSchedule.eventTimes.size(), 1);
-  ASSERT_DOUBLE_EQ(modeSchedule.eventTimes.front(), 3.0);  // First insert opportunity
-  ASSERT_EQ(modeSchedule.modeSequence.front(), 0);
-  ASSERT_EQ(modeSchedule.modeSequence.back(), 1);
+  ASSERT_DOUBLE_EQ(mode_schedule.event_times.size(), 1);
+  ASSERT_DOUBLE_EQ(mode_schedule.event_times.front(), 3.0);  // First insert opportunity
+  ASSERT_EQ(mode_schedule.mode_sequence.front(), 0);
+  ASSERT_EQ(mode_schedule.mode_sequence.back(), 1);
 }

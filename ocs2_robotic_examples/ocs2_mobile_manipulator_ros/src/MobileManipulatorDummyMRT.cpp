@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
 
   // MRT
   MRT_ROS_Interface mrt(robotName);
-  mrt.initRollout(&interface.getRollout());
+  mrt.init_rollout(&interface.getRollout());
   mrt.launchNodes(nodeHandle);
 
   // Visualization
@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
 
   // Dummy MRT
   MRT_ROS_Dummy_Loop dummy(mrt, interface.mpcSettings().mrtDesiredFrequency_, interface.mpcSettings().mpcDesiredFrequency_);
-  dummy.subscribeObservers({dummyVisualization});
+  dummy.subscribe_observers({dummyVisualization});
 
   // initial state
   SystemObservation initObservation;

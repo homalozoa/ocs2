@@ -27,25 +27,27 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "ocs2_core/Types.hpp"
+#include "ocs2_core/cost/QuadraticStateCost.hpp"
+#include "ocs2_core/cost/QuadraticStateInputCost.hpp"
+#include "ocs2_core/dynamics/LinearSystemDynamics.hpp"
+#include "ocs2_core/initialization/DefaultInitializer.hpp"
+#include "ocs2_ddp/GaussNewtonDDP_MPC.hpp"
+#include "ocs2_oc/rollout/TimeTriggeredRollout.hpp"
+#include "ocs2_python_interface/PythonInterface.hpp"
+#include "ocs2_robotic_tools/common/RobotInterface.hpp"
 
-#include <ocs2_core/Types.h>
-#include <ocs2_core/cost/QuadraticStateCost.h>
-#include <ocs2_core/cost/QuadraticStateInputCost.h>
-#include <ocs2_core/dynamics/LinearSystemDynamics.h>
-#include <ocs2_core/initialization/DefaultInitializer.h>
-#include <ocs2_ddp/GaussNewtonDDP_MPC.h>
-#include <ocs2_oc/rollout/TimeTriggeredRollout.h>
+namespace ocs2
+{
+namespace pybindings_test
+{
 
-#include <ocs2_python_interface/PythonInterface.h>
-#include <ocs2_robotic_tools/common/RobotInterface.h>
-
-namespace ocs2 {
-namespace pybindings_test {
-
-class DummyInterface final : public RobotInterface {
- public:
-  DummyInterface() {
+class DummyInterface final : public RobotInterface
+{
+public:
+  DummyInterface()
+  {
     const matrix_t A = (matrix_t(2, 2) << 0, 1, 0, 0).finished();
     const matrix_t B = (matrix_t(2, 1) << 0, 1).finished();
     problem_.dynamicsPtr.reset(new LinearSystemDynamics(A, B));
@@ -65,28 +67,33 @@ class DummyInterface final : public RobotInterface {
   }
   ~DummyInterface() override = default;
 
-  std::unique_ptr<ocs2::GaussNewtonDDP_MPC> getMpc() {
+  std::unique_ptr<ocs2::GaussNewtonDDP_MPC> getMpc()
+  {
     mpc::Settings mpcSettings;
     ddp::Settings ddpSettings;
     ddpSettings.algorithm_ = ddp::Algorithm::SLQ;
-    return std::make_unique<GaussNewtonDDP_MPC>(std::move(mpcSettings), std::move(ddpSettings), *rolloutPtr_, problem_, *initializerPtr_);
+    return std::make_unique<GaussNewtonDDP_MPC>(
+      std::move(mpcSettings), std::move(ddpSettings), *rolloutPtr_, problem_, *initializerPtr_);
   }
 
-  const OptimalControlProblem& getOptimalControlProblem() const override { return problem_; }
-  const Initializer& getInitializer() const override { return *initializerPtr_; }
+  const OptimalControlProblem & getOptimalControlProblem() const override { return problem_; }
+  const Initializer & getInitializer() const override { return *initializerPtr_; }
 
- private:
+private:
   OptimalControlProblem problem_;
   std::unique_ptr<Initializer> initializerPtr_;
   std::unique_ptr<RolloutBase> rolloutPtr_;
-  const TargetTrajectories targetTrajectories_ = TargetTrajectories({0.0}, {vector_t::Zero(2)}, {vector_t::Zero(2)});
+  const TargetTrajectories targetTrajectories_ =
+    TargetTrajectories({0.0}, {vector_t::Zero(2)}, {vector_t::Zero(2)});
 };
 
-class DummyPyBindings final : public PythonInterface {
- public:
+class DummyPyBindings final : public PythonInterface
+{
+public:
   using Base = PythonInterface;
 
-  DummyPyBindings() {
+  DummyPyBindings()
+  {
     DummyInterface robot;
     PythonInterface::init(robot, robot.getMpc());
   }
@@ -95,6 +102,4 @@ class DummyPyBindings final : public PythonInterface {
 }  // namespace pybindings_test
 }  // namespace ocs2
 
-TEST(OCS2PyBindingsTest, createDummyPyBindings) {
-  ocs2::pybindings_test::DummyPyBindings dummy;
-}
+TEST(OCS2PyBindingsTest, createDummyPyBindings) { ocs2::pybindings_test::DummyPyBindings dummy; }

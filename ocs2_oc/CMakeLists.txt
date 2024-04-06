@@ -48,7 +48,8 @@ ament_auto_add_library(
   src/search_strategy/FilterLinesearch.cpp
   src/trajectory_adjustment/TrajectorySpreading.cpp
 )
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(
+  ${PROJECT_NAME}
   ${Boost_LIBRARIES}
   -lm -ldl
 )

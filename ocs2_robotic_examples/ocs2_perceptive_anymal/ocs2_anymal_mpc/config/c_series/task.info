@@ -122,7 +122,7 @@ terrainPlane
 
 defaultModeSequenceTemplate
 {
-  modeSequence
+  mode_sequence
   {
     [0]  STANCE
   }

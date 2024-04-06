@@ -92,12 +92,12 @@ int main(int argc, char* argv[]) {
   switched_model::Gait stance;
   stance.duration = stanceTime;
   stance.eventPhases = {};
-  stance.modeSequence = {MN::STANCE};
+  stance.mode_sequence = {MN::STANCE};
 
   switched_model::Gait gait;
   gait.duration = gaitDuration;
   gait.eventPhases = {0.5};
-  gait.modeSequence = {MN::LF_RH, MN::RF_LH};
+  gait.mode_sequence = {MN::LF_RH, MN::RF_LH};
 
   GaitSchedule::GaitSequence gaitSequence{stance};
   for (int i = 0; i < numGaitCycles; ++i) {
@@ -187,7 +187,7 @@ int main(int argc, char* argv[]) {
   // ====== Create MPC solver ========
   const auto mpcSettings = ocs2::mpc::loadSettings(taskFolder + configName + "/task.info");
 
-  std::unique_ptr<ocs2::MPC_BASE> mpcPtr;
+  std::unique_ptr<ocs2::MpcBase> mpcPtr;
   const auto sqpSettings = ocs2::sqp::loadSettings(taskFolder + configName + "/multiple_shooting.info");
   switch (anymalInterface->modelSettings().algorithm_) {
     case switched_model::Algorithm::DDP: {
@@ -211,8 +211,8 @@ int main(int argc, char* argv[]) {
   observation.input.setZero(switched_model_loopshaping::INPUT_DIM);
 
   // Wait for the first policy
-  mpcInterface.setCurrentObservation(observation);
-  while (!mpcInterface.initialPolicyReceived()) {
+  mpcInterface.set_current_observation(observation);
+  while (!mpcInterface.initial_policy_received()) {
     mpcInterface.advanceMpc();
   }
 
@@ -223,26 +223,26 @@ int main(int argc, char* argv[]) {
     std::cout << "t: " << observation.time << "\n";
     try {
       // run MPC at current observation
-      mpcInterface.setCurrentObservation(observation);
+      mpcInterface.set_current_observation(observation);
       mpcInterface.advanceMpc();
-      mpcInterface.updatePolicy();
+      mpcInterface.update_policy();
 
-      performances.push_back(mpcInterface.getPerformanceIndices());
+      performances.push_back(mpcInterface.get_performance_indices());
 
       // Evaluate the optimized solution - change to optimal controller
       ocs2::vector_t tmp;
-      mpcInterface.evaluatePolicy(observation.time, observation.state, tmp, observation.input, observation.mode);
-      observation.input = ocs2::LinearInterpolation::interpolate(observation.time, mpcInterface.getPolicy().timeTrajectory_,
-                                                                 mpcInterface.getPolicy().inputTrajectory_);
+      mpcInterface.evaluate_policy(observation.time, observation.state, tmp, observation.input, observation.mode);
+      observation.input = ocs2::LinearInterpolation::interpolate(observation.time, mpcInterface.get_policy().timeTrajectory_,
+                                                                 mpcInterface.get_policy().inputTrajectory_);
 
       closedLoopSolution.timeTrajectory_.push_back(observation.time);
       closedLoopSolution.stateTrajectory_.push_back(observation.state);
       closedLoopSolution.inputTrajectory_.push_back(observation.input);
-      if (closedLoopSolution.modeSchedule_.modeSequence.empty()) {
-        closedLoopSolution.modeSchedule_.modeSequence.push_back(observation.mode);
-      } else if (closedLoopSolution.modeSchedule_.modeSequence.back() != observation.mode) {
-        closedLoopSolution.modeSchedule_.modeSequence.push_back(observation.mode);
-        closedLoopSolution.modeSchedule_.eventTimes.push_back(observation.time - 0.5 / f_mpc);
+      if (closedLoopSolution.mode_schedule_.mode_sequence.empty()) {
+        closedLoopSolution.mode_schedule_.mode_sequence.push_back(observation.mode);
+      } else if (closedLoopSolution.mode_schedule_.mode_sequence.back() != observation.mode) {
+        closedLoopSolution.mode_schedule_.mode_sequence.push_back(observation.mode);
+        closedLoopSolution.mode_schedule_.event_times.push_back(observation.time - 0.5 / f_mpc);
       }
 
       // perform a rollout
@@ -250,8 +250,8 @@ int main(int argc, char* argv[]) {
       size_array_t postEventIndicesStock;
       vector_array_t stateTrajectory, inputTrajectory;
       const scalar_t finalTime = observation.time + 1.0 / f_mpc;
-      auto modeschedule = mpcInterface.getPolicy().modeSchedule_;
-      rollout->run(observation.time, observation.state, finalTime, mpcInterface.getPolicy().controllerPtr_.get(), modeschedule,
+      auto modeschedule = mpcInterface.get_policy().mode_schedule_;
+      rollout->run(observation.time, observation.state, finalTime, mpcInterface.get_policy().controllerPtr_.get(), modeschedule,
                    timeTrajectory, postEventIndicesStock, stateTrajectory, inputTrajectory);
 
       observation.time = finalTime;
@@ -329,7 +329,7 @@ int main(int argc, char* argv[]) {
 
   while (ros::ok()) {
     visualizer.publishOptimizedStateTrajectory(ros::Time::now(), closedLoopSystemSolution.timeTrajectory_,
-                                               closedLoopSystemSolution.stateTrajectory_, closedLoopSystemSolution.modeSchedule_);
+                                               closedLoopSystemSolution.stateTrajectory_, closedLoopSystemSolution.mode_schedule_);
     visualizer.publishDesiredTrajectory(ros::Time::now(), targetTrajectories);
 
     filteredmapPublisher.publish(filteredMapMessage);
@@ -350,7 +350,7 @@ int main(int argc, char* argv[]) {
         observation.time = closedLoopSystemSolution.timeTrajectory_[k];
         observation.state = closedLoopSystemSolution.stateTrajectory_[k];
         observation.input = closedLoopSystemSolution.inputTrajectory_[k];
-        observation.mode = closedLoopSystemSolution.modeSchedule_.modeAtTime(observation.time);
+        observation.mode = closedLoopSystemSolution.mode_schedule_.modeAtTime(observation.time);
         visualizer.publishObservation(ros::Time::now(), observation);
       });
       if (frameDuration > publishDuration) {

@@ -70,13 +70,13 @@ public:
    * Sets the ModeSchedule to the buffer. The buffer will move to active ModeSchedule once preSolverRun() is called.
    * @note: This method must be thread safe.
    */
-  virtual void setModeSchedule(const ModeSchedule & modeSchedule) = 0;
+  virtual void setModeSchedule(const ModeSchedule & mode_schedule) = 0;
 
   /**
    * Move the ModeSchedule to the buffer. The buffer will move to active ModeSchedule once preSolverRun() is called.
    * @note: This method must be thread safe.
    */
-  virtual void setModeSchedule(ModeSchedule && modeSchedule) = 0;
+  virtual void setModeSchedule(ModeSchedule && mode_schedule) = 0;
 
   /** Returns a const reference to the active TargetTrajectories. */
   virtual const TargetTrajectories & getTargetTrajectories() const = 0;

@@ -53,15 +53,15 @@ struct Result
 };
 
 std::size_t modeAtTime(
-  const ocs2::ModeSchedule & modeSchedule, ocs2::scalar_t time, bool isFinalTime)
+  const ocs2::ModeSchedule & mode_schedule, ocs2::scalar_t time, bool isFinalTime)
 {
   if (isFinalTime) {
     auto timeItr =
-      std::upper_bound(modeSchedule.eventTimes.begin(), modeSchedule.eventTimes.end(), time);
-    int modeIndex = std::distance(modeSchedule.eventTimes.begin(), timeItr);
-    return modeSchedule.modeSequence[modeIndex];
+      std::upper_bound(mode_schedule.event_times.begin(), mode_schedule.event_times.end(), time);
+    int modeIndex = std::distance(mode_schedule.event_times.begin(), timeItr);
+    return mode_schedule.mode_sequence[modeIndex];
   } else {
-    return modeSchedule.modeAtTime(time);
+    return mode_schedule.modeAtTime(time);
   }
 }
 
@@ -105,14 +105,14 @@ protected:
 
   /******************************************************************************************************/
   Result rollout(
-    const ocs2::ModeSchedule & modeSchedule,
+    const ocs2::ModeSchedule & mode_schedule,
     const std::pair<ocs2::scalar_t, ocs2::scalar_t> & timeInterval) const
   {
     Result out;
-    ocs2::ModeSchedule modeScheduleTemp =
-      modeSchedule;  // since it is TimeTriggeredRollout, it will not be changed
+    ocs2::ModeSchedule mode_scheduleTemp =
+      mode_schedule;  // since it is TimeTriggeredRollout, it will not be changed
     rolloutPtr->run(
-      timeInterval.first, initState, timeInterval.second, controllerPtr.get(), modeScheduleTemp,
+      timeInterval.first, initState, timeInterval.second, controllerPtr.get(), mode_scheduleTemp,
       out.timeTrajectory, out.postEventsIndeces, out.stateTrajectory, out.inputTrajectory);
 
     out.eventDataArray.resize(out.postEventsIndeces.size());
@@ -124,26 +124,26 @@ protected:
     out.modeTrajectory.resize(out.timeTrajectory.size());
     for (int i = 0; i < out.modeTrajectory.size(); i++) {
       out.modeTrajectory[i] = modeAtTime(
-        modeSchedule, out.timeTrajectory[i], i == out.modeTrajectory.size() - 1 ? true : false);
+        mode_schedule, out.timeTrajectory[i], i == out.modeTrajectory.size() - 1 ? true : false);
     }
 
     out.preEventModeTrajectory.resize(out.postEventsIndeces.size());
     std::transform(
       out.postEventsIndeces.begin(), out.postEventsIndeces.end(),
-      out.preEventModeTrajectory.begin(), [&out, &modeSchedule](size_t eventIndex) {
-        return modeSchedule.modeAtTime(out.timeTrajectory[eventIndex - 1]);
+      out.preEventModeTrajectory.begin(), [&out, &mode_schedule](size_t eventIndex) {
+        return mode_schedule.modeAtTime(out.timeTrajectory[eventIndex - 1]);
       });
     return out;
   }
 
   /******************************************************************************************************/
   std::pair<Result, ocs2::TrajectorySpreading::Status> spreadRollout(
-    const ocs2::ModeSchedule & modeSchedule, const ocs2::ModeSchedule & updatedModeSchedule,
+    const ocs2::ModeSchedule & mode_schedule, const ocs2::ModeSchedule & updatedModeSchedule,
     const Result & in)
   {
     // set
     const auto status =
-      trajectorySpreadingPtr->set(modeSchedule, updatedModeSchedule, in.timeTrajectory);
+      trajectorySpreadingPtr->set(mode_schedule, updatedModeSchedule, in.timeTrajectory);
 
     Result out = in;
     trajectorySpreadingPtr->adjustTimeTrajectory(out.timeTrajectory);
@@ -160,11 +160,11 @@ protected:
 
   /******************************************************************************************************/
   ocs2::TrajectorySpreading::Status checkResults(
-    const ocs2::ModeSchedule & modeSchedule, const ocs2::ModeSchedule & updatedModeSchedule,
+    const ocs2::ModeSchedule & mode_schedule, const ocs2::ModeSchedule & updatedModeSchedule,
     const std::pair<ocs2::scalar_t, ocs2::scalar_t> & period, bool display = true)
   {
     // rollout
-    const auto result = rollout(modeSchedule, period);
+    const auto result = rollout(mode_schedule, period);
 
     if (display) {
       std::cerr << "\nBefore TrajectorySpreading: \n";
@@ -177,9 +177,9 @@ protected:
                   << "]: " << result.stateTrajectory[k].transpose() << "\n";
         if (itr != result.postEventsIndeces.end() && *itr == k + 1) {
           size_t eventInd =
-            ocs2::lookup::findIndexInTimeArray(modeSchedule.eventTimes, result.timeTrajectory[k]);
-          size_t preMode = modeSchedule.modeSequence[eventInd];
-          size_t postMode = modeSchedule.modeSequence[eventInd + 1];
+            ocs2::lookup::findIndexInTimeArray(mode_schedule.event_times, result.timeTrajectory[k]);
+          size_t preMode = mode_schedule.mode_sequence[eventInd];
+          size_t postMode = mode_schedule.mode_sequence[eventInd + 1];
           std::cerr << "+++++++++++++++++++++++++++++++++++++\n";
           std::cerr << "Event time: " << result.timeTrajectory[*itr] << "(" << preMode << "->"
                     << postMode << ")"
@@ -194,7 +194,7 @@ protected:
     // spread rollout
     Result spreadResult;
     ocs2::TrajectorySpreading::Status status;
-    std::tie(spreadResult, status) = spreadRollout(modeSchedule, updatedModeSchedule, result);
+    std::tie(spreadResult, status) = spreadRollout(mode_schedule, updatedModeSchedule, result);
 
     if (display) {
       std::cerr << "\nAfter TrajectorySpreading: \n";
@@ -207,9 +207,9 @@ protected:
                   << "]: " << spreadResult.stateTrajectory[k].transpose() << "\n";
         if (itr != spreadResult.postEventsIndeces.end() && *itr == k + 1) {
           size_t eventInd = ocs2::lookup::findIndexInTimeArray(
-            updatedModeSchedule.eventTimes, spreadResult.timeTrajectory[k]);
-          size_t preMode = updatedModeSchedule.modeSequence[eventInd];
-          size_t postMode = updatedModeSchedule.modeSequence[eventInd + 1];
+            updatedModeSchedule.event_times, spreadResult.timeTrajectory[k]);
+          size_t preMode = updatedModeSchedule.mode_sequence[eventInd];
+          size_t postMode = updatedModeSchedule.mode_sequence[eventInd + 1];
           std::cerr << "+++++++++++++++++++++++++++++++++++++\n";
           std::cerr << "Event time: " << spreadResult.timeTrajectory[*itr] << "(" << preMode << "->"
                     << postMode << ")"
@@ -235,10 +235,10 @@ protected:
       const ocs2::scalar_t finalTime = spreadResult.timeTrajectory.back();
 
       const auto startEventItr = std::upper_bound(
-        updatedModeSchedule.eventTimes.begin(), updatedModeSchedule.eventTimes.end(), initTime);
+        updatedModeSchedule.event_times.begin(), updatedModeSchedule.event_times.end(), initTime);
       // If the final time is aligned with(the same as) an event time, it belongs to the post-mode.
       const auto endEventItr = std::upper_bound(
-        updatedModeSchedule.eventTimes.begin(), updatedModeSchedule.eventTimes.end(), finalTime);
+        updatedModeSchedule.event_times.begin(), updatedModeSchedule.event_times.end(), finalTime);
 
       ocs2::size_array_t postEventIndices(endEventItr - startEventItr);
       for (auto itr = startEventItr; itr != endEventItr; itr++) {
@@ -271,7 +271,7 @@ protected:
 
     auto eventIndexActualItr = spreadResult.postEventsIndeces.begin();
     auto eventTimeReferenceInd =
-      ocs2::lookup::findIndexInTimeArray(updatedModeSchedule.eventTimes, period.first);
+      ocs2::lookup::findIndexInTimeArray(updatedModeSchedule.event_times, period.first);
     for (size_t k = 0; k < spreadResult.timeTrajectory.size(); k++) {
       // Time should be monotonic sequence except the final time. It is possible that the last two time points have the same time, but one
       // stands for pre-mode and the other stands for post-mode.
@@ -286,16 +286,16 @@ protected:
         *eventIndexActualItr == k + 1) {
         constexpr auto eps = ocs2::numeric_traits::limitEpsilon<ocs2::scalar_t>();
         EXPECT_EQ(
-          spreadResult.timeTrajectory[k], updatedModeSchedule.eventTimes[eventTimeReferenceInd]);
+          spreadResult.timeTrajectory[k], updatedModeSchedule.event_times[eventTimeReferenceInd]);
 
         // when there is only one point in a mode(for example mode A), the next mode(for example mode B) will overwrite the post-event time
         // of mode A, and thus the time differene between post-event and  pre-event is NOT necessary to be within the limit epsilon
-        // EXPECT_LT(spreadResult.timeTrajectory[k + 1], updatedModeSchedule.eventTimes[eventTimeReferenceInd] + eps);
+        // EXPECT_LT(spreadResult.timeTrajectory[k + 1], updatedModeSchedule.event_times[eventTimeReferenceInd] + eps);
 
         eventTimeReferenceInd++;
         eventIndexActualItr++;
       }
-      // mode should match the given modeSchedule
+      // mode should match the given mode_schedule
       auto updatedMode = modeAtTime(
         updatedModeSchedule, spreadResult.timeTrajectory[k],
         k == spreadResult.timeTrajectory.size() - 1 ? true : false);
@@ -333,17 +333,17 @@ constexpr bool TrajectorySpreadingTest::DEBUG_PRINT;
 
 TEST_F(TrajectorySpreadingTest, no_change)
 {
-  const ocs2::scalar_array_t eventTimes{0.6, 1.7};
-  const ocs2::size_array_t modeSequence{0, 1, 2};
-  const ocs2::ModeSchedule & modeSchedule{eventTimes, modeSequence};
+  const ocs2::scalar_array_t event_times{0.6, 1.7};
+  const ocs2::size_array_t mode_sequence{0, 1, 2};
+  const ocs2::ModeSchedule & mode_schedule{event_times, mode_sequence};
   const std::pair<ocs2::scalar_t, ocs2::scalar_t> period{0.0, 2};
 
   // rollout
-  const auto result = rollout(modeSchedule, period);
+  const auto result = rollout(mode_schedule, period);
   // spread rollout
   Result spreadResult;
   ocs2::TrajectorySpreading::Status status;
-  std::tie(spreadResult, status) = spreadRollout(modeSchedule, modeSchedule, result);
+  std::tie(spreadResult, status) = spreadRollout(mode_schedule, mode_schedule, result);
 
   EXPECT_FALSE(status.willTruncate);
   EXPECT_FALSE(status.willPerformTrajectorySpreading);
@@ -356,15 +356,15 @@ TEST_F(TrajectorySpreadingTest, no_change)
 
 TEST_F(TrajectorySpreadingTest, no_matching_modes)
 {
-  const ocs2::scalar_array_t eventTimes{0.6, 1.7};
-  const ocs2::size_array_t modeSequence{0, 1, 2};
+  const ocs2::scalar_array_t event_times{0.6, 1.7};
+  const ocs2::size_array_t mode_sequence{0, 1, 2};
 
   const ocs2::scalar_array_t updatedEventTimes{1.0, 1.1};
   const ocs2::size_array_t updatedModeSequence{10, 11, 12};
 
   const std::pair<ocs2::scalar_t, ocs2::scalar_t> period{0.0, 2.0};
   const auto status =
-    checkResults({eventTimes, modeSequence}, {updatedEventTimes, updatedModeSequence}, period);
+    checkResults({event_times, mode_sequence}, {updatedEventTimes, updatedModeSequence}, period);
 
   EXPECT_TRUE(status.willTruncate);
   EXPECT_FALSE(status.willPerformTrajectorySpreading);
@@ -372,15 +372,15 @@ TEST_F(TrajectorySpreadingTest, no_matching_modes)
 
 TEST_F(TrajectorySpreadingTest, partially_matching_modes)
 {
-  const ocs2::scalar_array_t eventTimes{0.6, 1.7, 2.3};
-  const ocs2::size_array_t modeSequence{0, 1, 2, 3};
+  const ocs2::scalar_array_t event_times{0.6, 1.7, 2.3};
+  const ocs2::size_array_t mode_sequence{0, 1, 2, 3};
 
   const ocs2::scalar_array_t updatedEventTimes{0.9, 1.1, 2.1};
   const ocs2::size_array_t updatedModeSequence{10, 1, 2, 30};
 
   const std::pair<ocs2::scalar_t, ocs2::scalar_t> period{1.0, 2.5};
   const auto status =
-    checkResults({eventTimes, modeSequence}, {updatedEventTimes, updatedModeSequence}, period);
+    checkResults({event_times, mode_sequence}, {updatedEventTimes, updatedModeSequence}, period);
 
   EXPECT_TRUE(status.willTruncate);
   EXPECT_TRUE(status.willPerformTrajectorySpreading);
@@ -388,15 +388,15 @@ TEST_F(TrajectorySpreadingTest, partially_matching_modes)
 
 TEST_F(TrajectorySpreadingTest, final_time_is_the_same_as_event_time_1)
 {
-  const ocs2::scalar_array_t eventTimes{1.1, 1.3};
-  const ocs2::size_array_t modeSequence{0, 1, 2};
+  const ocs2::scalar_array_t event_times{1.1, 1.3};
+  const ocs2::size_array_t mode_sequence{0, 1, 2};
 
   const ocs2::scalar_array_t updatedEventTimes{1.1, 2.1};
   const ocs2::size_array_t updatedModeSequence{0, 1, 2};
 
   const std::pair<ocs2::scalar_t, ocs2::scalar_t> period{0.2, 2.1};
   const auto status =
-    checkResults({eventTimes, modeSequence}, {updatedEventTimes, updatedModeSequence}, period);
+    checkResults({event_times, mode_sequence}, {updatedEventTimes, updatedModeSequence}, period);
 
   EXPECT_FALSE(status.willTruncate);
   EXPECT_TRUE(status.willPerformTrajectorySpreading);
@@ -404,15 +404,15 @@ TEST_F(TrajectorySpreadingTest, final_time_is_the_same_as_event_time_1)
 
 TEST_F(TrajectorySpreadingTest, final_time_is_the_same_as_event_time_2)
 {
-  const ocs2::scalar_array_t eventTimes{1.1, 2.1};
-  const ocs2::size_array_t modeSequence{0, 1, 2};
+  const ocs2::scalar_array_t event_times{1.1, 2.1};
+  const ocs2::size_array_t mode_sequence{0, 1, 2};
 
   const ocs2::scalar_array_t updatedEventTimes{1.1, 1.3};
   const ocs2::size_array_t updatedModeSequence{0, 1, 2};
 
   const std::pair<ocs2::scalar_t, ocs2::scalar_t> period{0.2, 2.1};
   const auto status =
-    checkResults({eventTimes, modeSequence}, {updatedEventTimes, updatedModeSequence}, period);
+    checkResults({event_times, mode_sequence}, {updatedEventTimes, updatedModeSequence}, period);
 
   EXPECT_FALSE(status.willTruncate);
   EXPECT_TRUE(status.willPerformTrajectorySpreading);
@@ -420,15 +420,15 @@ TEST_F(TrajectorySpreadingTest, final_time_is_the_same_as_event_time_2)
 
 TEST_F(TrajectorySpreadingTest, erase_trajectory)
 {
-  const ocs2::scalar_array_t eventTimes{1.1, 1.3};
-  const ocs2::size_array_t modeSequence{0, 1, 2};
+  const ocs2::scalar_array_t event_times{1.1, 1.3};
+  const ocs2::size_array_t mode_sequence{0, 1, 2};
 
   const ocs2::scalar_array_t updatedEventTimes{1.1, 1.3};
   const ocs2::size_array_t updatedModeSequence{0, 1, 3};
 
   const std::pair<ocs2::scalar_t, ocs2::scalar_t> period{0.2, 2.1};
   const auto status =
-    checkResults({eventTimes, modeSequence}, {updatedEventTimes, updatedModeSequence}, period);
+    checkResults({event_times, mode_sequence}, {updatedEventTimes, updatedModeSequence}, period);
 
   EXPECT_TRUE(status.willTruncate);
   EXPECT_FALSE(status.willPerformTrajectorySpreading);
@@ -436,15 +436,15 @@ TEST_F(TrajectorySpreadingTest, erase_trajectory)
 
 TEST_F(TrajectorySpreadingTest, fully_matched_modes)
 {
-  const ocs2::scalar_array_t eventTimes{1.1, 1.3};
-  const ocs2::size_array_t modeSequence{0, 1, 2};
+  const ocs2::scalar_array_t event_times{1.1, 1.3};
+  const ocs2::size_array_t mode_sequence{0, 1, 2};
 
   const ocs2::scalar_array_t updatedEventTimes{0.5, 2.1};
   const ocs2::size_array_t updatedModeSequence{0, 1, 2};
 
   const std::pair<ocs2::scalar_t, ocs2::scalar_t> period{0.0, 2.5};
   const auto status =
-    checkResults({eventTimes, modeSequence}, {updatedEventTimes, updatedModeSequence}, period);
+    checkResults({event_times, mode_sequence}, {updatedEventTimes, updatedModeSequence}, period);
 
   EXPECT_FALSE(status.willTruncate);
   EXPECT_TRUE(status.willPerformTrajectorySpreading);
@@ -452,143 +452,143 @@ TEST_F(TrajectorySpreadingTest, fully_matched_modes)
 
 TEST_F(TrajectorySpreadingTest, out_range_event_to_in_range_at_back_1)
 {
-  const ocs2::scalar_array_t eventTimes{0.6, 1.7};
-  const ocs2::size_array_t modeSequence{0, 1, 2};
+  const ocs2::scalar_array_t event_times{0.6, 1.7};
+  const ocs2::size_array_t mode_sequence{0, 1, 2};
 
   const ocs2::scalar_array_t updatedEventTimes{1.0, 1.1};
   const ocs2::size_array_t updatedModeSequence{0, 1, 2};
 
   const std::pair<ocs2::scalar_t, ocs2::scalar_t> period{0.0, 1.5};
   const auto status =
-    checkResults({eventTimes, modeSequence}, {updatedEventTimes, updatedModeSequence}, period);
+    checkResults({event_times, mode_sequence}, {updatedEventTimes, updatedModeSequence}, period);
 }
 
 TEST_F(TrajectorySpreadingTest, out_range_event_to_in_range_at_back_2)
 {
-  const ocs2::scalar_array_t eventTimes{1.0};
-  const ocs2::size_array_t modeSequence{0, 1};
+  const ocs2::scalar_array_t event_times{1.0};
+  const ocs2::size_array_t mode_sequence{0, 1};
 
   const ocs2::scalar_array_t updatedEventTimes{1.0, 2.0};
   const ocs2::size_array_t updatedModeSequence{0, 1, 2};
 
   const std::pair<ocs2::scalar_t, ocs2::scalar_t> period{0.7, 2.5};
   const auto status =
-    checkResults({eventTimes, modeSequence}, {updatedEventTimes, updatedModeSequence}, period);
+    checkResults({event_times, mode_sequence}, {updatedEventTimes, updatedModeSequence}, period);
 }
 
 TEST_F(TrajectorySpreadingTest, in_range_event_to_out_range_at_back_1)
 {
-  const ocs2::scalar_array_t eventTimes{1.0, 1.1};
-  const ocs2::size_array_t modeSequence{0, 1, 2};
+  const ocs2::scalar_array_t event_times{1.0, 1.1};
+  const ocs2::size_array_t mode_sequence{0, 1, 2};
 
   const ocs2::scalar_array_t updatedEventTimes{0.6, 1.7};
   const ocs2::size_array_t updatedModeSequence{0, 1, 2};
 
   const std::pair<ocs2::scalar_t, ocs2::scalar_t> period{0.0, 1.5};
   const auto status =
-    checkResults({eventTimes, modeSequence}, {updatedEventTimes, updatedModeSequence}, period);
+    checkResults({event_times, mode_sequence}, {updatedEventTimes, updatedModeSequence}, period);
 }
 
 TEST_F(TrajectorySpreadingTest, in_range_event_to_out_range_at_back_2)
 {
-  const ocs2::scalar_array_t eventTimes{1, 2, 3.1};
-  const ocs2::size_array_t modeSequence{0, 1, 2, 4};
+  const ocs2::scalar_array_t event_times{1, 2, 3.1};
+  const ocs2::size_array_t mode_sequence{0, 1, 2, 4};
 
   const ocs2::scalar_array_t updatedEventTimes{1, 3};
   const ocs2::size_array_t updatedModeSequence{0, 1, 3};
 
   const std::pair<ocs2::scalar_t, ocs2::scalar_t> period{0.5, 2.5};
   const auto status =
-    checkResults({eventTimes, modeSequence}, {updatedEventTimes, updatedModeSequence}, period);
+    checkResults({event_times, mode_sequence}, {updatedEventTimes, updatedModeSequence}, period);
 }
 
 TEST_F(TrajectorySpreadingTest, in_range_event_to_out_range_in_front_1)
 {
-  const ocs2::scalar_array_t eventTimes{1, 2};
-  const ocs2::size_array_t modeSequence{0, 1, 2};
+  const ocs2::scalar_array_t event_times{1, 2};
+  const ocs2::size_array_t mode_sequence{0, 1, 2};
 
   const ocs2::scalar_array_t updatedEventTimes{0.5, 1.6};
   const ocs2::size_array_t updatedModeSequence{0, 1, 2};
 
   const std::pair<ocs2::scalar_t, ocs2::scalar_t> period{0.7, 2.5};
   const auto status =
-    checkResults({eventTimes, modeSequence}, {updatedEventTimes, updatedModeSequence}, period);
+    checkResults({event_times, mode_sequence}, {updatedEventTimes, updatedModeSequence}, period);
 }
 
 TEST_F(TrajectorySpreadingTest, in_range_event_to_out_range_in_front_2)
 {
-  const ocs2::scalar_array_t eventTimes{1, 2};
-  const ocs2::size_array_t modeSequence{0, 1, 2};
+  const ocs2::scalar_array_t event_times{1, 2};
+  const ocs2::size_array_t mode_sequence{0, 1, 2};
 
   const ocs2::scalar_array_t updatedEventTimes{1.6};
   const ocs2::size_array_t updatedModeSequence{1, 2};
 
   const std::pair<ocs2::scalar_t, ocs2::scalar_t> period{0.7, 2.5};
   const auto status =
-    checkResults({eventTimes, modeSequence}, {updatedEventTimes, updatedModeSequence}, period);
+    checkResults({event_times, mode_sequence}, {updatedEventTimes, updatedModeSequence}, period);
 }
 
 TEST_F(TrajectorySpreadingTest, out_range_event_to_in_range_in_front_1)
 {
-  const ocs2::scalar_array_t eventTimes{2};
-  const ocs2::size_array_t modeSequence{1, 2};
+  const ocs2::scalar_array_t event_times{2};
+  const ocs2::size_array_t mode_sequence{1, 2};
 
   const ocs2::scalar_array_t updatedEventTimes{0.5, 1.6};
   const ocs2::size_array_t updatedModeSequence{0, 1, 2};
 
   const std::pair<ocs2::scalar_t, ocs2::scalar_t> period{0.7, 2.5};
   const auto status =
-    checkResults({eventTimes, modeSequence}, {updatedEventTimes, updatedModeSequence}, period);
+    checkResults({event_times, mode_sequence}, {updatedEventTimes, updatedModeSequence}, period);
 }
 
 TEST_F(TrajectorySpreadingTest, out_range_event_to_in_range_in_front_2)
 {
-  const ocs2::scalar_array_t eventTimes{0.5, 2};
-  const ocs2::size_array_t modeSequence{0, 1, 2};
+  const ocs2::scalar_array_t event_times{0.5, 2};
+  const ocs2::size_array_t mode_sequence{0, 1, 2};
 
   const ocs2::scalar_array_t updatedEventTimes{1, 1.6};
   const ocs2::size_array_t updatedModeSequence{0, 1, 2};
 
   const std::pair<ocs2::scalar_t, ocs2::scalar_t> period{0.7, 2.5};
   const auto status =
-    checkResults({eventTimes, modeSequence}, {updatedEventTimes, updatedModeSequence}, period);
+    checkResults({event_times, mode_sequence}, {updatedEventTimes, updatedModeSequence}, period);
 }
 
 TEST_F(TrajectorySpreadingTest, overlap_forward)
 {
-  const ocs2::scalar_array_t eventTimes{1, 1.5, 2};
-  const ocs2::size_array_t modeSequence{0, 1, 2, 3};
+  const ocs2::scalar_array_t event_times{1, 1.5, 2};
+  const ocs2::size_array_t mode_sequence{0, 1, 2, 3};
 
   const ocs2::scalar_array_t updatedEventTimes{1, 2.2, 2.3};
   const ocs2::size_array_t updatedModeSequence{0, 1, 2, 3};
 
   const std::pair<ocs2::scalar_t, ocs2::scalar_t> period{0.9, 2.5};
   const auto status =
-    checkResults({eventTimes, modeSequence}, {updatedEventTimes, updatedModeSequence}, period);
+    checkResults({event_times, mode_sequence}, {updatedEventTimes, updatedModeSequence}, period);
 }
 
 TEST_F(TrajectorySpreadingTest, overlap_backward)
 {
-  const ocs2::scalar_array_t eventTimes{1, 2.2, 3};
-  const ocs2::size_array_t modeSequence{0, 1, 2, 3};
+  const ocs2::scalar_array_t event_times{1, 2.2, 3};
+  const ocs2::size_array_t mode_sequence{0, 1, 2, 3};
 
   const ocs2::scalar_array_t updatedEventTimes{1, 1.5, 2};
   const ocs2::size_array_t updatedModeSequence{0, 1, 2, 3};
 
   const std::pair<ocs2::scalar_t, ocs2::scalar_t> period{0, 3.5};
   const auto status =
-    checkResults({eventTimes, modeSequence}, {updatedEventTimes, updatedModeSequence}, period);
+    checkResults({event_times, mode_sequence}, {updatedEventTimes, updatedModeSequence}, period);
 }
 
 TEST_F(TrajectorySpreadingTest, anymal_test)
 {
-  const ocs2::scalar_array_t eventTimes{1.00001, 1.40001, 1.80001, 2.20001, 2.60001};
-  const ocs2::size_array_t modeSequence{15, 15, 7, 14, 11, 13};
+  const ocs2::scalar_array_t event_times{1.00001, 1.40001, 1.80001, 2.20001, 2.60001};
+  const ocs2::size_array_t mode_sequence{15, 15, 7, 14, 11, 13};
 
   const ocs2::scalar_array_t updatedEventTimes{1.51913, 1.91913, 2.31913, 2.71913, 3.11913};
   const ocs2::size_array_t updatedModeSequence{15, 7, 14, 11, 13, 7};
 
   const std::pair<ocs2::scalar_t, ocs2::scalar_t> period{1.4, 2.4};
   const auto status =
-    checkResults({eventTimes, modeSequence}, {updatedEventTimes, updatedModeSequence}, period);
+    checkResults({event_times, mode_sequence}, {updatedEventTimes, updatedModeSequence}, period);
 }

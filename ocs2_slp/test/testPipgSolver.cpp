@@ -27,18 +27,18 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <Eigen/Sparse>
+#include "eigen3/Eigen/Sparse"
+#include "gtest/gtest.h"
+#include "ocs2_oc/oc_problem/OcpToKkt.hpp"
+#include "ocs2_oc/test/testProblemsGeneration.hpp"
+#include "ocs2_qp_solver/QpSolver.hpp"
+#include "ocs2_slp/pipg/PipgSolver.hpp"
+#include "ocs2_slp/pipg/SingleThreadPipg.hpp"
 
-#include <ocs2_oc/oc_problem/OcpToKkt.h>
-#include <ocs2_oc/test/testProblemsGeneration.h>
-#include <ocs2_qp_solver/QpSolver.h>
-
-#include "ocs2_slp/pipg/PipgSolver.h"
-#include "ocs2_slp/pipg/SingleThreadPipg.h"
-
-ocs2::pipg::Settings configurePipg(size_t maxNumIterations, ocs2::scalar_t absoluteTolerance, ocs2::scalar_t relativeTolerance,
-                                   bool verbose) {
+ocs2::pipg::Settings configurePipg(
+  size_t maxNumIterations, ocs2::scalar_t absoluteTolerance, ocs2::scalar_t relativeTolerance,
+  bool verbose)
+{
   ocs2::pipg::Settings settings;
   settings.maxNumIterations = maxNumIterations;
   settings.absoluteTolerance = absoluteTolerance;
@@ -49,8 +49,9 @@ ocs2::pipg::Settings configurePipg(size_t maxNumIterations, ocs2::scalar_t absol
   return settings;
 }
 
-class PIPGSolverTest : public testing::Test {
- protected:
+class PIPGSolverTest : public testing::Test
+{
+protected:
   // x_0, x_1, ... x_{N - 1}, X_{N}
   static constexpr size_t N_ = 10;  // numStages
   static constexpr size_t nx_ = 4;
@@ -61,7 +62,8 @@ class PIPGSolverTest : public testing::Test {
   static constexpr size_t numThreads_ = 8;
   static constexpr bool verbose_ = true;
 
-  PIPGSolverTest() : solver(configurePipg(30000, 1e-10, 1e-3, verbose_)) {
+  PIPGSolverTest() : solver(configurePipg(30000, 1e-10, 1e-3, verbose_))
+  {
     srand(10);
 
     // Construct OCP problem
@@ -77,7 +79,8 @@ class PIPGSolverTest : public testing::Test {
 
     solver.resize(ocs2::extractSizesFromProblem(dynamicsArray, costArray, &constraintsArray));
     ocs2::getCostMatrix(solver.size(), x0, costArray, costApproximation);
-    ocs2::getConstraintMatrix(solver.size(), x0, dynamicsArray, nullptr, nullptr, constraintsApproximation);
+    ocs2::getConstraintMatrix(
+      solver.size(), x0, dynamicsArray, nullptr, nullptr, constraintsApproximation);
   }
 
   ocs2::vector_t x0;
@@ -100,38 +103,45 @@ constexpr size_t PIPGSolverTest::numConstraints_;
 constexpr size_t PIPGSolverTest::numThreads_;
 constexpr bool PIPGSolverTest::verbose_;
 
-TEST_F(PIPGSolverTest, correctness) {
+TEST_F(PIPGSolverTest, correctness)
+{
   // ocs2::qp_solver::SolveDenseQP use  Gz + g = 0 for constraints
   auto QPconstraints = constraintsApproximation;
   QPconstraints.f = -QPconstraints.f;
   ocs2::vector_t primalSolutionQP;
-  std::tie(primalSolutionQP, std::ignore) = ocs2::qp_solver::solveDenseQp(costApproximation, QPconstraints);
+  std::tie(primalSolutionQP, std::ignore) =
+    ocs2::qp_solver::solveDenseQp(costApproximation, QPconstraints);
 
   Eigen::JacobiSVD<ocs2::matrix_t> svd(costApproximation.dfdxx);
   ocs2::vector_t s = svd.singularValues();
   const ocs2::scalar_t lambda = s(0);
   const ocs2::scalar_t mu = s(svd.rank() - 1);
-  Eigen::JacobiSVD<ocs2::matrix_t> svdGTG(constraintsApproximation.dfdx.transpose() * constraintsApproximation.dfdx);
+  Eigen::JacobiSVD<ocs2::matrix_t> svdGTG(
+    constraintsApproximation.dfdx.transpose() * constraintsApproximation.dfdx);
   const ocs2::scalar_t sigma = svdGTG.singularValues()(0);
   const ocs2::pipg::PipgBounds pipgBounds{mu, lambda, sigma};
 
   ocs2::vector_t primalSolutionPIPG;
-  std::ignore = ocs2::pipg::singleThreadPipg(solver.settings(), costApproximation.dfdxx.sparseView(), costApproximation.dfdx,
-                                             constraintsApproximation.dfdx.sparseView(), constraintsApproximation.f,
-                                             ocs2::vector_t::Ones(solver.getNumDynamicsConstraints()), pipgBounds, primalSolutionPIPG);
+  std::ignore = ocs2::pipg::singleThreadPipg(
+    solver.settings(), costApproximation.dfdxx.sparseView(), costApproximation.dfdx,
+    constraintsApproximation.dfdx.sparseView(), constraintsApproximation.f,
+    ocs2::vector_t::Ones(solver.getNumDynamicsConstraints()), pipgBounds, primalSolutionPIPG);
 
   ocs2::vector_array_t scalingVectors(N_, ocs2::vector_t::Ones(nx_));
   ocs2::vector_array_t X, U;
-  std::ignore = solver.solve(threadPool, x0, dynamicsArray, costArray, nullptr, scalingVectors, nullptr, pipgBounds, X, U);
+  std::ignore = solver.solve(
+    threadPool, x0, dynamicsArray, costArray, nullptr, scalingVectors, nullptr, pipgBounds, X, U);
 
   ocs2::vector_t primalSolutionPIPGParallel;
   ocs2::toKktSolution(X, U, primalSolutionPIPGParallel);
 
-  auto calculateConstraintViolation = [&](const ocs2::vector_t& sol) -> ocs2::scalar_t {
+  auto calculateConstraintViolation = [&](const ocs2::vector_t & sol) -> ocs2::scalar_t {
     return (constraintsApproximation.dfdx * sol - constraintsApproximation.f).cwiseAbs().maxCoeff();
   };
-  auto calculateCost = [&](const ocs2::vector_t& sol) -> ocs2::scalar_t {
-    return (0.5 * sol.transpose() * costApproximation.dfdxx * sol + costApproximation.dfdx.transpose() * sol)(0);
+  auto calculateCost = [&](const ocs2::vector_t & sol) -> ocs2::scalar_t {
+    return (
+      0.5 * sol.transpose() * costApproximation.dfdxx * sol +
+      costApproximation.dfdx.transpose() * sol)(0);
   };
   ocs2::scalar_t QPCost = calculateCost(primalSolutionQP);
   ocs2::scalar_t QPConstraintViolation = calculateConstraintViolation(primalSolutionQP);
@@ -140,7 +150,8 @@ TEST_F(PIPGSolverTest, correctness) {
   ocs2::scalar_t PIPGConstraintViolation = calculateConstraintViolation(primalSolutionPIPG);
 
   ocs2::scalar_t PIPGParallelCost = calculateCost(primalSolutionPIPGParallel);
-  ocs2::scalar_t PIPGParallelCConstraintViolation = calculateConstraintViolation(primalSolutionPIPGParallel);
+  ocs2::scalar_t PIPGParallelCConstraintViolation =
+    calculateConstraintViolation(primalSolutionPIPGParallel);
 
   if (verbose_) {
     std::cerr << "\n++++++++++++++++++++++++++++++++++++++++++++++++++++++";
@@ -150,7 +161,8 @@ TEST_F(PIPGSolverTest, correctness) {
     std::cerr << "mu:  " << mu << " lambda: " << lambda << " sigma: " << sigma << "\n";
 
     std::cerr << "QP-PIPG:  " << (primalSolutionQP - primalSolutionPIPG).cwiseAbs().sum() << "\n";
-    std::cerr << "PIPG-PIPGParallel:  " << (primalSolutionPIPG - primalSolutionPIPGParallel).cwiseAbs().sum() << "\n";
+    std::cerr << "PIPG-PIPGParallel:  "
+              << (primalSolutionPIPG - primalSolutionPIPGParallel).cwiseAbs().sum() << "\n";
 
     std::cerr << "QP:\n";
     std::cerr << "cost:   " << QPCost << "    "
@@ -165,22 +177,29 @@ TEST_F(PIPGSolverTest, correctness) {
               << "constraint-violation:   " << PIPGParallelCConstraintViolation << "\n\n"
               << std::endl;
   }
-  EXPECT_TRUE(primalSolutionQP.isApprox(primalSolutionPIPG, solver.settings().absoluteTolerance * 10.0))
-      << "Inf-norm of (QP - PIPG): " << (primalSolutionQP - primalSolutionPIPG).cwiseAbs().maxCoeff();
+  EXPECT_TRUE(
+    primalSolutionQP.isApprox(primalSolutionPIPG, solver.settings().absoluteTolerance * 10.0))
+    << "Inf-norm of (QP - PIPG): " << (primalSolutionQP - primalSolutionPIPG).cwiseAbs().maxCoeff();
 
-  EXPECT_TRUE(primalSolutionPIPGParallel.isApprox(primalSolutionPIPG, solver.settings().absoluteTolerance * 10.0))
-      << "Inf-norm of (PIPG - PIPGParallel): " << (primalSolutionPIPGParallel - primalSolutionPIPG).cwiseAbs().maxCoeff();
+  EXPECT_TRUE(primalSolutionPIPGParallel.isApprox(
+    primalSolutionPIPG, solver.settings().absoluteTolerance * 10.0))
+    << "Inf-norm of (PIPG - PIPGParallel): "
+    << (primalSolutionPIPGParallel - primalSolutionPIPG).cwiseAbs().maxCoeff();
 
   // Threshold is the (absoluteTolerance) * (2-Norm of the hessian H)[lambda]
   EXPECT_TRUE(std::abs(QPCost - PIPGCost) < solver.settings().absoluteTolerance * lambda)
-      << "Absolute diff is [" << std::abs(QPCost - PIPGCost) << "] which is larger than [" << solver.settings().absoluteTolerance * lambda
-      << "]";
+    << "Absolute diff is [" << std::abs(QPCost - PIPGCost) << "] which is larger than ["
+    << solver.settings().absoluteTolerance * lambda << "]";
 
   EXPECT_TRUE(std::abs(PIPGParallelCost - PIPGCost) < solver.settings().absoluteTolerance)
-      << "Absolute diff is [" << std::abs(PIPGParallelCost - PIPGCost) << "] which is larger than ["
-      << solver.settings().absoluteTolerance * lambda << "]";
+    << "Absolute diff is [" << std::abs(PIPGParallelCost - PIPGCost) << "] which is larger than ["
+    << solver.settings().absoluteTolerance * lambda << "]";
 
   ASSERT_TRUE(std::abs(PIPGConstraintViolation) < solver.settings().absoluteTolerance);
-  EXPECT_TRUE(std::abs(QPConstraintViolation - PIPGConstraintViolation) < solver.settings().absoluteTolerance * 10.0);
-  EXPECT_TRUE(std::abs(PIPGParallelCConstraintViolation - PIPGConstraintViolation) < solver.settings().absoluteTolerance * 10.0);
+  EXPECT_TRUE(
+    std::abs(QPConstraintViolation - PIPGConstraintViolation) <
+    solver.settings().absoluteTolerance * 10.0);
+  EXPECT_TRUE(
+    std::abs(PIPGParallelCConstraintViolation - PIPGConstraintViolation) <
+    solver.settings().absoluteTolerance * 10.0);
 }

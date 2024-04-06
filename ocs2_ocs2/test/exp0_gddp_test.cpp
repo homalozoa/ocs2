@@ -75,7 +75,7 @@ TEST(exp0_gddp_test, optimum_gradient_test) {
   // event times
   std::vector<double> optimumEventTimes{0.1897};
   std::vector<size_t> subsystemsSequence{0, 1};
-  std::shared_ptr<ModeScheduleManager<STATE_DIM, INPUT_DIM>> modeScheduleManagerPtr(
+  std::shared_ptr<ModeScheduleManager<STATE_DIM, INPUT_DIM>> mode_scheduleManagerPtr(
       new ModeScheduleManager<STATE_DIM, INPUT_DIM>({optimumEventTimes, subsystemsSequence}));
 
   double startTime = 0.0;
@@ -93,17 +93,17 @@ TEST(exp0_gddp_test, optimum_gradient_test) {
   /******************************************************************************************************/
   /******************************************************************************************************/
   // system dynamics
-  EXP0_System systemDynamics(modeScheduleManagerPtr);
+  EXP0_System systemDynamics(mode_scheduleManagerPtr);
   TimeTriggeredRollout<STATE_DIM, INPUT_DIM> timeTriggeredRollout(systemDynamics, rolloutSettings);
 
   // system derivatives
-  EXP0_SystemDerivative systemDerivative(modeScheduleManagerPtr);
+  EXP0_SystemDerivative systemDerivative(mode_scheduleManagerPtr);
 
   // system constraints
   ConstraintBase systemConstraint;
 
   // system cost functions
-  EXP0_CostFunction systemCostFunction(modeScheduleManagerPtr);
+  EXP0_CostFunction systemCostFunction(mode_scheduleManagerPtr);
 
   // system operatingTrajectories
   Eigen::Matrix<double, STATE_DIM, 1> stateOperatingPoint = Eigen::Matrix<double, STATE_DIM, 1>::Zero();
@@ -116,7 +116,7 @@ TEST(exp0_gddp_test, optimum_gradient_test) {
   // SLQ - single core version
   SLQ<STATE_DIM, INPUT_DIM> slqST(&timeTriggeredRollout, &systemDerivative, &systemConstraint, &systemCostFunction, &operatingTrajectories,
                                   slqSettings);
-  slqST.setModeScheduleManager(modeScheduleManagerPtr);
+  slqST.setModeScheduleManager(mode_scheduleManagerPtr);
 
   // SLQ data collector
   SLQ_DataCollector<STATE_DIM, INPUT_DIM> slqDataCollector(&timeTriggeredRollout, &systemDerivative, &systemConstraint,

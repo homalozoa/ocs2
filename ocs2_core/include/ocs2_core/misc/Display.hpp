@@ -1,3 +1,4 @@
+// Copyright 2024 Homalozoa. All rights reserved.
 // Copyright 2020 Farbod Farshidian. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -36,7 +37,7 @@ namespace ocs2
 
 /** Loops over the elements in a container and creates a delimited string */
 template <typename Container>
-std::string toDelimitedString(const Container & container, const std::string & delimiter = ", ")
+std::string to_delimited_str(const Container & container, const std::string & delimiter = ", ")
 {
   std::stringstream ss;
 

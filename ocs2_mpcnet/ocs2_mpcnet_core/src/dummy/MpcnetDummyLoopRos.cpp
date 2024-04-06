@@ -73,7 +73,7 @@ void MpcnetDummyLoopRos::run(const SystemObservation& systemObservation, const T
     primalSolution.timeTrajectory_ = {finalSystemObservation.time};
     primalSolution.stateTrajectory_ = {finalSystemObservation.state};
     primalSolution.inputTrajectory_ = {finalSystemObservation.input};
-    primalSolution.modeSchedule_ = rosReferenceManagerPtr_->getModeSchedule();
+    primalSolution.mode_schedule_ = rosReferenceManagerPtr_->getModeSchedule();
     primalSolution.controllerPtr_ = std::unique_ptr<ControllerBase>(mpcnetPtr_->clone());
     CommandData commandData;
     commandData.mpcInitObservation_ = initialSystemObservation;
@@ -117,12 +117,12 @@ void MpcnetDummyLoopRos::rollout(scalar_t duration, const SystemObservation& ini
   // start of while loop
   while (time <= initialSystemObservation.time + duration) {
     // forward simulate system
-    ModeSchedule modeSchedule = rosReferenceManagerPtr_->getModeSchedule();
+    ModeSchedule mode_schedule = rosReferenceManagerPtr_->getModeSchedule();
     scalar_array_t timeTrajectory;
     size_array_t postEventIndicesStock;
     vector_array_t stateTrajectory;
     vector_array_t inputTrajectory;
-    rolloutPtr_->run(time, state, time + timeStep, mpcnetPtr_.get(), modeSchedule, timeTrajectory, postEventIndicesStock, stateTrajectory,
+    rolloutPtr_->run(time, state, time + timeStep, mpcnetPtr_.get(), mode_schedule, timeTrajectory, postEventIndicesStock, stateTrajectory,
                      inputTrajectory);
 
     // update time, state and input

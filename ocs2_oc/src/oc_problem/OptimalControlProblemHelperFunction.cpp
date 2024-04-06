@@ -43,7 +43,7 @@ void initializeDualSolution(
   const auto timePeriod =
     std::make_pair(primalSolution.timeTrajectory_.front(), primalSolution.timeTrajectory_.back());
   const auto interpolatableTimePeriod = findIntersectionToExtendableInterval(
-    cachedDualSolution.timeTrajectory, primalSolution.modeSchedule_.eventTimes, timePeriod);
+    cachedDualSolution.timeTrajectory, primalSolution.mode_schedule_.event_times, timePeriod);
   const bool interpolateTillFinalTime =
     numerics::almost_eq(interpolatableTimePeriod.second, timePeriod.second);
 

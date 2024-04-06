@@ -27,14 +27,14 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <ocs2_perceptive/distance_transform/ComputeDistanceTransform.h>
-#include <ocs2_perceptive/distance_transform/DistanceTransformInterface.h>
+#include "ocs2_perceptive/distance_transform/ComputeDistanceTransform.hpp"
+#include "ocs2_perceptive/distance_transform/DistanceTransformInterface.hpp"
 
-#include <ocs2_perceptive/end_effector/EndEffectorDistanceConstraint.h>
-#include <ocs2_perceptive/end_effector/EndEffectorDistanceConstraintCppAd.h>
+#include "ocs2_perceptive/end_effector/EndEffectorDistanceConstraint.hpp"
+#include "ocs2_perceptive/end_effector/EndEffectorDistanceConstraintCppAd.hpp"
 
-#include <ocs2_perceptive/interpolation/BilinearInterpolation.h>
-#include <ocs2_perceptive/interpolation/TrilinearInterpolation.h>
+#include "ocs2_perceptive/interpolation/BilinearInterpolation.hpp"
+#include "ocs2_perceptive/interpolation/TrilinearInterpolation.hpp"
 
 // dummy target for clang toolchain
 int main() {

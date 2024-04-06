@@ -91,7 +91,7 @@ TEST_F(DoubleIntegratorIntegrationTest, synchronousTracking) {
   observation.time = initTime;
   observation.state = initState;
   observation.input.setZero(INPUT_DIM);
-  mpcInterface.setCurrentObservation(observation);
+  mpcInterface.set_current_observation(observation);
 
   // run MPC for N iterations
   auto time = initTime;
@@ -100,18 +100,18 @@ TEST_F(DoubleIntegratorIntegrationTest, synchronousTracking) {
     mpcInterface.advanceMpc();
     time += 1.0 / f_mpc;
 
-    if (mpcInterface.initialPolicyReceived()) {
+    if (mpcInterface.initial_policy_received()) {
       size_t mode;
       vector_t optimalState, optimalInput;
 
-      mpcInterface.updatePolicy();
-      mpcInterface.evaluatePolicy(time, vector_t::Zero(STATE_DIM), optimalState, optimalInput, mode);
+      mpcInterface.update_policy();
+      mpcInterface.evaluate_policy(time, vector_t::Zero(STATE_DIM), optimalState, optimalInput, mode);
 
       // use optimal state for the next observation:
       observation.time = time;
       observation.state = optimalState;
       observation.input.setZero(INPUT_DIM);
-      mpcInterface.setCurrentObservation(observation);
+      mpcInterface.set_current_observation(observation);
     }
   }
 
@@ -126,7 +126,7 @@ TEST_F(DoubleIntegratorIntegrationTest, coldStartMPC) {
   observation.time = initTime;
   observation.state = initState;
   observation.input.setZero(INPUT_DIM);
-  mpcInterface.setCurrentObservation(observation);
+  mpcInterface.set_current_observation(observation);
 
   // run MPC for N iterations
   auto time = initTime;
@@ -135,18 +135,18 @@ TEST_F(DoubleIntegratorIntegrationTest, coldStartMPC) {
     mpcInterface.advanceMpc();
     time += 1.0 / f_mpc;
 
-    if (mpcInterface.initialPolicyReceived()) {
+    if (mpcInterface.initial_policy_received()) {
       size_t mode;
       vector_t optimalState, optimalInput;
 
-      mpcInterface.updatePolicy();
-      mpcInterface.evaluatePolicy(time, vector_t::Zero(STATE_DIM), optimalState, optimalInput, mode);
+      mpcInterface.update_policy();
+      mpcInterface.evaluate_policy(time, vector_t::Zero(STATE_DIM), optimalState, optimalInput, mode);
 
       // use optimal state for the next observation:
       observation.time = time;
       observation.state = optimalState;
       observation.input.setZero(INPUT_DIM);
-      mpcInterface.setCurrentObservation(observation);
+      mpcInterface.set_current_observation(observation);
     }
   }
 
@@ -166,8 +166,8 @@ TEST_F(DoubleIntegratorIntegrationTest, asynchronousTracking) {
   observation.input.setZero(INPUT_DIM);
 
   // Wait for the first policy
-  mpcInterface.setCurrentObservation(observation);
-  while (!mpcInterface.initialPolicyReceived()) {
+  mpcInterface.set_current_observation(observation);
+  while (!mpcInterface.initial_policy_received()) {
     mpcInterface.advanceMpc();
   }
 
@@ -192,11 +192,11 @@ TEST_F(DoubleIntegratorIntegrationTest, asynchronousTracking) {
           observation.time += 1.0 / f_mrt;
 
           // Evaluate the policy
-          mpcInterface.updatePolicy();
-          mpcInterface.evaluatePolicy(observation.time, vector_t::Zero(STATE_DIM), observation.state, observation.input, observation.mode);
+          mpcInterface.update_policy();
+          mpcInterface.evaluate_policy(observation.time, vector_t::Zero(STATE_DIM), observation.state, observation.input, observation.mode);
 
           // use optimal state for the next observation:
-          mpcInterface.setCurrentObservation(observation);
+          mpcInterface.set_current_observation(observation);
         },
         f_mrt);
   }

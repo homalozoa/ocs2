@@ -12,15 +12,15 @@
 using namespace switched_model;
 
 TEST(TestZeroForceConstraint, evaluate) {
-  // Mock the modeScheduleManager
-  SwitchedModelModeScheduleManager modeScheduleManager(nullptr, nullptr, nullptr);
-  modeScheduleManager.setModeSchedule({{},{ModeNumber::FLY}});
+  // Mock the mode_scheduleManager
+  SwitchedModelModeScheduleManager mode_scheduleManager(nullptr, nullptr, nullptr);
+  mode_scheduleManager.setModeSchedule({{},{ModeNumber::FLY}});
 
   // Mock the precomputation
   SwitchedModelPreComputationMockup preComp;
 
   using TestedConstraint = ZeroForceConstraint;
-  TestedConstraint zeroForceConstraint(0, modeScheduleManager);
+  TestedConstraint zeroForceConstraint(0, mode_scheduleManager);
 
   // evaluation point
   double t = 0.0;

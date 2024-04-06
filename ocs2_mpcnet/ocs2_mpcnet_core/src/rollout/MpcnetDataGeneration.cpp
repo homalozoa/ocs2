@@ -41,13 +41,13 @@ namespace mpcnet {
 /******************************************************************************************************/
 const data_array_t* MpcnetDataGeneration::run(scalar_t alpha, const std::string& policyFilePath, scalar_t timeStep, size_t dataDecimation,
                                               size_t nSamples, const matrix_t& samplingCovariance,
-                                              const SystemObservation& initialObservation, const ModeSchedule& modeSchedule,
+                                              const SystemObservation& initialObservation, const ModeSchedule& mode_schedule,
                                               const TargetTrajectories& targetTrajectories) {
   // clear data array
   dataArray_.clear();
 
   // set system
-  set(alpha, policyFilePath, initialObservation, modeSchedule, targetTrajectories);
+  set(alpha, policyFilePath, initialObservation, mode_schedule, targetTrajectories);
 
   // set up scalar standard normal generator and compute Cholesky decomposition of covariance matrix
   std::random_device randomDevice;

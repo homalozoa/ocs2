@@ -114,14 +114,14 @@ void GaitSchedule::rolloutGaitScheduleTillTime(scalar_t time) {
 }
 
 bool isStandingDuringTimeHorizon(scalar_t timeHorizon, const GaitSchedule& gaitSchedule) {
-  const auto modeSchedule = gaitSchedule.getModeSchedule(timeHorizon);
-  return std::all_of(modeSchedule.modeSequence.begin(), modeSchedule.modeSequence.end(),
+  const auto mode_schedule = gaitSchedule.getModeSchedule(timeHorizon);
+  return std::all_of(mode_schedule.mode_sequence.begin(), mode_schedule.mode_sequence.end(),
                      [](size_t mode) { return mode == ModeNumber::STANCE; });
 }
 
 bool isStanding(const GaitSchedule& gaitSchedule) {
-  const auto& modeSequence = gaitSchedule.getCurrentGait().modeSequence;
-  return std::all_of(modeSequence.begin(), modeSequence.end(), [](size_t mode) { return mode == ModeNumber::STANCE; });
+  const auto& mode_sequence = gaitSchedule.getCurrentGait().mode_sequence;
+  return std::all_of(mode_sequence.begin(), mode_sequence.end(), [](size_t mode) { return mode == ModeNumber::STANCE; });
 }
 
 }  // namespace switched_model

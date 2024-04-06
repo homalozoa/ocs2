@@ -1,3 +1,4 @@
+// Copyright 2024 Homalozoa. All rights reserved.
 // Copyright 2019 Oliver Harley. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without

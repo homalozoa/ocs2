@@ -38,12 +38,12 @@ namespace ocs2
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-MPC_MRT_Interface::MPC_MRT_Interface(MPC_BASE & mpc) : mpc_(mpc) { mpcTimer_.reset(); }
+MPC_MRT_Interface::MPC_MRT_Interface(MpcBase & mpc) : mpc_(mpc) { mpcTimer_.reset(); }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void MPC_MRT_Interface::resetMpcNode(const TargetTrajectories & initTargetTrajectories)
+void MPC_MRT_Interface::reset_mpc_node(const TargetTrajectories & initTargetTrajectories)
 {
   mpc_.reset();
   mpc_.getSolverPtr()->getReferenceManager().setTargetTrajectories(initTargetTrajectories);
@@ -53,7 +53,7 @@ void MPC_MRT_Interface::resetMpcNode(const TargetTrajectories & initTargetTrajec
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void MPC_MRT_Interface::setCurrentObservation(const SystemObservation & currentObservation)
+void MPC_MRT_Interface::set_current_observation(const SystemObservation & currentObservation)
 {
   std::lock_guard<std::mutex> lock(observationMutex_);
   currentObservation_ = currentObservation;
@@ -141,7 +141,7 @@ void MPC_MRT_Interface::copyToBuffer(const SystemObservation & mpcInitObservatio
   auto performanceIndicesPtr = std::make_unique<PerformanceIndex>();
   *performanceIndicesPtr = mpc_.getSolverPtr()->getPerformanceIndeces();
 
-  this->moveToBuffer(
+  this->move_to_buffer(
     std::move(commandPtr), std::move(primalSolutionPtr), std::move(performanceIndicesPtr));
 }
 
@@ -150,7 +150,7 @@ void MPC_MRT_Interface::copyToBuffer(const SystemObservation & mpcInitObservatio
 /******************************************************************************************************/
 matrix_t MPC_MRT_Interface::getLinearFeedbackGain(scalar_t time)
 {
-  auto controller = dynamic_cast<LinearController *>(this->getPolicy().controllerPtr_.get());
+  auto controller = dynamic_cast<LinearController *>(this->get_policy().controllerPtr_.get());
   if (controller == nullptr) {
     throw std::runtime_error(
       "[MPC_MRT_Interface::getLinearFeedbackGain] Feedback gains only available with linear "

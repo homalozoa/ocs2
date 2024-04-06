@@ -27,47 +27,58 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <ocs2_robotic_tools/common/RotationTransforms.h>
-#include <ocs2_self_collision/SelfCollisionConstraint.h>
+#include "ocs2_self_collision/SelfCollisionConstraint.hpp"
 
-namespace ocs2 {
+#include "ocs2_robotic_tools/common/RotationTransforms.hpp"
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-SelfCollisionConstraint::SelfCollisionConstraint(const PinocchioStateInputMapping<scalar_t>& mapping,
-                                                 PinocchioGeometryInterface pinocchioGeometryInterface, scalar_t minimumDistance)
-    : StateConstraint(ConstraintOrder::Linear),
-      selfCollision_(std::move(pinocchioGeometryInterface), minimumDistance),
-      mappingPtr_(mapping.clone()) {}
+namespace ocs2
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-SelfCollisionConstraint::SelfCollisionConstraint(const SelfCollisionConstraint& rhs)
-    : StateConstraint(rhs), selfCollision_(rhs.selfCollision_), mappingPtr_(rhs.mappingPtr_->clone()) {}
+SelfCollisionConstraint::SelfCollisionConstraint(
+  const PinocchioStateInputMapping<scalar_t> & mapping,
+  PinocchioGeometryInterface pinocchioGeometryInterface, scalar_t minimumDistance)
+: StateConstraint(ConstraintOrder::Linear),
+  selfCollision_(std::move(pinocchioGeometryInterface), minimumDistance),
+  mappingPtr_(mapping.clone())
+{
+}
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-size_t SelfCollisionConstraint::getNumConstraints(scalar_t time) const {
+SelfCollisionConstraint::SelfCollisionConstraint(const SelfCollisionConstraint & rhs)
+: StateConstraint(rhs), selfCollision_(rhs.selfCollision_), mappingPtr_(rhs.mappingPtr_->clone())
+{
+}
+
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
+size_t SelfCollisionConstraint::getNumConstraints(scalar_t time) const
+{
   return selfCollision_.getNumCollisionPairs();
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-vector_t SelfCollisionConstraint::getValue(scalar_t time, const vector_t& state, const PreComputation& preComputation) const {
-  const auto& pinocchioInterface = getPinocchioInterface(preComputation);
+vector_t SelfCollisionConstraint::getValue(
+  scalar_t time, const vector_t & state, const PreComputation & preComputation) const
+{
+  const auto & pinocchioInterface = getPinocchioInterface(preComputation);
   return selfCollision_.getValue(pinocchioInterface);
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-VectorFunctionLinearApproximation SelfCollisionConstraint::getLinearApproximation(scalar_t time, const vector_t& state,
-                                                                                  const PreComputation& preComputation) const {
-  const auto& pinocchioInterface = getPinocchioInterface(preComputation);
+VectorFunctionLinearApproximation SelfCollisionConstraint::getLinearApproximation(
+  scalar_t time, const vector_t & state, const PreComputation & preComputation) const
+{
+  const auto & pinocchioInterface = getPinocchioInterface(preComputation);
   mappingPtr_->setPinocchioInterface(pinocchioInterface);
 
   VectorFunctionLinearApproximation constraint;

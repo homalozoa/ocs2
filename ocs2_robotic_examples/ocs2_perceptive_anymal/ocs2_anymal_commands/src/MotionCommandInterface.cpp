@@ -35,7 +35,7 @@ void MotionCommandInterface::getKeyboardCommand() {
   std::cout << commandMsg << ": ";
 
   auto shouldTerminate = []() { return !ros::ok() || !ros::master::check(); };
-  const std::string motionCommand = ocs2::getCommandLineString(shouldTerminate);
+  const std::string motionCommand = ocs2::get_cmdline_str(shouldTerminate);
 
   if (motionCommand.empty()) {
     return;

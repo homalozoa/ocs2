@@ -69,13 +69,13 @@ scalar_t getIntervalDuration(const AnnotatedTime & start, const AnnotatedTime & 
  * @param initTime : start time.
  * @param finalTime : final time.
  * @param dt : desired discretization step.
- * @param eventTimes : Event times where a time discretization must be made.
+ * @param event_times : Event times where a time discretization must be made.
  * @param dt_min : minimum discretization step. Smaller intervals will be merged. Needs to be bigger than limitEpsilon to avoid
  * interpolation problems
  * @return vector of discrete time points
  */
 std::vector<AnnotatedTime> timeDiscretizationWithEvents(
-  scalar_t initTime, scalar_t finalTime, scalar_t dt, const scalar_array_t & eventTimes,
+  scalar_t initTime, scalar_t finalTime, scalar_t dt, const scalar_array_t & event_times,
   scalar_t dt_min = 10.0 * numeric_traits::limitEpsilon<scalar_t>());
 
 /**

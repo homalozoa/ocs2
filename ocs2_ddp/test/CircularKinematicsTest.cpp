@@ -27,23 +27,24 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
+#include <boost/filesystem.hpp>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
 #include <string>
 
-#include <boost/filesystem.hpp>
+#include "gtest/gtest.h"
+#include "ocs2_core/initialization/DefaultInitializer.hpp"
+#include "ocs2_ddp/ILQR.hpp"
+#include "ocs2_ddp/SLQ.hpp"
+#include "ocs2_oc/oc_problem/OptimalControlProblem.hpp"
+#include "ocs2_oc/rollout/TimeTriggeredRollout.hpp"
+#include "ocs2_oc/test/circular_kinematics.hpp"
 
-#include <ocs2_core/initialization/DefaultInitializer.h>
-#include <ocs2_ddp/ILQR.h>
-#include <ocs2_ddp/SLQ.h>
-#include <ocs2_oc/oc_problem/OptimalControlProblem.h>
-#include <ocs2_oc/rollout/TimeTriggeredRollout.h>
-#include <ocs2_oc/test/circular_kinematics.h>
-
-class CircularKinematicsTest : public testing::TestWithParam<std::tuple<ocs2::search_strategy::Type, size_t>> {
- protected:
+class CircularKinematicsTest
+: public testing::TestWithParam<std::tuple<ocs2::search_strategy::Type, size_t>>
+{
+protected:
   static constexpr size_t STATE_DIM = 2;
   static constexpr size_t INPUT_DIM = 2;
   static constexpr ocs2::scalar_t timeStep = 0.01;
@@ -51,7 +52,8 @@ class CircularKinematicsTest : public testing::TestWithParam<std::tuple<ocs2::se
   static constexpr ocs2::scalar_t constraintTolerance = 1e-5;
   static constexpr ocs2::scalar_t expectedCost = 0.1;
 
-  CircularKinematicsTest() {
+  CircularKinematicsTest()
+  {
     // optimal control problem
     boost::filesystem::path filePath(__FILE__);
     problem = ocs2::createCircularKinematicsProblem("/tmp/ocs2/ddp_test_generated");
@@ -64,7 +66,8 @@ class CircularKinematicsTest : public testing::TestWithParam<std::tuple<ocs2::se
 
   size_t getNumThreads() { return std::get<1>(GetParam()); }
 
-  ocs2::rollout::Settings rolloutSettings(ocs2::ddp::Algorithm algorithmType) const {
+  ocs2::rollout::Settings rolloutSettings(ocs2::ddp::Algorithm algorithmType) const
+  {
     ocs2::rollout::Settings rolloutSettings;
     rolloutSettings.absTolODE = 1e-9;
     rolloutSettings.relTolODE = 1e-7;
@@ -85,8 +88,10 @@ class CircularKinematicsTest : public testing::TestWithParam<std::tuple<ocs2::se
     return rolloutSettings;
   };
 
-  ocs2::ddp::Settings getSettings(ocs2::ddp::Algorithm algorithmType, size_t numThreads, ocs2::search_strategy::Type strategy,
-                                  bool display = false) const {
+  ocs2::ddp::Settings getSettings(
+    ocs2::ddp::Algorithm algorithmType, size_t numThreads, ocs2::search_strategy::Type strategy,
+    bool display = false) const
+  {
     ocs2::ddp::Settings ddpSettings;
     ddpSettings.algorithm_ = algorithmType;
     ddpSettings.nThreads_ = numThreads;
@@ -116,12 +121,14 @@ class CircularKinematicsTest : public testing::TestWithParam<std::tuple<ocs2::se
     ddpSettings.preComputeRiccatiTerms_ = false;
     ddpSettings.strategy_ = strategy;
     ddpSettings.lineSearch_.minStepLength = 0.01;
-    ddpSettings.lineSearch_.hessianCorrectionStrategy = ocs2::hessian_correction::Strategy::CHOLESKY_MODIFICATION;
+    ddpSettings.lineSearch_.hessianCorrectionStrategy =
+      ocs2::hessian_correction::Strategy::CHOLESKY_MODIFICATION;
     ddpSettings.lineSearch_.hessianCorrectionMultiple = 1e-3;
     return ddpSettings;
   }
 
-  std::string getTestName(const ocs2::ddp::Settings& ddpSettings) const {
+  std::string getTestName(const ocs2::ddp::Settings & ddpSettings) const
+  {
     std::string testName;
     testName += "Circular-Kinematics Test { ";
     testName += "Algorithm: " + ocs2::ddp::toAlgorithmName(ddpSettings.algorithm_) + ",  ";
@@ -130,16 +137,20 @@ class CircularKinematicsTest : public testing::TestWithParam<std::tuple<ocs2::se
     return testName;
   }
 
-  void performanceIndexTest(const ocs2::ddp::Settings& ddpSettings, const ocs2::PerformanceIndex& performanceIndex) const {
+  void performanceIndexTest(
+    const ocs2::ddp::Settings & ddpSettings, const ocs2::PerformanceIndex & performanceIndex) const
+  {
     const auto testName = getTestName(ddpSettings);
-    EXPECT_LT(performanceIndex.cost - expectedCost, 0.0) << "MESSAGE: " << testName << ": failed in the cost test!";
+    EXPECT_LT(performanceIndex.cost - expectedCost, 0.0)
+      << "MESSAGE: " << testName << ": failed in the cost test!";
     EXPECT_NEAR(performanceIndex.equalityConstraintsSSE, 0.0, 10.0 * constraintTolerance)
-        << "MESSAGE: " << testName << ": failed in state-input equality constraint ISE test!";
+      << "MESSAGE: " << testName << ": failed in state-input equality constraint ISE test!";
   }
 
   const ocs2::scalar_t startTime = 0.0;
   const ocs2::scalar_t finalTime = 10.0;
-  const ocs2::vector_t initState = (ocs2::vector_t(STATE_DIM) << 1.0, 0.0).finished();  // radius 1.0
+  const ocs2::vector_t initState =
+    (ocs2::vector_t(STATE_DIM) << 1.0, 0.0).finished();  // radius 1.0
 
   ocs2::OptimalControlProblem problem;
   std::unique_ptr<ocs2::Initializer> initializerPtr;
@@ -155,7 +166,8 @@ constexpr ocs2::scalar_t CircularKinematicsTest::expectedCost;
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-TEST_P(CircularKinematicsTest, SLQ) {
+TEST_P(CircularKinematicsTest, SLQ)
+{
   const auto algorithm = ocs2::ddp::Algorithm::SLQ;
 
   // ddp settings
@@ -184,7 +196,8 @@ TEST_P(CircularKinematicsTest, SLQ) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-TEST_P(CircularKinematicsTest, ILQR) {
+TEST_P(CircularKinematicsTest, ILQR)
+{
   const auto algorithm = ocs2::ddp::Algorithm::ILQR;
 
   // ddp settings
@@ -213,14 +226,16 @@ TEST_P(CircularKinematicsTest, ILQR) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-INSTANTIATE_TEST_CASE_P(CircularKinematicsTestCase, CircularKinematicsTest,
-                        testing::Combine(testing::ValuesIn({ocs2::search_strategy::Type::LINE_SEARCH
-                                                            /* , ocs2::search_strategy::Type::LEVENBERG_MARQUARDT */}),
-                                         testing::ValuesIn({size_t(1), size_t(3)})), /* num threads */
-                        [](const testing::TestParamInfo<CircularKinematicsTest::ParamType>& info) {
-                          /* returns test name for gtest summary */
-                          std::string name;
-                          name += ocs2::search_strategy::toString(std::get<0>(info.param)) + "__";
-                          name += std::get<1>(info.param) == 1 ? "SINGLE_THREAD" : "MULTI_THREAD";
-                          return name;
-                        });
+INSTANTIATE_TEST_CASE_P(
+  CircularKinematicsTestCase, CircularKinematicsTest,
+  testing::Combine(
+    testing::ValuesIn({ocs2::search_strategy::Type::LINE_SEARCH
+                       /* , ocs2::search_strategy::Type::LEVENBERG_MARQUARDT */}),
+    testing::ValuesIn({size_t(1), size_t(3)})), /* num threads */
+  [](const testing::TestParamInfo<CircularKinematicsTest::ParamType> & info) {
+    /* returns test name for gtest summary */
+    std::string name;
+    name += ocs2::search_strategy::toString(std::get<0>(info.param)) + "__";
+    name += std::get<1>(info.param) == 1 ? "SINGLE_THREAD" : "MULTI_THREAD";
+    return name;
+  });

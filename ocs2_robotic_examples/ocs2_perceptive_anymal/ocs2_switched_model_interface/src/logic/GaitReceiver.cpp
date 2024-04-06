@@ -32,8 +32,8 @@ void GaitReceiver::preSolverRun(scalar_t initTime, scalar_t finalTime, const vec
 }
 
 void GaitReceiver::mpcModeSequenceCallback(const ocs2_msgs::mode_schedule::ConstPtr& msg) {
-  const auto modeSequenceTemplate = readModeSequenceTemplateMsg(*msg);
-  const auto gait = toGait(modeSequenceTemplate);
+  const auto mode_sequenceTemplate = readModeSequenceTemplateMsg(*msg);
+  const auto gait = toGait(mode_sequenceTemplate);
 
   {
     std::lock_guard<std::mutex> lock(receivedGaitMutex_);
@@ -47,9 +47,9 @@ void GaitReceiver::mpcModeSequenceCallback(const ocs2_msgs::mode_schedule::Const
 }
 
 void GaitReceiver::mpcModeScheduledGaitCallback(const ocs2_msgs::mode_schedule::ConstPtr& msg) {
-  const auto modeSequenceTemplate = readModeSequenceTemplateMsg(*msg);
-  const auto gait = toGait(modeSequenceTemplate);
-  const auto scheduledGaitTime = modeSequenceTemplate.switchingTimes.front();
+  const auto mode_sequenceTemplate = readModeSequenceTemplateMsg(*msg);
+  const auto gait = toGait(mode_sequenceTemplate);
+  const auto scheduledGaitTime = mode_sequenceTemplate.switchingTimes.front();
 
   std::cout << "ScheduledGaitCallback:\n";
   std::cout << "\nReceivedGait:\n" << gait << "\n";

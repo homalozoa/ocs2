@@ -26,56 +26,74 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
-#include <pinocchio/fwd.hpp>
-
+#include <memory>
 #include <pinocchio/algorithm/frames-derivatives.hpp>
 #include <pinocchio/algorithm/frames.hpp>
 #include <pinocchio/algorithm/kinematics-derivatives.hpp>
 #include <pinocchio/algorithm/kinematics.hpp>
+#include <pinocchio/fwd.hpp>
 
-#include <ocs2_pinocchio_interface/PinocchioEndEffectorKinematics.h>
-#include <ocs2_pinocchio_interface/PinocchioEndEffectorKinematicsCppAd.h>
-#include <ocs2_pinocchio_interface/urdf.h>
-
-#include <ocs2_core/automatic_differentiation/FiniteDifferenceMethods.h>
-#include <ocs2_robotic_tools/common/AngularVelocityMapping.h>
-#include <ocs2_robotic_tools/common/RotationTransforms.h>
-
-#include <gtest/gtest.h>
-
-#include "ManipulatorArmUrdf.h"
+#include "ManipulatorArmUrdf.hpp"
+#include "gtest/gtest.h"
+#include "ocs2_core/automatic_differentiation/FiniteDifferenceMethods.hpp"
+#include "ocs2_pinocchio_interface/PinocchioEndEffectorKinematics.hpp"
+#include "ocs2_pinocchio_interface/PinocchioEndEffectorKinematicsCppAd.hpp"
+#include "ocs2_pinocchio_interface/urdf.hpp"
+#include "ocs2_robotic_tools/common/AngularVelocityMapping.hpp"
+#include "ocs2_robotic_tools/common/RotationTransforms.hpp"
 
 template <typename SCALAR>
-class ManipulatorMapping final : public ocs2::PinocchioStateInputMapping<SCALAR> {
- public:
+class ManipulatorMapping final : public ocs2::PinocchioStateInputMapping<SCALAR>
+{
+public:
   using scalar_t = SCALAR;
   using vector_t = Eigen::Matrix<SCALAR, Eigen::Dynamic, 1>;
   using matrix_t = Eigen::Matrix<SCALAR, Eigen::Dynamic, Eigen::Dynamic>;
 
   ManipulatorMapping() = default;
   ~ManipulatorMapping() override = default;
-  ManipulatorMapping<SCALAR>* clone() const override { return new ManipulatorMapping<SCALAR>(*this); }
+  ManipulatorMapping<SCALAR> * clone() const override
+  {
+    return new ManipulatorMapping<SCALAR>(*this);
+  }
 
-  vector_t getPinocchioJointPosition(const vector_t& state) const override { return state; }
+  vector_t getPinocchioJointPosition(const vector_t & state) const override { return state; }
 
-  vector_t getPinocchioJointVelocity(const vector_t& state, const vector_t& input) const override { return input; }
+  vector_t getPinocchioJointVelocity(const vector_t & state, const vector_t & input) const override
+  {
+    return input;
+  }
 
-  std::pair<matrix_t, matrix_t> getOcs2Jacobian(const vector_t& state, const matrix_t& Jq, const matrix_t& Jv) const override {
+  std::pair<matrix_t, matrix_t> getOcs2Jacobian(
+    const vector_t & state, const matrix_t & Jq, const matrix_t & Jv) const override
+  {
     return {Jq, Jv};
   }
 };
 
-class TestEndEffectorKinematics : public ::testing::Test {
- public:
+class TestEndEffectorKinematics : public ::testing::Test
+{
+public:
   using quaternion_t = Eigen::Quaternion<ocs2::scalar_t>;
 
-  TestEndEffectorKinematics() {
+  TestEndEffectorKinematics()
+  {
     auto pinocchioInterface = ocs2::getPinocchioInterfaceFromUrdfString(manipulatorArmUrdf);
 
     pinocchioInterfacePtr.reset(new ocs2::PinocchioInterface(pinocchioInterface));
-    eeKinematicsPtr.reset(new ocs2::PinocchioEndEffectorKinematics(pinocchioInterface, pinocchioMapping, {"WRIST_2"}));
-    eeKinematicsCppAdPtr.reset(new ocs2::PinocchioEndEffectorKinematicsCppAd(
-        pinocchioInterface, pinocchioMappingCppAd, {"WRIST_2"}, 6, 6, "pinocchio_end_effector_kinematics", "/tmp/ocs2", true, false));
+    eeKinematicsPtr.reset(
+      new ocs2::PinocchioEndEffectorKinematics(pinocchioInterface, pinocchioMapping, {"WRIST_2"}));
+    std::cout << "hello world" << std::endl;
+    std::unique_ptr<ocs2::PinocchioEndEffectorKinematicsCppAd> end_effector_k_cppad(
+      new ocs2::PinocchioEndEffectorKinematicsCppAd(
+        pinocchioInterface, pinocchioMappingCppAd, std::vector<std::string>{"WRIST_2"}, 6, 6,
+        "pinocchio_end_effector_kinematics", "/tmp/ocs2", true, false));
+    std::cout << "pass" << std::endl;
+    eeKinematicsCppAdPtr = std::move(end_effector_k_cppad);
+    // eeKinematicsCppAdPtr.reset(new ocs2::PinocchioEndEffectorKinematicsCppAd(
+    //   pinocchioInterface, pinocchioMappingCppAd, {"WRIST_2"}, 6, 6,
+    //   "pinocchio_end_effector_kinematics", "/tmp/ocs2", true, false));
+    std::cout << "bye" << std::endl;
 
     x.resize(6);
     x << 2.5, -1.0, 1.5, 0.0, 1.0, 0.0;
@@ -85,8 +103,10 @@ class TestEndEffectorKinematics : public ::testing::Test {
     v = pinocchioMapping.getPinocchioJointVelocity(x, u);
   }
 
-  void compareApproximation(const ocs2::VectorFunctionLinearApproximation& f1, const ocs2::VectorFunctionLinearApproximation& f2,
-                            bool functionOfInput = false) {
+  void compareApproximation(
+    const ocs2::VectorFunctionLinearApproximation & f1,
+    const ocs2::VectorFunctionLinearApproximation & f2, bool functionOfInput = false)
+  {
     if (!f1.f.isApprox(f2.f)) {
       std::cerr << "f1.f  " << f1.f.transpose() << '\n';
       std::cerr << "f2.f  " << f2.f.transpose() << '\n';
@@ -121,9 +141,11 @@ class TestEndEffectorKinematics : public ::testing::Test {
   ManipulatorMapping<ocs2::ad_scalar_t> pinocchioMappingCppAd;
 };
 
-TEST_F(TestEndEffectorKinematics, testKinematicsPosition) {
-  const auto& model = pinocchioInterfacePtr->getModel();
-  auto& data = pinocchioInterfacePtr->getData();
+TEST_F(TestEndEffectorKinematics, testKinematicsPosition)
+{
+  const auto & model = pinocchioInterfacePtr->getModel();
+  EXPECT_TRUE(true);
+  auto & data = pinocchioInterfacePtr->getData();
 
   pinocchio::forwardKinematics(model, data, q);
   pinocchio::updateFramePlacements(model, data);
@@ -143,9 +165,10 @@ TEST_F(TestEndEffectorKinematics, testKinematicsPosition) {
   EXPECT_TRUE(J.topRows<3>().isApprox(eePosLin.dfdx));
 }
 
-TEST_F(TestEndEffectorKinematics, testPosition) {
-  const auto& model = pinocchioInterfacePtr->getModel();
-  auto& data = pinocchioInterfacePtr->getData();
+TEST_F(TestEndEffectorKinematics, testPosition)
+{
+  const auto & model = pinocchioInterfacePtr->getModel();
+  auto & data = pinocchioInterfacePtr->getData();
 
   pinocchio::forwardKinematics(model, data, q);
   pinocchio::updateFramePlacements(model, data);
@@ -157,9 +180,10 @@ TEST_F(TestEndEffectorKinematics, testPosition) {
   EXPECT_TRUE(eePos.isApprox(eePosAd));
 }
 
-TEST_F(TestEndEffectorKinematics, testPositionApproximation) {
-  const auto& model = pinocchioInterfacePtr->getModel();
-  auto& data = pinocchioInterfacePtr->getData();
+TEST_F(TestEndEffectorKinematics, testPositionApproximation)
+{
+  const auto & model = pinocchioInterfacePtr->getModel();
+  auto & data = pinocchioInterfacePtr->getData();
 
   pinocchio::forwardKinematics(model, data, q);
   pinocchio::updateFramePlacements(model, data);
@@ -172,9 +196,10 @@ TEST_F(TestEndEffectorKinematics, testPositionApproximation) {
   compareApproximation(eePosLin, eePosLinAd);
 }
 
-TEST_F(TestEndEffectorKinematics, testVelocity) {
-  const auto& model = pinocchioInterfacePtr->getModel();
-  auto& data = pinocchioInterfacePtr->getData();
+TEST_F(TestEndEffectorKinematics, testVelocity)
+{
+  const auto & model = pinocchioInterfacePtr->getModel();
+  auto & data = pinocchioInterfacePtr->getData();
 
   const auto a = ocs2::vector_t::Zero(q.rows());
   pinocchio::computeForwardKinematicsDerivatives(model, data, q, v, a);
@@ -186,9 +211,10 @@ TEST_F(TestEndEffectorKinematics, testVelocity) {
   EXPECT_TRUE(eeVel.isApprox(eeVelAd));
 }
 
-TEST_F(TestEndEffectorKinematics, testVelocityApproximation) {
-  const auto& model = pinocchioInterfacePtr->getModel();
-  auto& data = pinocchioInterfacePtr->getData();
+TEST_F(TestEndEffectorKinematics, testVelocityApproximation)
+{
+  const auto & model = pinocchioInterfacePtr->getModel();
+  auto & data = pinocchioInterfacePtr->getData();
 
   const auto a = ocs2::vector_t::Zero(q.rows());
   pinocchio::computeForwardKinematicsDerivatives(model, data, q, v, a);
@@ -200,9 +226,10 @@ TEST_F(TestEndEffectorKinematics, testVelocityApproximation) {
   compareApproximation(eeVelLin, eeVelLinAd, /* functionOfInput = */ true);
 }
 
-TEST_F(TestEndEffectorKinematics, testOrientationError) {
-  const auto& model = pinocchioInterfacePtr->getModel();
-  auto& data = pinocchioInterfacePtr->getData();
+TEST_F(TestEndEffectorKinematics, testOrientationError)
+{
+  const auto & model = pinocchioInterfacePtr->getModel();
+  auto & data = pinocchioInterfacePtr->getData();
   pinocchio::forwardKinematics(model, data, q);
   pinocchio::updateFramePlacements(model, data);
   eeKinematicsPtr->setPinocchioInterface(*pinocchioInterfacePtr);
@@ -213,23 +240,27 @@ TEST_F(TestEndEffectorKinematics, testOrientationError) {
   EXPECT_TRUE(eeOrientationError.isApprox(eeOrientationErrorAd));
 }
 
-TEST_F(TestEndEffectorKinematics, testOrientationErrorApproximation) {
-  const auto& model = pinocchioInterfacePtr->getModel();
-  auto& data = pinocchioInterfacePtr->getData();
+TEST_F(TestEndEffectorKinematics, testOrientationErrorApproximation)
+{
+  const auto & model = pinocchioInterfacePtr->getModel();
+  auto & data = pinocchioInterfacePtr->getData();
   pinocchio::forwardKinematics(model, data, q);
   pinocchio::updateFramePlacements(model, data);
   pinocchio::computeJointJacobians(model, data);
   eeKinematicsPtr->setPinocchioInterface(*pinocchioInterfacePtr);
 
   const quaternion_t qRef(1, 0, 0, 0);
-  const auto eeOrientationErrorLin = eeKinematicsPtr->getOrientationErrorLinearApproximation(x, {qRef})[0];
-  const auto eeOrientationErrorLinAd = eeKinematicsCppAdPtr->getOrientationErrorLinearApproximation(x, {qRef})[0];
+  const auto eeOrientationErrorLin =
+    eeKinematicsPtr->getOrientationErrorLinearApproximation(x, {qRef})[0];
+  const auto eeOrientationErrorLinAd =
+    eeKinematicsCppAdPtr->getOrientationErrorLinearApproximation(x, {qRef})[0];
   compareApproximation(eeOrientationErrorLin, eeOrientationErrorLinAd);
 }
 
-TEST_F(TestEndEffectorKinematics, testOrientationError_zeroError) {
-  const auto& model = pinocchioInterfacePtr->getModel();
-  auto& data = pinocchioInterfacePtr->getData();
+TEST_F(TestEndEffectorKinematics, testOrientationError_zeroError)
+{
+  const auto & model = pinocchioInterfacePtr->getModel();
+  auto & data = pinocchioInterfacePtr->getData();
   pinocchio::forwardKinematics(model, data, q);
   pinocchio::updateFramePlacements(model, data);
   const auto frameId = model.getBodyId("WRIST_2");
@@ -243,12 +274,14 @@ TEST_F(TestEndEffectorKinematics, testOrientationError_zeroError) {
   EXPECT_TRUE(eeOrientationErrorAd.norm() < 1e-9);
 }
 
-TEST_F(TestEndEffectorKinematics, testClone) {
-  const auto& model = pinocchioInterfacePtr->getModel();
-  auto& data = pinocchioInterfacePtr->getData();
+TEST_F(TestEndEffectorKinematics, testClone)
+{
+  const auto & model = pinocchioInterfacePtr->getModel();
+  auto & data = pinocchioInterfacePtr->getData();
 
   auto clonePtr = std::unique_ptr<ocs2::PinocchioEndEffectorKinematics>(eeKinematicsPtr->clone());
-  auto cloneCppAdPtr = std::unique_ptr<ocs2::PinocchioEndEffectorKinematicsCppAd>(eeKinematicsCppAdPtr->clone());
+  auto cloneCppAdPtr =
+    std::unique_ptr<ocs2::PinocchioEndEffectorKinematicsCppAd>(eeKinematicsCppAdPtr->clone());
 
   const auto a = ocs2::vector_t::Zero(q.rows());
   pinocchio::computeForwardKinematicsDerivatives(model, data, q, v, a);
@@ -266,9 +299,10 @@ TEST_F(TestEndEffectorKinematics, testClone) {
 }
 
 /* Test to understand the frame jacobian */
-TEST_F(TestEndEffectorKinematics, testPinocchioOrientationErrorJacoiban) {
-  const auto& model = pinocchioInterfacePtr->getModel();
-  auto& data = pinocchioInterfacePtr->getData();
+TEST_F(TestEndEffectorKinematics, testPinocchioOrientationErrorJacoiban)
+{
+  const auto & model = pinocchioInterfacePtr->getModel();
+  auto & data = pinocchioInterfacePtr->getData();
   const auto v = ocs2::vector_t::Zero(model.nv);
   const auto frameId = model.getBodyId("WRIST_2");
   const quaternion_t qRef(1, 0, 0, 0);
@@ -282,7 +316,7 @@ TEST_F(TestEndEffectorKinematics, testPinocchioOrientationErrorJacoiban) {
   ocs2::matrix_t J = ocs2::matrix_t::Zero(6, model.nq);
   pinocchio::getFrameJacobian(model, data, frameId, rf, J);
 
-  auto func1 = [&](const ocs2::vector_t& v) -> ocs2::vector_t {
+  auto func1 = [&](const ocs2::vector_t & v) -> ocs2::vector_t {
     pinocchio::forwardKinematics(model, data, x, v);
     pinocchio::updateFramePlacements(model, data);
     return getFrameVelocity(model, data, frameId, rf).angular();
@@ -292,10 +326,11 @@ TEST_F(TestEndEffectorKinematics, testPinocchioOrientationErrorJacoiban) {
 
   // Check analytic jacobian
   quaternion_t q = ocs2::matrixToQuaternion(data.oMf[frameId].rotation());
-  ocs2::matrix_t Janalytic =
-      (ocs2::quaternionDistanceJacobian(q, qRef) * ocs2::angularVelocityToQuaternionTimeDerivative(q)) * J.bottomRows<3>();
+  ocs2::matrix_t Janalytic = (ocs2::quaternionDistanceJacobian(q, qRef) *
+                              ocs2::angularVelocityToQuaternionTimeDerivative(q)) *
+                             J.bottomRows<3>();
 
-  auto func2 = [&](const ocs2::vector_t& x) -> ocs2::vector_t {
+  auto func2 = [&](const ocs2::vector_t & x) -> ocs2::vector_t {
     const auto q = pinocchioMapping.getPinocchioJointPosition(x);
     pinocchio::forwardKinematics(model, data, q);
     pinocchio::updateFramePlacements(model, data);

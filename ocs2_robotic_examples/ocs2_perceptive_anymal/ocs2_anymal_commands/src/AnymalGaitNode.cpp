@@ -17,10 +17,10 @@ int main(int argc, char* argv[]) {
   ros::init(argc, argv, robotName + "_mpc_mode_sequence");
   ros::NodeHandle nodeHandle;
 
-  switched_model::ModeSequenceKeyboard modeSequenceCommand(nodeHandle, gaitFile, robotName, true);
+  switched_model::ModeSequenceKeyboard mode_sequenceCommand(nodeHandle, gaitFile, robotName, true);
 
   while (ros::ok() && ros::master::check()) {
-    modeSequenceCommand.getKeyboardCommand();
+    mode_sequenceCommand.getKeyboardCommand();
   }
 
   // Successful exit

@@ -60,17 +60,17 @@ auto TrajectorySpreading::set(
   const scalar_t oldInitTime = oldTimeTrajectory.front();
   const scalar_t oldFinalTime = oldTimeTrajectory.back();
 
-  // note: sizeof(eventTimes) + 1 == sizeof(modeSequence)
+  // note: sizeof(event_times) + 1 == sizeof(mode_sequence)
   const int oldFirstActiveModeIndex =
-    upperBoundIndex(oldModeSchedule.eventTimes, oldInitTime);  // no event at initial time
+    upperBoundIndex(oldModeSchedule.event_times, oldInitTime);  // no event at initial time
   const int oldLastActiveModeIndex =
-    upperBoundIndex(oldModeSchedule.eventTimes, oldFinalTime);  // can be an event at final time
+    upperBoundIndex(oldModeSchedule.event_times, oldFinalTime);  // can be an event at final time
 
   // step 2: What modes do the new mode schedule need?
   const int newFirstActiveModeIndex =
-    upperBoundIndex(newModeSchedule.eventTimes, oldInitTime);  // no event at initial time
+    upperBoundIndex(newModeSchedule.event_times, oldInitTime);  // no event at initial time
   const int newLastActiveModeIndex =
-    upperBoundIndex(newModeSchedule.eventTimes, oldFinalTime);  // can be an event at final time
+    upperBoundIndex(newModeSchedule.event_times, oldFinalTime);  // can be an event at final time
 
   // the starting mode of the matched sequence may differ from the leading mode of the old mode schedule.
   auto oldStartIndexOfMatchedSequence = oldFirstActiveModeIndex;
@@ -81,16 +81,16 @@ auto TrajectorySpreading::set(
   // the size of the window where the active modes are identical.
   // this means: mode[firstMatchingModeIndex + w] != updatedMode[updatedFirstMatchingModeIndex + w]
   size_t w = 0;
-  while (oldStartIndexOfMatchedSequence < oldModeSchedule.modeSequence.size()) {
+  while (oldStartIndexOfMatchedSequence < oldModeSchedule.mode_sequence.size()) {
     // +1 to include the last active mode
     const auto mismatchedIndex = std::mismatch(
-      oldModeSchedule.modeSequence.cbegin() + oldStartIndexOfMatchedSequence,
-      oldModeSchedule.modeSequence.cbegin() + oldLastActiveModeIndex + 1,
-      newModeSchedule.modeSequence.cbegin() + newStartIndexOfMatchedSequence,
-      newModeSchedule.modeSequence.cbegin() + newLastActiveModeIndex + 1);
+      oldModeSchedule.mode_sequence.cbegin() + oldStartIndexOfMatchedSequence,
+      oldModeSchedule.mode_sequence.cbegin() + oldLastActiveModeIndex + 1,
+      newModeSchedule.mode_sequence.cbegin() + newStartIndexOfMatchedSequence,
+      newModeSchedule.mode_sequence.cbegin() + newLastActiveModeIndex + 1);
 
     w = std::distance(
-      oldModeSchedule.modeSequence.begin() + oldStartIndexOfMatchedSequence, mismatchedIndex.first);
+      oldModeSchedule.mode_sequence.begin() + oldStartIndexOfMatchedSequence, mismatchedIndex.first);
 
     if (w > 0) {
       break;
@@ -109,11 +109,11 @@ auto TrajectorySpreading::set(
   // Phase 1: Add all event time that are between modes. Those event time show up in both original and modified trajectories.
   if (w > 0) {
     const auto oldBeginEventItr =
-      oldModeSchedule.eventTimes.begin() + oldStartIndexOfMatchedSequence;
+      oldModeSchedule.event_times.begin() + oldStartIndexOfMatchedSequence;
     oldMatchedEventTimes.assign(oldBeginEventItr, oldBeginEventItr + w - 1);
 
     const auto newBeginEventItr =
-      newModeSchedule.eventTimes.begin() + newStartIndexOfMatchedSequence;
+      newModeSchedule.event_times.begin() + newStartIndexOfMatchedSequence;
     newMatchedEventTimes.assign(newBeginEventItr, newBeginEventItr + w - 1);
 
     // w - 1 events are kept in total
@@ -127,7 +127,7 @@ auto TrajectorySpreading::set(
   // In summary, Triggering event time can be either ignored (leading mode of both old and new schedule are matched) or shifted backward.
   if (w > 0 && oldStartIndexOfMatchedSequence > oldFirstActiveModeIndex) {
     const auto oldLastTriggeredEvent =
-      oldModeSchedule.eventTimes[oldStartIndexOfMatchedSequence - 1];
+      oldModeSchedule.event_times[oldStartIndexOfMatchedSequence - 1];
     const auto newLastTriggeredEvent = oldInitTime - 1e-4;  // a bit before the updated initial time
 
     oldMatchedEventTimes.insert(oldMatchedEventTimes.begin(), oldLastTriggeredEvent);
@@ -149,12 +149,12 @@ auto TrajectorySpreading::set(
   if (
     !isLastActiveModeOfOldModeSequenceMatched &&
     (isLastActiveModeOfNewModeSequenceMatched ||
-     oldModeSchedule.eventTimes[oldStartIndexOfMatchedSequence + w - 1] <
-       newModeSchedule.eventTimes[newStartIndexOfMatchedSequence + w - 1])) {
-    const auto oldLEndEvent = oldModeSchedule.eventTimes[oldStartIndexOfMatchedSequence + w - 1];
+     oldModeSchedule.event_times[oldStartIndexOfMatchedSequence + w - 1] <
+       newModeSchedule.event_times[newStartIndexOfMatchedSequence + w - 1])) {
+    const auto oldLEndEvent = oldModeSchedule.event_times[oldStartIndexOfMatchedSequence + w - 1];
     const auto newEndEvent = isLastActiveModeOfNewModeSequenceMatched
                                ? oldFinalTime + 1e-4
-                               : newModeSchedule.eventTimes[newStartIndexOfMatchedSequence + w - 1];
+                               : newModeSchedule.event_times[newStartIndexOfMatchedSequence + w - 1];
 
     oldMatchedEventTimes.push_back(oldLEndEvent);
     newMatchedEventTimes.push_back(newEndEvent);
@@ -171,7 +171,7 @@ auto TrajectorySpreading::set(
   // if last mode of the new mode sequence is NOT matched
   else if (!isLastActiveModeOfNewModeSequenceMatched) {
     const auto mismatchEventTime =
-      newModeSchedule.eventTimes[newStartIndexOfMatchedSequence + w - 1];
+      newModeSchedule.event_times[newStartIndexOfMatchedSequence + w - 1];
     eraseFromIndex_ = lowerBoundIndex(oldTimeTrajectory, mismatchEventTime);
   }
 
@@ -185,21 +185,21 @@ auto TrajectorySpreading::set(
   // debug print
   if (debugPrint_) {
     const auto oldFirstMatchedModeItr =
-      oldModeSchedule.modeSequence.begin() + oldStartIndexOfMatchedSequence;
+      oldModeSchedule.mode_sequence.begin() + oldStartIndexOfMatchedSequence;
     const auto newFirstMatchedModeItr =
-      newModeSchedule.modeSequence.begin() + newStartIndexOfMatchedSequence;
+      newModeSchedule.mode_sequence.begin() + newStartIndexOfMatchedSequence;
 
     std::cerr << "[TrajectorySpreading]:\n";
     std::cerr << "    ### Old Mode:         ";
-    for (int i = 0; i < oldModeSchedule.modeSequence.size(); i++) {
+    for (int i = 0; i < oldModeSchedule.mode_sequence.size(); i++) {
       if (i == oldFirstActiveModeIndex) {
         std::cerr << "\033[0;33m";
       }
 
-      std::cerr << oldModeSchedule.modeSequence[i];
+      std::cerr << oldModeSchedule.mode_sequence[i];
 
       if (i != 0) {
-        std::cerr << "(" << oldModeSchedule.eventTimes[i - 1] << ")";
+        std::cerr << "(" << oldModeSchedule.event_times[i - 1] << ")";
       }
 
       if (i == oldFirstActiveModeIndex) {
@@ -218,15 +218,15 @@ auto TrajectorySpreading::set(
     std::cerr << "\n";
 
     std::cerr << "    ### New Mode:         ";
-    for (int i = 0; i < newModeSchedule.modeSequence.size(); i++) {
+    for (int i = 0; i < newModeSchedule.mode_sequence.size(); i++) {
       if (i == newFirstActiveModeIndex) {
         std::cerr << "\033[0;33m";
       }
 
-      std::cerr << newModeSchedule.modeSequence[i];
+      std::cerr << newModeSchedule.mode_sequence[i];
 
       if (i != 0) {
-        std::cerr << "(" << newModeSchedule.eventTimes[i - 1] << ")";
+        std::cerr << "(" << newModeSchedule.event_times[i - 1] << ")";
       }
 
       if (i == newFirstActiveModeIndex) {

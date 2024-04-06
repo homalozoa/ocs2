@@ -38,8 +38,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ocs2_core/misc/Benchmark.hpp"
 #include "ocs2_core/model_data/Multiplier.hpp"
-#include "ocs2_mpc/MPC_BASE.hpp"
-#include "ocs2_mpc/MRT_BASE.hpp"
+#include "ocs2_mpc/mpc_base.hpp"
+#include "ocs2_mpc/mrt_base.hpp"
 
 namespace ocs2
 {
@@ -48,20 +48,20 @@ namespace ocs2
  * A lean ROS independent interface to OCS2. In incorporates the functionality of the MPC and the MRT (trajectory tracking) modules.
  * Please refer to ocs2_double_integrator_example for a minimal example and tests
  */
-class MPC_MRT_Interface final : public MRT_BASE
+class MPC_MRT_Interface final : public MrtBase
 {
 public:
   /**
    * Constructor
    * @param [in] mpc: The underlying MPC class to be used.
    */
-  explicit MPC_MRT_Interface(MPC_BASE & mpc);
+  explicit MPC_MRT_Interface(MpcBase & mpc);
 
   ~MPC_MRT_Interface() override = default;
 
-  void resetMpcNode(const TargetTrajectories & initTargetTrajectories) override;
+  void reset_mpc_node(const TargetTrajectories & initTargetTrajectories) override;
 
-  void setCurrentObservation(const SystemObservation & currentObservation) override;
+  void set_current_observation(const SystemObservation & currentObservation) override;
 
   /*
    * Gets the ReferenceManager which manages both ModeSchedule and TargetTrajectories.
@@ -71,7 +71,7 @@ public:
 
   /**
    * Advance the mpc module for one iteration. The evaluation methods can be called while this method is running. They will evaluate the
-   * control law that was up-to-date at the last updatePolicy() call.
+   * control law that was up-to-date at the last update_policy() call.
    */
   void advanceMpc();
 
@@ -126,7 +126,7 @@ private:
    */
   void copyToBuffer(const SystemObservation & mpcInitObservation);
 
-  MPC_BASE & mpc_;
+  MpcBase & mpc_;
   benchmark::RepeatedTimer mpcTimer_;
 
   // MPC inputs

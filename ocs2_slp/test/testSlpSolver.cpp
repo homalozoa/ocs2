@@ -27,20 +27,21 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "ocs2_core/initialization/DefaultInitializer.hpp"
+#include "ocs2_oc/synchronized_module/ReferenceManager.hpp"
+#include "ocs2_oc/test/testProblemsGeneration.hpp"
+#include "ocs2_slp/SlpSolver.hpp"
 
-#include <ocs2_core/initialization/DefaultInitializer.h>
-#include <ocs2_oc/synchronized_module/ReferenceManager.h>
-#include <ocs2_oc/test/testProblemsGeneration.h>
+namespace ocs2
+{
+namespace
+{
 
-#include "ocs2_slp/SlpSolver.h"
-
-namespace ocs2 {
-namespace {
-
-std::pair<PrimalSolution, std::vector<PerformanceIndex>> solve(const VectorFunctionLinearApproximation& dynamicsMatrices,
-                                                               const ScalarFunctionQuadraticApproximation& costMatrices,
-                                                               const ocs2::scalar_t tol) {
+std::pair<PrimalSolution, std::vector<PerformanceIndex>> solve(
+  const VectorFunctionLinearApproximation & dynamicsMatrices,
+  const ScalarFunctionQuadraticApproximation & costMatrices, const ocs2::scalar_t tol)
+{
   int n = dynamicsMatrices.dfdu.rows();
   int m = dynamicsMatrices.dfdu.cols();
 
@@ -54,12 +55,14 @@ std::pair<PrimalSolution, std::vector<PerformanceIndex>> solve(const VectorFunct
   problem.finalCostPtr->add("finalCost", ocs2::getOcs2StateCost(costMatrices));
 
   // Reference Manager
-  ocs2::TargetTrajectories targetTrajectories({0.0}, {ocs2::vector_t::Ones(n)}, {ocs2::vector_t::Ones(m)});
+  ocs2::TargetTrajectories targetTrajectories(
+    {0.0}, {ocs2::vector_t::Ones(n)}, {ocs2::vector_t::Ones(m)});
   std::shared_ptr<ReferenceManager> referenceManagerPtr(new ReferenceManager(targetTrajectories));
 
   problem.targetTrajectoriesPtr = &referenceManagerPtr->getTargetTrajectories();
 
-  problem.equalityConstraintPtr->add("intermediateCost", ocs2::getOcs2Constraints(getRandomConstraints(n, m, 0)));
+  problem.equalityConstraintPtr->add(
+    "intermediateCost", ocs2::getOcs2Constraints(getRandomConstraints(n, m, 0)));
 
   ocs2::DefaultInitializer zeroInitializer(m);
 
@@ -105,7 +108,8 @@ std::pair<PrimalSolution, std::vector<PerformanceIndex>> solve(const VectorFunct
 }  // namespace
 }  // namespace ocs2
 
-TEST(testSlpSolver, test_unconstrained) {
+TEST(testSlpSolver, test_unconstrained)
+{
   int n = 3;
   int m = 2;
   const double tol = 1e-9;

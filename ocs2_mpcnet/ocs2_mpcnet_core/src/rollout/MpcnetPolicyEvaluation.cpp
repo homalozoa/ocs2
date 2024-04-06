@@ -36,13 +36,13 @@ namespace mpcnet {
 /******************************************************************************************************/
 /******************************************************************************************************/
 metrics_t MpcnetPolicyEvaluation::run(scalar_t alpha, const std::string& policyFilePath, scalar_t timeStep,
-                                      const SystemObservation& initialObservation, const ModeSchedule& modeSchedule,
+                                      const SystemObservation& initialObservation, const ModeSchedule& mode_schedule,
                                       const TargetTrajectories& targetTrajectories) {
   // declare metrics
   metrics_t metrics;
 
   // set system
-  set(alpha, policyFilePath, initialObservation, modeSchedule, targetTrajectories);
+  set(alpha, policyFilePath, initialObservation, mode_schedule, targetTrajectories);
 
   // run policy evaluation
   try {

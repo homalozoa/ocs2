@@ -51,7 +51,8 @@ add_dependencies(${PROJECT_NAME}
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
 )
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(
+  ${PROJECT_NAME}
   ${catkin_LIBRARIES}
 )
 target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
@@ -64,7 +65,8 @@ add_dependencies(${PROJECT_NAME}_mpc_node
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
 )
-target_link_libraries(${PROJECT_NAME}_mpc_node
+target_link_libraries(
+  ${PROJECT_NAME}_mpc_node
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
 )
@@ -77,7 +79,8 @@ add_dependencies(${PROJECT_NAME}_dummy_mrt_node
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
 )
-target_link_libraries(${PROJECT_NAME}_dummy_mrt_node
+target_link_libraries(
+  ${PROJECT_NAME}_dummy_mrt_node
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
 )
@@ -125,7 +128,8 @@ catkin_add_nosetests(test)
 catkin_add_gtest(${PROJECT_NAME}_test
   test/testProblemFormulation.cpp
 )
-target_link_libraries(${PROJECT_NAME}_test
+target_link_libraries(
+  ${PROJECT_NAME}_test
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
   gtest_main

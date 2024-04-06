@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.8)
 project(ocs2_legged_robot_raisim)
 
 # Generate compile_commands.json for clang tools
@@ -46,7 +46,8 @@ add_library(${PROJECT_NAME}
 add_dependencies(${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}
 )
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(
+  ${PROJECT_NAME}
   ${catkin_LIBRARIES}
 )
 target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
@@ -109,7 +110,8 @@ install(DIRECTORY config launch
 catkin_add_gtest(${PROJECT_NAME}_test
   test/testLeggedRobotRaisimConversions.cpp
 )
-target_link_libraries(${PROJECT_NAME}_test
+target_link_libraries(
+  ${PROJECT_NAME}_test
   gtest_main
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}

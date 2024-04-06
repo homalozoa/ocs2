@@ -27,15 +27,20 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_ipm/IpmHelpers.h"
+#include "ocs2_ipm/IpmHelpers.hpp"
 
 #include <cassert>
 
-namespace ocs2 {
-namespace ipm {
+namespace ocs2
+{
+namespace ipm
+{
 
-void condenseIneqConstraints(scalar_t barrierParam, const vector_t& slack, const vector_t& dual,
-                             const VectorFunctionLinearApproximation& ineqConstraint, ScalarFunctionQuadraticApproximation& lagrangian) {
+void condenseIneqConstraints(
+  scalar_t barrierParam, const vector_t & slack, const vector_t & dual,
+  const VectorFunctionLinearApproximation & ineqConstraint,
+  ScalarFunctionQuadraticApproximation & lagrangian)
+{
   assert(barrierParam > 0.0);
   const size_t nc = ineqConstraint.f.size();
   const size_t nu = ineqConstraint.dfdu.cols();
@@ -51,24 +56,29 @@ void condenseIneqConstraints(scalar_t barrierParam, const vector_t& slack, const
   }
 
   // coefficients for condensing
-  const vector_t condensingLinearCoeff = (dual.array() * ineqConstraint.f.array() - barrierParam) / slack.array();
+  const vector_t condensingLinearCoeff =
+    (dual.array() * ineqConstraint.f.array() - barrierParam) / slack.array();
   const vector_t condensingQuadraticCoeff = dual.cwiseQuotient(slack);
 
   // condensing
   lagrangian.dfdx.noalias() += ineqConstraint.dfdx.transpose() * condensingLinearCoeff;
-  const matrix_t condensingQuadraticCoeff_dfdx = condensingQuadraticCoeff.asDiagonal() * ineqConstraint.dfdx;
+  const matrix_t condensingQuadraticCoeff_dfdx =
+    condensingQuadraticCoeff.asDiagonal() * ineqConstraint.dfdx;
   lagrangian.dfdxx.noalias() += ineqConstraint.dfdx.transpose() * condensingQuadraticCoeff_dfdx;
 
   if (nu > 0) {
     lagrangian.dfdu.noalias() += ineqConstraint.dfdu.transpose() * condensingLinearCoeff;
-    const matrix_t condensingQuadraticCoeff_dfdu = condensingQuadraticCoeff.asDiagonal() * ineqConstraint.dfdu;
+    const matrix_t condensingQuadraticCoeff_dfdu =
+      condensingQuadraticCoeff.asDiagonal() * ineqConstraint.dfdu;
     lagrangian.dfduu.noalias() += ineqConstraint.dfdu.transpose() * condensingQuadraticCoeff_dfdu;
     lagrangian.dfdux.noalias() += ineqConstraint.dfdu.transpose() * condensingQuadraticCoeff_dfdx;
   }
 }
 
-vector_t retrieveSlackDirection(const VectorFunctionLinearApproximation& stateInputIneqConstraints, const vector_t& dx, const vector_t& du,
-                                scalar_t barrierParam, const vector_t& slackStateInputIneq) {
+vector_t retrieveSlackDirection(
+  const VectorFunctionLinearApproximation & stateInputIneqConstraints, const vector_t & dx,
+  const vector_t & du, scalar_t barrierParam, const vector_t & slackStateInputIneq)
+{
   assert(barrierParam > 0.0);
   if (stateInputIneqConstraints.f.size() == 0) {
     return vector_t();
@@ -80,8 +90,10 @@ vector_t retrieveSlackDirection(const VectorFunctionLinearApproximation& stateIn
   return slackDirection;
 }
 
-vector_t retrieveSlackDirection(const VectorFunctionLinearApproximation& stateIneqConstraints, const vector_t& dx, scalar_t barrierParam,
-                                const vector_t& slackStateIneq) {
+vector_t retrieveSlackDirection(
+  const VectorFunctionLinearApproximation & stateIneqConstraints, const vector_t & dx,
+  scalar_t barrierParam, const vector_t & slackStateIneq)
+{
   assert(barrierParam > 0.0);
   if (stateIneqConstraints.f.size() == 0) {
     return vector_t();
@@ -92,7 +104,10 @@ vector_t retrieveSlackDirection(const VectorFunctionLinearApproximation& stateIn
   return slackDirection;
 }
 
-vector_t retrieveDualDirection(scalar_t barrierParam, const vector_t& slack, const vector_t& dual, const vector_t& slackDirection) {
+vector_t retrieveDualDirection(
+  scalar_t barrierParam, const vector_t & slack, const vector_t & dual,
+  const vector_t & slackDirection)
+{
   assert(barrierParam > 0.0);
   vector_t dualDirection = dual.cwiseProduct(slack + slackDirection);
   dualDirection.array() -= barrierParam;
@@ -100,7 +115,8 @@ vector_t retrieveDualDirection(scalar_t barrierParam, const vector_t& slack, con
   return dualDirection;
 }
 
-scalar_t fractionToBoundaryStepSize(const vector_t& v, const vector_t& dv, scalar_t marginRate) {
+scalar_t fractionToBoundaryStepSize(const vector_t & v, const vector_t & dv, scalar_t marginRate)
+{
   assert(marginRate > 0.0);
   assert(marginRate <= 1.0);
 
@@ -113,8 +129,11 @@ scalar_t fractionToBoundaryStepSize(const vector_t& v, const vector_t& dv, scala
   return alpha > 0.0 ? std::min(1.0 / alpha, 1.0) : 1.0;
 }
 
-namespace {
-MultiplierCollection toMultiplierCollection(const multiple_shooting::ConstraintsSize constraintsSize, const vector_t& stateIneq) {
+namespace
+{
+MultiplierCollection toMultiplierCollection(
+  const multiple_shooting::ConstraintsSize constraintsSize, const vector_t & stateIneq)
+{
   MultiplierCollection multiplierCollection;
   size_t head = 0;
   for (const size_t size : constraintsSize.stateIneq) {
@@ -124,8 +143,10 @@ MultiplierCollection toMultiplierCollection(const multiple_shooting::Constraints
   return multiplierCollection;
 }
 
-MultiplierCollection toMultiplierCollection(const multiple_shooting::ConstraintsSize constraintsSize, const vector_t& stateIneq,
-                                            const vector_t& stateInputIneq) {
+MultiplierCollection toMultiplierCollection(
+  const multiple_shooting::ConstraintsSize constraintsSize, const vector_t & stateIneq,
+  const vector_t & stateInputIneq)
+{
   MultiplierCollection multiplierCollection = toMultiplierCollection(constraintsSize, stateIneq);
   size_t head = 0;
   for (const size_t size : constraintsSize.stateInputIneq) {
@@ -135,13 +156,16 @@ MultiplierCollection toMultiplierCollection(const multiple_shooting::Constraints
   return multiplierCollection;
 }
 
-vector_t extractLagrangian(const std::vector<Multiplier>& termsMultiplier) {
+vector_t extractLagrangian(const std::vector<Multiplier> & termsMultiplier)
+{
   size_t n = 0;
-  std::for_each(termsMultiplier.begin(), termsMultiplier.end(), [&](const Multiplier& m) { n += m.lagrangian.size(); });
+  std::for_each(termsMultiplier.begin(), termsMultiplier.end(), [&](const Multiplier & m) {
+    n += m.lagrangian.size();
+  });
 
   vector_t vec(n);
   size_t head = 0;
-  for (const auto& m : termsMultiplier) {
+  for (const auto & m : termsMultiplier) {
     vec.segment(head, m.lagrangian.size()) = m.lagrangian;
     head += m.lagrangian.size();
   }  // end of i loop
@@ -150,8 +174,11 @@ vector_t extractLagrangian(const std::vector<Multiplier>& termsMultiplier) {
 }
 }  // namespace
 
-DualSolution toDualSolution(const std::vector<AnnotatedTime>& time, const std::vector<multiple_shooting::ConstraintsSize>& constraintsSize,
-                            const vector_array_t& stateIneq, const vector_array_t& stateInputIneq) {
+DualSolution toDualSolution(
+  const std::vector<AnnotatedTime> & time,
+  const std::vector<multiple_shooting::ConstraintsSize> & constraintsSize,
+  const vector_array_t & stateIneq, const vector_array_t & stateInputIneq)
+{
   // Problem horizon
   const int N = static_cast<int>(time.size()) - 1;
 
@@ -165,9 +192,11 @@ DualSolution toDualSolution(const std::vector<AnnotatedTime>& time, const std::v
   for (int i = 0; i < N; ++i) {
     if (time[i].event == AnnotatedTime::Event::PreEvent) {
       dualSolution.preJumps.emplace_back(toMultiplierCollection(constraintsSize[i], stateIneq[i]));
-      dualSolution.intermediates.push_back(dualSolution.intermediates.back());  // no event at the initial node
+      dualSolution.intermediates.push_back(
+        dualSolution.intermediates.back());  // no event at the initial node
     } else {
-      dualSolution.intermediates.emplace_back(toMultiplierCollection(constraintsSize[i], stateIneq[i], stateInputIneq[i]));
+      dualSolution.intermediates.emplace_back(
+        toMultiplierCollection(constraintsSize[i], stateIneq[i], stateInputIneq[i]));
     }
   }
   dualSolution.final = toMultiplierCollection(constraintsSize[N], stateIneq[N]);
@@ -176,8 +205,12 @@ DualSolution toDualSolution(const std::vector<AnnotatedTime>& time, const std::v
   return dualSolution;
 }
 
-std::pair<vector_t, vector_t> fromMultiplierCollection(const MultiplierCollection& multiplierCollection) {
-  return std::make_pair(extractLagrangian(multiplierCollection.stateIneq), extractLagrangian(multiplierCollection.stateInputIneq));
+std::pair<vector_t, vector_t> fromMultiplierCollection(
+  const MultiplierCollection & multiplierCollection)
+{
+  return std::make_pair(
+    extractLagrangian(multiplierCollection.stateIneq),
+    extractLagrangian(multiplierCollection.stateInputIneq));
 }
 
 }  // namespace ipm

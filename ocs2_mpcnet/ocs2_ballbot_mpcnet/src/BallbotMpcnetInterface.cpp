@@ -49,7 +49,7 @@ BallbotMpcnetInterface::BallbotMpcnetInterface(size_t nDataGenerationThreads, si
   // path to save auto-generated libraries
   const std::string libraryFolder = ros::package::getPath("ocs2_ballbot") + "/auto_generated";
   // set up MPC-Net rollout manager for data generation and policy evaluation
-  std::vector<std::unique_ptr<MPC_BASE>> mpcPtrs;
+  std::vector<std::unique_ptr<MpcBase>> mpcPtrs;
   std::vector<std::unique_ptr<ocs2::mpcnet::MpcnetControllerBase>> mpcnetPtrs;
   std::vector<std::unique_ptr<RolloutBase>> rolloutPtrs;
   std::vector<std::shared_ptr<ocs2::mpcnet::MpcnetDefinitionBase>> mpcnetDefinitionPtrs;
@@ -81,7 +81,7 @@ BallbotMpcnetInterface::BallbotMpcnetInterface(size_t nDataGenerationThreads, si
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-std::unique_ptr<MPC_BASE> BallbotMpcnetInterface::getMpc(BallbotInterface& ballbotInterface) {
+std::unique_ptr<MpcBase> BallbotMpcnetInterface::getMpc(BallbotInterface& ballbotInterface) {
   // ensure MPC and DDP settings are as needed for MPC-Net
   const auto mpcSettings = [&]() {
     auto settings = ballbotInterface.mpcSettings();

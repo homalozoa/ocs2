@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
 
   // MRT
   ocs2::MRT_ROS_Interface mrt(robotName);
-  mrt.initRollout(&ballbotInterface.getRollout());
+  mrt.init_rollout(&ballbotInterface.getRollout());
   mrt.launchNodes(nodeHandle);
 
   // Visualization
@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
   // Dummy ballbot
   ocs2::MRT_ROS_Dummy_Loop dummyBallbot(mrt, ballbotInterface.mpcSettings().mrtDesiredFrequency_,
                                         ballbotInterface.mpcSettings().mpcDesiredFrequency_);
-  dummyBallbot.subscribeObservers({ballbotDummyVisualization});
+  dummyBallbot.subscribe_observers({ballbotDummyVisualization});
 
   // initial state
   ocs2::SystemObservation initObservation;

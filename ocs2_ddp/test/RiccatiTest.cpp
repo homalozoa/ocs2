@@ -29,14 +29,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <memory>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "ocs2_core/misc/LinearAlgebra.hpp"
+#include "ocs2_core/misc/randomMatrices.hpp"
+#include "ocs2_ddp/riccati_equations/ContinuousTimeRiccatiEquations.hpp"
 
-#include <ocs2_core/misc/LinearAlgebra.h>
-#include <ocs2_core/misc/randomMatrices.h>
-#include <ocs2_ddp/riccati_equations/ContinuousTimeRiccatiEquations.h>
-
-class RiccatiInitializer {
- public:
+class RiccatiInitializer
+{
+public:
   using riccati_t = ocs2::ContinuousTimeRiccatiEquations;
 
   ocs2::scalar_array_t timeStamp;
@@ -47,7 +47,8 @@ class RiccatiInitializer {
 
   std::vector<ocs2::riccati_modification::Data> riccatiModificationTrajectory;
 
-  RiccatiInitializer(const int stateDim, const int inputDim) {
+  RiccatiInitializer(const int stateDim, const int inputDim)
+  {
     timeStamp = ocs2::scalar_array_t{0.0, 1.0};
 
     ocs2::ModelData projectedModelData;
@@ -58,33 +59,42 @@ class RiccatiInitializer {
     projectedModelData.dynamics.dfdu = ocs2::matrix_t::Random(stateDim, inputDim);
     projectedModelData.cost.f = ocs2::vector_t::Random(1)(0);
     projectedModelData.cost.dfdx = ocs2::vector_t::Random(stateDim);
-    projectedModelData.cost.dfdxx = ocs2::LinearAlgebra::generateSPDmatrix<ocs2::matrix_t>(stateDim);
+    projectedModelData.cost.dfdxx =
+      ocs2::LinearAlgebra::generateSPDmatrix<ocs2::matrix_t>(stateDim);
     projectedModelData.cost.dfdu = ocs2::vector_t::Random(inputDim);
-    projectedModelData.cost.dfduu.setIdentity(inputDim,
-                                              inputDim);  // Important: It is identity since it is a projected projectedModelData!
+    projectedModelData.cost.dfduu.setIdentity(
+      inputDim,
+      inputDim);  // Important: It is identity since it is a projected projectedModelData!
     projectedModelData.cost.dfdux = ocs2::matrix_t::Random(inputDim, stateDim);
     projectedModelData.stateEqConstraint.setZero(0, stateDim);
     projectedModelData.stateInputEqConstraint.setZero(inputDim, stateDim, inputDim);
 
-    projectedModelDataTrajectory = std::vector<ocs2::ModelData>{projectedModelData, projectedModelData};
+    projectedModelDataTrajectory =
+      std::vector<ocs2::ModelData>{projectedModelData, projectedModelData};
 
     ocs2::riccati_modification::Data riccatiModification;
-    riccatiModification.deltaQm_ = 0.1 * ocs2::LinearAlgebra::generateSPDmatrix<ocs2::matrix_t>(stateDim);
+    riccatiModification.deltaQm_ =
+      0.1 * ocs2::LinearAlgebra::generateSPDmatrix<ocs2::matrix_t>(stateDim);
     riccatiModification.deltaGv_ = ocs2::vector_t::Zero(inputDim);
     riccatiModification.deltaGm_ = ocs2::matrix_t::Zero(inputDim, stateDim);
     riccatiModification.constraintRangeProjector_.setZero(inputDim, 0);
-    ocs2::LinearAlgebra::computeInverseMatrixUUT(projectedModelData.cost.dfduu, riccatiModification.constraintNullProjector_);
+    ocs2::LinearAlgebra::computeInverseMatrixUUT(
+      projectedModelData.cost.dfduu, riccatiModification.constraintNullProjector_);
 
-    riccatiModificationTrajectory = std::vector<ocs2::riccati_modification::Data>{riccatiModification, riccatiModification};
+    riccatiModificationTrajectory =
+      std::vector<ocs2::riccati_modification::Data>{riccatiModification, riccatiModification};
   }
 
-  void initialize(riccati_t& riccati) {
-    riccati.setData(&timeStamp, &projectedModelDataTrajectory, &eventsPastTheEndIndeces, &modelDataEventTimesArray,
-                    &riccatiModificationTrajectory);
+  void initialize(riccati_t & riccati)
+  {
+    riccati.setData(
+      &timeStamp, &projectedModelDataTrajectory, &eventsPastTheEndIndeces,
+      &modelDataEventTimesArray, &riccatiModificationTrajectory);
   }
 };
 
-TEST(RiccatiTest, compareImplementations) {
+TEST(RiccatiTest, compareImplementations)
+{
   constexpr int STATE_DIM = 48;
   constexpr int INPUT_DIM = 10;
 
@@ -104,7 +114,8 @@ TEST(RiccatiTest, compareImplementations) {
   EXPECT_LE((dSdz_precompute - dSdz_noPrecompute).array().abs().maxCoeff(), 1e-9);
 }
 
-TEST(RiccatiTest, testFlattenSMatrix) {
+TEST(RiccatiTest, testFlattenSMatrix)
+{
   const int stateDim = 4;
   using riccati_t = ocs2::ContinuousTimeRiccatiEquations;
 
@@ -130,7 +141,8 @@ TEST(RiccatiTest, testFlattenSMatrix) {
   EXPECT_EQ(allSs, allSs_expect);
 }
 
-TEST(RiccatiTest, testFlattenAndUnflatten) {
+TEST(RiccatiTest, testFlattenAndUnflatten)
+{
   const int stateDim = 42;
   using riccati_t = ocs2::ContinuousTimeRiccatiEquations;
 

@@ -27,39 +27,48 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
 #include <memory>
 
-#include "ocs2_ipm/IpmSolver.h"
-
-#include <ocs2_core/constraint/LinearStateConstraint.h>
-#include <ocs2_core/constraint/LinearStateInputConstraint.h>
-#include <ocs2_core/initialization/DefaultInitializer.h>
-#include <ocs2_oc/test/EXP1.h>
+#include "gtest/gtest.h"
+#include "ocs2_core/constraint/LinearStateConstraint.hpp"
+#include "ocs2_core/constraint/LinearStateInputConstraint.hpp"
+#include "ocs2_core/initialization/DefaultInitializer.hpp"
+#include "ocs2_ipm/IpmSolver.hpp"
+#include "ocs2_oc/test/EXP1.hpp"
 
 using namespace ocs2;
 
-class EXP1_MixedStateInputIneqConstraints final : public StateInputConstraint {
- public:
+class EXP1_MixedStateInputIneqConstraints final : public StateInputConstraint
+{
+public:
   EXP1_MixedStateInputIneqConstraints(scalar_t xumin, scalar_t xumax)
-      : StateInputConstraint(ConstraintOrder::Linear), xumin_(xumin), xumax_(xumax) {}
+  : StateInputConstraint(ConstraintOrder::Linear), xumin_(xumin), xumax_(xumax)
+  {
+  }
   ~EXP1_MixedStateInputIneqConstraints() override = default;
 
-  EXP1_MixedStateInputIneqConstraints* clone() const override { return new EXP1_MixedStateInputIneqConstraints(*this); }
+  EXP1_MixedStateInputIneqConstraints * clone() const override
+  {
+    return new EXP1_MixedStateInputIneqConstraints(*this);
+  }
 
   size_t getNumConstraints(scalar_t time) const override { return 2; }
 
-  vector_t getValue(scalar_t t, const vector_t& x, const vector_t& u, const PreComputation&) const override {
+  vector_t getValue(
+    scalar_t t, const vector_t & x, const vector_t & u, const PreComputation &) const override
+  {
     vector_t e(2);
     e << (x(0) * u(0) - xumin_), (xumax_ - x(1) * u(0));
     return e;
   }
 
-  VectorFunctionLinearApproximation getLinearApproximation(scalar_t t, const vector_t& x, const vector_t& u,
-                                                           const PreComputation& preComp) const override {
+  VectorFunctionLinearApproximation getLinearApproximation(
+    scalar_t t, const vector_t & x, const vector_t & u,
+    const PreComputation & preComp) const override
+  {
     VectorFunctionLinearApproximation e(2, x.size(), u.size());
     e.f = getValue(t, x, u, preComp);
     e.dfdx << u(0), 0, 0, -u(0);
@@ -67,11 +76,12 @@ class EXP1_MixedStateInputIneqConstraints final : public StateInputConstraint {
     return e;
   }
 
- private:
+private:
   const scalar_t xumin_, xumax_;
 };
 
-TEST(Exp1Test, Unconstrained) {
+TEST(Exp1Test, Unconstrained)
+{
   constexpr size_t STATE_DIM = 2;
   constexpr size_t INPUT_DIM = 1;
 
@@ -97,8 +107,8 @@ TEST(Exp1Test, Unconstrained) {
   }();
 
   const scalar_array_t initEventTimes{0.2262, 1.0176};
-  const size_array_t modeSequence{0, 1, 2};
-  auto referenceManagerPtr = getExp1ReferenceManager(initEventTimes, modeSequence);
+  const size_array_t mode_sequence{0, 1, 2};
+  auto referenceManagerPtr = getExp1ReferenceManager(initEventTimes, mode_sequence);
   auto problem = createExp1Problem(referenceManagerPtr);
 
   const scalar_t startTime = 0.0;
@@ -113,16 +123,18 @@ TEST(Exp1Test, Unconstrained) {
   solver.run(startTime, initState, finalTime);
 }
 
-TEST(Exp1Test, Constrained) {
+TEST(Exp1Test, Constrained)
+{
   constexpr size_t STATE_DIM = 2;
   constexpr size_t INPUT_DIM = 1;
 
-  auto getStateBoxConstraint = [&](const vector_t& minState, const vector_t& maxState) {
+  auto getStateBoxConstraint = [&](const vector_t & minState, const vector_t & maxState) {
     constexpr size_t numIneqConstraint = 2 * STATE_DIM;
     const vector_t e = (vector_t(numIneqConstraint) << -minState, maxState).finished();
     const matrix_t C =
-        (matrix_t(numIneqConstraint, STATE_DIM) << matrix_t::Identity(STATE_DIM, STATE_DIM), -matrix_t::Identity(STATE_DIM, STATE_DIM))
-            .finished();
+      (matrix_t(numIneqConstraint, STATE_DIM) << matrix_t::Identity(STATE_DIM, STATE_DIM),
+       -matrix_t::Identity(STATE_DIM, STATE_DIM))
+        .finished();
     return std::make_unique<LinearStateConstraint>(std::move(e), std::move(C));
   };
 
@@ -131,8 +143,9 @@ TEST(Exp1Test, Constrained) {
     const vector_t e = (vector_t(numIneqConstraint) << -minInput, maxInput).finished();
     const matrix_t C = matrix_t::Zero(numIneqConstraint, STATE_DIM);
     const matrix_t D =
-        (matrix_t(numIneqConstraint, INPUT_DIM) << matrix_t::Identity(INPUT_DIM, INPUT_DIM), -matrix_t::Identity(INPUT_DIM, INPUT_DIM))
-            .finished();
+      (matrix_t(numIneqConstraint, INPUT_DIM) << matrix_t::Identity(INPUT_DIM, INPUT_DIM),
+       -matrix_t::Identity(INPUT_DIM, INPUT_DIM))
+        .finished();
     return std::make_unique<LinearStateInputConstraint>(std::move(e), std::move(C), std::move(D));
   };
 
@@ -158,8 +171,8 @@ TEST(Exp1Test, Constrained) {
   }();
 
   const scalar_array_t initEventTimes{0.2262, 1.0176};
-  const size_array_t modeSequence{0, 1, 2};
-  auto referenceManagerPtr = getExp1ReferenceManager(initEventTimes, modeSequence);
+  const size_array_t mode_sequence{0, 1, 2};
+  auto referenceManagerPtr = getExp1ReferenceManager(initEventTimes, mode_sequence);
   auto problem = createExp1Problem(referenceManagerPtr);
 
   // add inequality constraints
@@ -185,13 +198,13 @@ TEST(Exp1Test, Constrained) {
   const auto primalSolution = solver.primalSolution(finalTime);
 
   // check constraint satisfaction
-  for (const auto& x : primalSolution.stateTrajectory_) {
+  for (const auto & x : primalSolution.stateTrajectory_) {
     if (x.size() > 0) {
       ASSERT_TRUE((x - xmin).minCoeff() >= 0);
       ASSERT_TRUE((xmax - x).minCoeff() >= 0);
     }
   }
-  for (const auto& u : primalSolution.inputTrajectory_) {
+  for (const auto & u : primalSolution.inputTrajectory_) {
     if (u.size() > 0) {
       ASSERT_TRUE(u(0) - umin >= 0);
       ASSERT_TRUE(umax - u(0) >= 0);
@@ -205,7 +218,8 @@ TEST(Exp1Test, Constrained) {
   }
 }
 
-TEST(Exp1Test, MixedConstrained) {
+TEST(Exp1Test, MixedConstrained)
+{
   constexpr size_t STATE_DIM = 2;
   constexpr size_t INPUT_DIM = 1;
 
@@ -231,14 +245,15 @@ TEST(Exp1Test, MixedConstrained) {
   }();
 
   const scalar_array_t initEventTimes{0.2262, 1.0176};
-  const size_array_t modeSequence{0, 1, 2};
-  auto referenceManagerPtr = getExp1ReferenceManager(initEventTimes, modeSequence);
+  const size_array_t mode_sequence{0, 1, 2};
+  auto referenceManagerPtr = getExp1ReferenceManager(initEventTimes, mode_sequence);
   auto problem = createExp1Problem(referenceManagerPtr);
 
   // add inequality constraints
   const scalar_t xumin = -1.0;
   const scalar_t xumax = 1.0;
-  auto stateInputIneqConstraint = std::make_unique<EXP1_MixedStateInputIneqConstraints>(xumin, xumax);
+  auto stateInputIneqConstraint =
+    std::make_unique<EXP1_MixedStateInputIneqConstraints>(xumin, xumax);
   auto stateInputIneqConstraintCloned = stateInputIneqConstraint->clone();
   problem.inequalityConstraintPtr->add("bound", std::move(stateInputIneqConstraint));
   const scalar_t startTime = 0.0;
@@ -258,9 +273,10 @@ TEST(Exp1Test, MixedConstrained) {
   const size_t N = primalSolution.inputTrajectory_.size();
   for (size_t i = 0; i < N; ++i) {
     const auto t = primalSolution.timeTrajectory_[i];
-    const auto& x = primalSolution.stateTrajectory_[i];
-    const auto& u = primalSolution.inputTrajectory_[i];
-    const auto constraintValue = stateInputIneqConstraintCloned->getValue(t, x, u, PreComputation());
+    const auto & x = primalSolution.stateTrajectory_[i];
+    const auto & u = primalSolution.inputTrajectory_[i];
+    const auto constraintValue =
+      stateInputIneqConstraintCloned->getValue(t, x, u, PreComputation());
     ASSERT_TRUE(constraintValue.minCoeff() >= 0.0);
   }
 

@@ -171,7 +171,7 @@ TEST_P(DummyMobileManipulatorParametersTests, synchronousTracking) {
   observation.time = initTime;
   observation.state = mobileManipulatorInterfacePtr->getInitialState();
   observation.input.setZero(modelInfo.inputDim);
-  mpcInterface.setCurrentObservation(observation);
+  mpcInterface.set_current_observation(observation);
 
   // Run MPC for N iterations
   auto time = initTime;
@@ -180,19 +180,19 @@ TEST_P(DummyMobileManipulatorParametersTests, synchronousTracking) {
     mpcInterface.advanceMpc();
     time += 1.0 / f_mpc;
 
-    if (mpcInterface.initialPolicyReceived()) {
+    if (mpcInterface.initial_policy_received()) {
       size_t mode;
       vector_t optimalState, optimalInput;
 
-      mpcInterface.updatePolicy();
-      mpcInterface.evaluatePolicy(time, vector_t::Zero(modelInfo.stateDim),
+      mpcInterface.update_policy();
+      mpcInterface.evaluate_policy(time, vector_t::Zero(modelInfo.stateDim),
                                   optimalState, optimalInput, mode);
 
       // use optimal state for the next observation:
       observation.time = time;
       observation.state = optimalState;
       observation.input.setZero(modelInfo.inputDim);
-      mpcInterface.setCurrentObservation(observation);
+      mpcInterface.set_current_observation(observation);
     }
   }
 
@@ -215,8 +215,8 @@ TEST_P(DummyMobileManipulatorParametersTests, asynchronousTracking) {
   observation.input.setZero(modelInfo.inputDim);
 
   // Wait for the first policy
-  mpcInterface.setCurrentObservation(observation);
-  while (!mpcInterface.initialPolicyReceived()) {
+  mpcInterface.set_current_observation(observation);
+  while (!mpcInterface.initial_policy_received()) {
     mpcInterface.advanceMpc();
   }
 
@@ -241,13 +241,13 @@ TEST_P(DummyMobileManipulatorParametersTests, asynchronousTracking) {
           observation.time += 1.0 / f_mrt;
 
           // Evaluate the policy
-          mpcInterface.updatePolicy();
-          mpcInterface.evaluatePolicy(
+          mpcInterface.update_policy();
+          mpcInterface.evaluate_policy(
               observation.time, vector_t::Zero(modelInfo.stateDim),
               observation.state, observation.input, observation.mode);
 
           // use optimal state for the next observation:
-          mpcInterface.setCurrentObservation(observation);
+          mpcInterface.set_current_observation(observation);
         },
         f_mrt);
   }

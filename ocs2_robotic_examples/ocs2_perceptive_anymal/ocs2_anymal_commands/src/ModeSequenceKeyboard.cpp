@@ -16,7 +16,7 @@ ModeSequenceKeyboard::ModeSequenceKeyboard(ros::NodeHandle nodeHandle, const std
   ROS_INFO_STREAM(robotName + "_mpc_mode_schedule node is setting up ...");
   ocs2::loadData::loadStdVector(gaitFile, "list", gaitList_, verbose);
 
-  modeSequenceTemplatePublisher_ = nodeHandle.advertise<ocs2_msgs::mode_schedule>(robotName + "_mpc_mode_schedule", 1, true);
+  mode_sequenceTemplatePublisher_ = nodeHandle.advertise<ocs2_msgs::mode_schedule>(robotName + "_mpc_mode_schedule", 1, true);
 
   gaitMap_.clear();
   for (const auto& gaitName : gaitList_) {
@@ -30,7 +30,7 @@ void ModeSequenceKeyboard::getKeyboardCommand() {
   std::cout << commadMsg << ": ";
 
   auto shouldTerminate = []() { return !ros::ok() || !ros::master::check(); };
-  const auto gaitCommand = ocs2::getCommandLineString(shouldTerminate);
+  const auto gaitCommand = ocs2::get_cmdline_str(shouldTerminate);
 
   if (gaitCommand.empty()) {
     return;
@@ -42,8 +42,8 @@ void ModeSequenceKeyboard::getKeyboardCommand() {
   }
 
   try {
-    ModeSequenceTemplate modeSequenceTemplate = gaitMap_.at(gaitCommand);
-    publishModeSequenceTemplate(modeSequenceTemplate);
+    ModeSequenceTemplate mode_sequenceTemplate = gaitMap_.at(gaitCommand);
+    publishModeSequenceTemplate(mode_sequenceTemplate);
   } catch (const std::out_of_range& e) {
     std::cout << "Gait \"" << gaitCommand << "\" not found.\n";
     printGaitList(gaitList_);
@@ -59,8 +59,8 @@ void ModeSequenceKeyboard::printGaitList(const std::vector<std::string>& gaitLis
   std::cout << std::endl;
 }
 
-void ModeSequenceKeyboard::publishModeSequenceTemplate(const ModeSequenceTemplate& modeSchedule) {
-  modeSequenceTemplatePublisher_.publish(createModeSequenceTemplateMsg(modeSchedule));
+void ModeSequenceKeyboard::publishModeSequenceTemplate(const ModeSequenceTemplate& mode_schedule) {
+  mode_sequenceTemplatePublisher_.publish(createModeSequenceTemplateMsg(mode_schedule));
 }
 
 }  // namespace switched_model

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.8)
 project(ocs2_ballbot)
 
 # Generate compile_commands.json for clang tools
@@ -68,7 +68,8 @@ add_library(${PROJECT_NAME}
 add_dependencies(${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}
 )
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(
+  ${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
   dl

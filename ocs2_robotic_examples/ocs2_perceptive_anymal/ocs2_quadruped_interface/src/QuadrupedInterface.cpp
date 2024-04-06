@@ -51,7 +51,7 @@ QuadrupedInterface::QuadrupedInterface(const kinematic_model_t& kinematicModel, 
   std::unique_ptr<TerrainModel> terrainModel(new PlanarTerrainModel(std::move(settings_.terrainPlane_)));
 
   // Mode schedule manager
-  modeScheduleManagerPtr_ = std::make_shared<SwitchedModelModeScheduleManager>(std::move(gaitSchedule), std::move(swingTrajectoryPlanner),
+  mode_scheduleManagerPtr_ = std::make_shared<SwitchedModelModeScheduleManager>(std::move(gaitSchedule), std::move(swingTrajectoryPlanner),
                                                                                std::move(terrainModel));
   // Dynamics parameter module
   dynamicsParametersSynchronizedModulePtr_ = std::make_shared<DynamicsParametersSynchronizedModule>();

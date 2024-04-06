@@ -99,7 +99,7 @@ public:
    * @param [in] initState: The initial state.
    * @param [in] finalTime: The final time.
    * @param [in] controller: control policy.
-   * @param [in, out] modeSchedule: Defines the sequence of modes and the associated event times. For TimeTriggeredRollout
+   * @param [in, out] mode_schedule: Defines the sequence of modes and the associated event times. For TimeTriggeredRollout
    *                                this is an input argument while for StateTriggeredRollout this is an output argument.
    * @param [out] timeTrajectory: The time trajectory stamp.
    * @param [out] postEventIndices: Indices containing past-the-end index of events trigger.
@@ -110,7 +110,7 @@ public:
    */
   virtual vector_t run(
     scalar_t initTime, const vector_t & initState, scalar_t finalTime, ControllerBase * controller,
-    ModeSchedule & modeSchedule, scalar_array_t & timeTrajectory, size_array_t & postEventIndices,
+    ModeSchedule & mode_schedule, scalar_array_t & timeTrajectory, size_array_t & postEventIndices,
     vector_array_t & stateTrajectory, vector_array_t & inputTrajectory) = 0;
 
   /**
@@ -128,7 +128,7 @@ public:
 protected:
   /** Extracts an array of the rollout's start and final times for each active mode. */
   std::vector<std::pair<scalar_t, scalar_t>> findActiveModesTimeInterval(
-    scalar_t initTime, scalar_t finalTime, const scalar_array_t & eventTimes) const;
+    scalar_t initTime, scalar_t finalTime, const scalar_array_t & event_times) const;
 
   /** Checks for the numerical stability if rollout::Settings::checkNumericalStability is true. */
   void checkNumericalStability(

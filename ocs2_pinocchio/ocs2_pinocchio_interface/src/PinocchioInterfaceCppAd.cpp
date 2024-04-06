@@ -27,10 +27,11 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <ocs2_pinocchio_interface/PinocchioInterface.h>
-#include <ocs2_pinocchio_interface/implementation/PinocchioInterface.h>
+#include "ocs2_pinocchio_interface/PinocchioInterface.hpp"
+#include "ocs2_pinocchio_interface/implementation/PinocchioInterface.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
 // explicit instantiation
 template class PinocchioInterfaceTpl<ad_scalar_t>;

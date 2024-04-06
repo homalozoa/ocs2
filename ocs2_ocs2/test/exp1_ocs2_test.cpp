@@ -80,7 +80,7 @@ TEST(exp1_gslq_test, exp1_ocs2_test) {
   // logic rule
   std::vector<double> initEventTimes{1.0, 2.0};
   std::vector<size_t> subsystemsSequence{0, 1, 2};
-  std::shared_ptr<ModeScheduleManager<STATE_DIM, INPUT_DIM>> modeScheduleManagerPtr(
+  std::shared_ptr<ModeScheduleManager<STATE_DIM, INPUT_DIM>> mode_scheduleManagerPtr(
       new ModeScheduleManager<STATE_DIM, INPUT_DIM>({initEventTimes, subsystemsSequence}));
 
   double startTime = 0.0;
@@ -99,17 +99,17 @@ TEST(exp1_gslq_test, exp1_ocs2_test) {
   /******************************************************************************************************/
   /******************************************************************************************************/
   // system dynamics
-  EXP1_System systemDynamics(modeScheduleManagerPtr);
+  EXP1_System systemDynamics(mode_scheduleManagerPtr);
   TimeTriggeredRollout<STATE_DIM, INPUT_DIM> timeTriggeredRollout(systemDynamics, rolloutSettings);
 
   // system derivatives
-  EXP1_SystemDerivative systemDerivative(modeScheduleManagerPtr);
+  EXP1_SystemDerivative systemDerivative(mode_scheduleManagerPtr);
 
   // system constraints
   ConstraintBase systemConstraint;
 
   // system cost functions
-  EXP1_CostFunction systemCostFunction(modeScheduleManagerPtr);
+  EXP1_CostFunction systemCostFunction(mode_scheduleManagerPtr);
 
   // system operatingTrajectories
   Eigen::Matrix<double, STATE_DIM, 1> stateOperatingPoint = Eigen::Matrix<double, STATE_DIM, 1>::Zero();
@@ -121,7 +121,7 @@ TEST(exp1_gslq_test, exp1_ocs2_test) {
   /******************************************************************************************************/
   // OCS2
   OCS2<STATE_DIM, INPUT_DIM> ocs2(&timeTriggeredRollout, &systemDerivative, &systemConstraint, &systemCostFunction, &operatingTrajectories,
-                                  slqSettings, modeScheduleManagerPtr, nullptr, gddpSettings, nlpSettings);
+                                  slqSettings, mode_scheduleManagerPtr, nullptr, gddpSettings, nlpSettings);
 
   // run ocs2 using LQ method for computing the derivatives
   ocs2.gddpSettings().useLQForDerivatives_ = true;

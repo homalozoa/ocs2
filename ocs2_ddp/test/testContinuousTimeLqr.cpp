@@ -27,18 +27,16 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
-
-#include "ocs2_ddp/ContinuousTimeLqr.h"
-
-#include <ocs2_core/cost/QuadraticStateInputCost.h>
-#include <ocs2_core/dynamics/LinearSystemDynamics.h>
-
-#include <ocs2_qp_solver/test/testProblemsGeneration.h>
+#include "gtest/gtest.h"
+#include "ocs2_core/cost/QuadraticStateInputCost.hpp"
+#include "ocs2_core/dynamics/LinearSystemDynamics.hpp"
+#include "ocs2_ddp/ContinuousTimeLqr.hpp"
+#include "ocs2_qp_solver/test/testProblemsGeneration.hpp"
 
 using namespace ocs2;
 
-TEST(testContinousTimeLqr, compareWithMatlab) {
+TEST(testContinousTimeLqr, compareWithMatlab)
+{
   // Set up problem with arbitrary values
   const matrix_t A = (matrix_t(2, 2) << 1.0, 2.0, 3.0, 4.0).finished();
   const matrix_t B = (matrix_t(2, 1) << 5.0, 6.0).finished();
@@ -64,15 +62,19 @@ TEST(testContinousTimeLqr, compareWithMatlab) {
 
   // MATLAB results, notice sign difference with MATLAB, ocs2 computes K for u = K * x
   const matrix_t K_check = (matrix_t(1, 2) << -0.905054653909129, -1.802904101100247).finished();
-  const matrix_t S_check = (matrix_t(2, 2) << 1.109884545577592, -0.187358243057052, -0.187358243057052, 1.625218620131083).finished();
+  const matrix_t S_check =
+    (matrix_t(2, 2) << 1.109884545577592, -0.187358243057052, -0.187358243057052, 1.625218620131083)
+      .finished();
 
   const scalar_t tolerance = 1e-9;
   ASSERT_TRUE(lqrSolution.feedbackGains.isApprox(K_check, tolerance));
   ASSERT_TRUE(lqrSolution.valueFunction.isApprox(S_check, tolerance));
 }
 
-TEST(testContinousTimeLqr, evaluateCAREresidual) {
-  const scalar_t careResidualNormTolerance = 1e-9;  // CARE needs to be solved up until this tolerance
+TEST(testContinousTimeLqr, evaluateCAREresidual)
+{
+  const scalar_t careResidualNormTolerance =
+    1e-9;  // CARE needs to be solved up until this tolerance
 
   // Check random problems of increasing size.
   for (int n = 2; n < 65; n *= 2) {
@@ -99,16 +101,18 @@ TEST(testContinousTimeLqr, evaluateCAREresidual) {
     const scalar_t timeLinearization = 0.0;
     const vector_t stateLinearization = vector_t::Random(n);
     const vector_t inputLinearization = vector_t::Random(m);
-    const auto lqrSolution = continuous_time_lqr::solve(problem, timeLinearization, stateLinearization, inputLinearization);
+    const auto lqrSolution = continuous_time_lqr::solve(
+      problem, timeLinearization, stateLinearization, inputLinearization);
 
     // Check CARE
-    const auto& A = dynamicsMatrices.dfdx;
-    const auto& B = dynamicsMatrices.dfdu;
-    const auto& Q = costMatrices.dfdxx;
-    const auto& R = costMatrices.dfduu;
-    const auto& P = costMatrices.dfdux;
-    const auto& S = lqrSolution.valueFunction;
-    const matrix_t careResidual = A.transpose() * S + S * A - (S * B + P.transpose()) * R.lu().solve(B.transpose() * S + P) + Q;
+    const auto & A = dynamicsMatrices.dfdx;
+    const auto & B = dynamicsMatrices.dfdu;
+    const auto & Q = costMatrices.dfdxx;
+    const auto & R = costMatrices.dfduu;
+    const auto & P = costMatrices.dfdux;
+    const auto & S = lqrSolution.valueFunction;
+    const matrix_t careResidual =
+      A.transpose() * S + S * A - (S * B + P.transpose()) * R.lu().solve(B.transpose() * S + P) + Q;
     ASSERT_LT(careResidual.norm(), careResidualNormTolerance);
   }
 }

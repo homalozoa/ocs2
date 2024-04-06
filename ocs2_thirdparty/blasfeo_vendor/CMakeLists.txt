@@ -10,7 +10,7 @@ set(EXTPRJ_NAME blasfeo)
 set(PREFIX_DIR "${CMAKE_CURRENT_BINARY_DIR}/${EXTPRJ_NAME}")
 set(OUT_DIR "${CMAKE_BINARY_DIR}/${EXTPRJ_NAME}")
 set(PKG_URL "https://github.com/giaf/blasfeo")
-set(PKG_VER ae6e2d1dea015862a09990b95905038a756ffc7d)
+set(PKG_VER b39df4d6774dcf37aa759ea65a26f2c8affff281)
 
 include(ExternalProject)
 
@@ -20,28 +20,11 @@ externalproject_add(
   GIT_REPOSITORY ${PKG_URL}
   GIT_TAG ${PKG_VER}
   CMAKE_ARGS
-      -DCMAKE_INSTALL_PREFIX=${PREFIX_DIR}
+      -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
       -DBLASFEO_EXAMPLES=OFF
       -DBUILD_SHARED_LIBS=ON
-  INSTALL_DIR "${PREFIX_DIR}"
+  INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
   TIMEOUT 1200
 )
 
-set(blasfeo
-  blasfeo
-)
-
-install(DIRECTORY ${OUT_DIR}/include
-  DESTINATION include/${EXTPRJ_NAME}
-)
-
-install(DIRECTORY ${OUT_DIR}/lib/
-  DESTINATION lib/
-  REGEX ".?so.?"
-  PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
-    GROUP_EXECUTE GROUP_READ
-)
-
-ament_export_include_directories(include)
-ament_export_libraries(blasfeo)
 ament_package()

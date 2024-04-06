@@ -13,7 +13,7 @@ in the Eclipse Public License, Version 2.0 are satisfied:
 ---------------------------------------------------------------------------- */
 // cppad.hpp gets included at the end
 # define EIGEN_MATRIXBASE_PLUGIN <cppad/example/eigen_plugin.hpp>
-# include <Eigen/Core>
+# include "eigen3/Eigen/Core"
 
 /*
 $begin cppad_eigen.hpp$$
@@ -68,7 +68,7 @@ contain an example and test of this include file.
 They return true if they succeed and false otherwise.
 
 $head Include Files$$
-The file $code <Eigen/Core>$$ is included before
+The file $code "eigen3/Eigen/Core"$$ is included before
 these definitions and $code <cppad/cppad.hpp>$$ is included after.
 
 $head CppAD Declarations$$

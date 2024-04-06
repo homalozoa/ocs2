@@ -17,9 +17,9 @@ ocs2_switched_model_msgs::gait toMessage(const Gait& gait) {
   for (const auto& phase : gait.eventPhases) {
     msg.eventPhases.push_back(phase);
   }
-  msg.modeSequence.reserve(gait.modeSequence.size());
-  for (const auto& mode : gait.modeSequence) {
-    msg.modeSequence.push_back(mode);
+  msg.mode_sequence.reserve(gait.mode_sequence.size());
+  for (const auto& mode : gait.mode_sequence) {
+    msg.mode_sequence.push_back(mode);
   }
   return msg;
 }
@@ -31,9 +31,9 @@ Gait fromMessage(const ocs2_switched_model_msgs::gait& msg) {
   for (const auto& phase : msg.eventPhases) {
     gait.eventPhases.push_back(phase);
   }
-  gait.modeSequence.reserve(msg.modeSequence.size());
-  for (const auto& mode : msg.modeSequence) {
-    gait.modeSequence.push_back(mode);
+  gait.mode_sequence.reserve(msg.mode_sequence.size());
+  for (const auto& mode : msg.mode_sequence) {
+    gait.mode_sequence.push_back(mode);
   }
   assert(isValidGait(gait));
   return gait;

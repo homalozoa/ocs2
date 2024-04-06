@@ -27,22 +27,26 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <ocs2_robotic_tools/common/RotationTransforms.h>
+#include "ocs2_robotic_tools/common/RotationTransforms.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-Eigen::Quaternion<ad_scalar_t> matrixToQuaternion(const Eigen::Matrix<ad_scalar_t, 3, 3>& R) {
+Eigen::Quaternion<ad_scalar_t> matrixToQuaternion(const Eigen::Matrix<ad_scalar_t, 3, 3> & R)
+{
   ad_scalar_t t1, t2, t;
   ad_scalar_t x1, x2, x;
   ad_scalar_t y1, y2, y;
   ad_scalar_t z1, z2, z;
   ad_scalar_t w1, w2, w;
 
-  t1 = CppAD::CondExpGt(R(0, 0), R(1, 1), 1 + R(0, 0) - R(1, 1) - R(2, 2), 1 - R(0, 0) + R(1, 1) - R(2, 2));
-  t2 = CppAD::CondExpLt(R(0, 0), -R(1, 1), 1 - R(0, 0) - R(1, 1) + R(2, 2), 1 + R(0, 0) + R(1, 1) + R(2, 2));
+  t1 = CppAD::CondExpGt(
+    R(0, 0), R(1, 1), 1 + R(0, 0) - R(1, 1) - R(2, 2), 1 - R(0, 0) + R(1, 1) - R(2, 2));
+  t2 = CppAD::CondExpLt(
+    R(0, 0), -R(1, 1), 1 - R(0, 0) - R(1, 1) + R(2, 2), 1 + R(0, 0) + R(1, 1) + R(2, 2));
   t = CppAD::CondExpLt(R(2, 2), ad_scalar_t(0.0), t1, t2);
 
   x1 = CppAD::CondExpGt(R(0, 0), R(1, 1), t, R(1, 0) + R(0, 1));
@@ -70,22 +74,26 @@ Eigen::Quaternion<ad_scalar_t> matrixToQuaternion(const Eigen::Matrix<ad_scalar_
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-namespace {  // helper functions to select the right modulo
+namespace
+{  // helper functions to select the right modulo
 template <typename SCALAR_T>
 SCALAR_T scalarMod(SCALAR_T, SCALAR_T);
 
 template <>
-float scalarMod<float>(float x, float y) {
+float scalarMod<float>(float x, float y)
+{
   return fmodf(x, y);
 }
 
 template <>
-double scalarMod<double>(double x, double y) {
+double scalarMod<double>(double x, double y)
+{
   return fmod(x, y);
 }
 }  // namespace
 
-scalar_t moduloAngleWithReference(scalar_t x, scalar_t reference) {
+scalar_t moduloAngleWithReference(scalar_t x, scalar_t reference)
+{
   const scalar_t ub = reference + M_PI;  // upper bound
   const scalar_t lb = reference - M_PI;  // lower bound
 

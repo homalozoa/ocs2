@@ -168,15 +168,15 @@ private:
 /******************************************************************************************************/
 /******************************************************************************************************/
 inline std::shared_ptr<ReferenceManager> getExp0ReferenceManager(
-  const scalar_array_t & eventTimes, const std::vector<size_t> & modeSequence)
+  const scalar_array_t & event_times, const std::vector<size_t> & mode_sequence)
 {
   const vector_t x = (vector_t(2) << 4.0, 2.0).finished();
   const vector_t u = (vector_t(1) << 0.0).finished();
   TargetTrajectories targetTrajectories({0.0}, {x}, {u});
 
-  ModeSchedule modeSchedule(eventTimes, modeSequence);
+  ModeSchedule mode_schedule(event_times, mode_sequence);
 
-  return std::make_shared<ReferenceManager>(std::move(targetTrajectories), std::move(modeSchedule));
+  return std::make_shared<ReferenceManager>(std::move(targetTrajectories), std::move(mode_schedule));
 }
 
 /******************************************************************************************************/

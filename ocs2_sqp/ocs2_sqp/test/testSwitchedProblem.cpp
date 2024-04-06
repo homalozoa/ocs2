@@ -27,28 +27,30 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "ocs2_core/constraint/LinearStateInputConstraint.hpp"
+#include "ocs2_core/constraint/StateInputConstraint.hpp"
+#include "ocs2_core/initialization/DefaultInitializer.hpp"
+#include "ocs2_core/misc/LinearInterpolation.hpp"
+#include "ocs2_oc/oc_data/TimeDiscretization.hpp"
+#include "ocs2_oc/synchronized_module/ReferenceManager.hpp"
+#include "ocs2_oc/test/testProblemsGeneration.hpp"
+#include "ocs2_sqp/SqpSolver.hpp"
 
-#include "ocs2_sqp/SqpSolver.h"
-
-#include <ocs2_core/constraint/LinearStateInputConstraint.h>
-#include <ocs2_core/constraint/StateInputConstraint.h>
-#include <ocs2_core/initialization/DefaultInitializer.h>
-#include <ocs2_core/misc/LinearInterpolation.h>
-#include <ocs2_oc/oc_data/TimeDiscretization.h>
-#include <ocs2_oc/synchronized_module/ReferenceManager.h>
-
-#include <ocs2_oc/test/testProblemsGeneration.h>
-
-namespace ocs2 {
-namespace {
+namespace ocs2
+{
+namespace
+{
 /**
  * A constraint that in mode 0 sets u[0] = 0 and in mode 1 sets u[1] = 1
  */
-class SwitchedConstraint : public StateInputConstraint {
- public:
+class SwitchedConstraint : public StateInputConstraint
+{
+public:
   explicit SwitchedConstraint(std::shared_ptr<ReferenceManager> referenceManagerPtr)
-      : StateInputConstraint(ConstraintOrder::Linear), referenceManagerPtr_(std::move(referenceManagerPtr)) {
+  : StateInputConstraint(ConstraintOrder::Linear),
+    referenceManagerPtr_(std::move(referenceManagerPtr))
+  {
     constexpr int n = 3;
     constexpr int m = 2;
     constexpr int nc = 1;
@@ -64,28 +66,36 @@ class SwitchedConstraint : public StateInputConstraint {
   }
 
   ~SwitchedConstraint() override = default;
-  SwitchedConstraint* clone() const override { return new SwitchedConstraint(*this); }
+  SwitchedConstraint * clone() const override { return new SwitchedConstraint(*this); }
 
-  size_t getNumConstraints(scalar_t time) const override {
+  size_t getNumConstraints(scalar_t time) const override
+  {
     const auto activeMode = referenceManagerPtr_->getModeSchedule().modeAtTime(time);
     return subsystemConstraintsPtr_[activeMode]->getNumConstraints(time);
   }
 
-  vector_t getValue(scalar_t time, const vector_t& state, const vector_t& input, const PreComputation& preComp) const override {
+  vector_t getValue(
+    scalar_t time, const vector_t & state, const vector_t & input,
+    const PreComputation & preComp) const override
+  {
     const auto activeMode = referenceManagerPtr_->getModeSchedule().modeAtTime(time);
     return subsystemConstraintsPtr_[activeMode]->getValue(time, state, input, preComp);
   };
 
-  VectorFunctionLinearApproximation getLinearApproximation(scalar_t time, const vector_t& state, const vector_t& input,
-                                                           const PreComputation& preComp) const {
+  VectorFunctionLinearApproximation getLinearApproximation(
+    scalar_t time, const vector_t & state, const vector_t & input,
+    const PreComputation & preComp) const
+  {
     const auto activeMode = referenceManagerPtr_->getModeSchedule().modeAtTime(time);
-    return subsystemConstraintsPtr_[activeMode]->getLinearApproximation(time, state, input, preComp);
+    return subsystemConstraintsPtr_[activeMode]->getLinearApproximation(
+      time, state, input, preComp);
   }
 
- private:
-  SwitchedConstraint(const SwitchedConstraint& other)
-      : ocs2::StateInputConstraint(other), referenceManagerPtr_(other.referenceManagerPtr_) {
-    for (const auto& constraint : other.subsystemConstraintsPtr_) {
+private:
+  SwitchedConstraint(const SwitchedConstraint & other)
+  : ocs2::StateInputConstraint(other), referenceManagerPtr_(other.referenceManagerPtr_)
+  {
+    for (const auto & constraint : other.subsystemConstraintsPtr_) {
       subsystemConstraintsPtr_.emplace_back(constraint->clone());
     }
   }
@@ -94,7 +104,8 @@ class SwitchedConstraint : public StateInputConstraint {
   std::vector<std::unique_ptr<ocs2::StateInputConstraint>> subsystemConstraintsPtr_;
 };
 
-std::pair<PrimalSolution, std::vector<PerformanceIndex>> solveWithEventTime(scalar_t eventTime) {
+std::pair<PrimalSolution, std::vector<PerformanceIndex>> solveWithEventTime(scalar_t eventTime)
+{
   constexpr int n = 3;
   constexpr int m = 2;
 
@@ -109,19 +120,24 @@ std::pair<PrimalSolution, std::vector<PerformanceIndex>> solveWithEventTime(scal
   problem.costPtr->add("intermediateCost", ocs2::getOcs2Cost(ocs2::getRandomCost(n, m)));
   problem.softConstraintPtr->add("intermediateCost", ocs2::getOcs2Cost(ocs2::getRandomCost(n, m)));
   problem.preJumpCostPtr->add("eventCost", ocs2::getOcs2StateCost(ocs2::getRandomCost(n, 0)));
-  problem.preJumpSoftConstraintPtr->add("eventCost", ocs2::getOcs2StateCost(ocs2::getRandomCost(n, 0)));
+  problem.preJumpSoftConstraintPtr->add(
+    "eventCost", ocs2::getOcs2StateCost(ocs2::getRandomCost(n, 0)));
   problem.finalCostPtr->add("finalCost", ocs2::getOcs2StateCost(ocs2::getRandomCost(n, 0)));
-  problem.finalSoftConstraintPtr->add("finalCost", ocs2::getOcs2StateCost(ocs2::getRandomCost(n, 0)));
+  problem.finalSoftConstraintPtr->add(
+    "finalCost", ocs2::getOcs2StateCost(ocs2::getRandomCost(n, 0)));
 
   // Reference Manager
-  const ocs2::ModeSchedule modeSchedule({eventTime}, {0, 1});
-  const ocs2::TargetTrajectories targetTrajectories({0.0}, {ocs2::vector_t::Random(n)}, {ocs2::vector_t::Random(m)});
-  auto referenceManagerPtr = std::make_shared<ocs2::ReferenceManager>(targetTrajectories, modeSchedule);
+  const ocs2::ModeSchedule mode_schedule({eventTime}, {0, 1});
+  const ocs2::TargetTrajectories targetTrajectories(
+    {0.0}, {ocs2::vector_t::Random(n)}, {ocs2::vector_t::Random(m)});
+  auto referenceManagerPtr =
+    std::make_shared<ocs2::ReferenceManager>(targetTrajectories, mode_schedule);
 
   problem.targetTrajectoriesPtr = &targetTrajectories;
 
   // Constraint
-  problem.equalityConstraintPtr->add("switchedConstraint", std::make_unique<SwitchedConstraint>(referenceManagerPtr));
+  problem.equalityConstraintPtr->add(
+    "switchedConstraint", std::make_unique<SwitchedConstraint>(referenceManagerPtr));
 
   ocs2::DefaultInitializer zeroInitializer(m);
 
@@ -151,14 +167,15 @@ std::pair<PrimalSolution, std::vector<PerformanceIndex>> solveWithEventTime(scal
 }  // namespace
 }  // namespace ocs2
 
-TEST(test_switched_problem, switched_constraint) {
+TEST(test_switched_problem, switched_constraint)
+{
   const ocs2::scalar_t startTime = 0.0;
   const ocs2::scalar_t finalTime = 1.0;
   const ocs2::scalar_t eventTime = 0.1875;
   const double tol = 1e-9;
   const auto solution = ocs2::solveWithEventTime(eventTime);
-  const auto& primalSolution = solution.first;
-  const auto& performanceLog = solution.second;
+  const auto & primalSolution = solution.first;
+  const auto & performanceLog = solution.second;
 
   /*
    * Assert performance
@@ -178,10 +195,10 @@ TEST(test_switched_problem, switched_constraint) {
   ocs2::scalar_t t_check = startTime;
   ocs2::scalar_t dt_check = 1e-5;
   while (t_check < finalTime) {
-    ocs2::vector_t xNominal =
-        ocs2::LinearInterpolation::interpolate(t_check, primalSolution.timeTrajectory_, primalSolution.stateTrajectory_);
-    ocs2::vector_t uNominal =
-        ocs2::LinearInterpolation::interpolate(t_check, primalSolution.timeTrajectory_, primalSolution.inputTrajectory_);
+    ocs2::vector_t xNominal = ocs2::LinearInterpolation::interpolate(
+      t_check, primalSolution.timeTrajectory_, primalSolution.stateTrajectory_);
+    ocs2::vector_t uNominal = ocs2::LinearInterpolation::interpolate(
+      t_check, primalSolution.timeTrajectory_, primalSolution.inputTrajectory_);
     ocs2::vector_t uControl = primalSolution.controllerPtr_->computeInput(t_check, xNominal);
     if (t_check < eventTime) {
       ASSERT_LT(std::abs(uNominal[0]), tol);
@@ -194,15 +211,16 @@ TEST(test_switched_problem, switched_constraint) {
   }
 }
 
-TEST(test_switched_problem, event_at_beginning) {
+TEST(test_switched_problem, event_at_beginning)
+{
   // The event should replace the start time, all inputs should be after the event.
   const ocs2::scalar_t startTime = 0.0;
   const ocs2::scalar_t finalTime = 1.0;
   const ocs2::scalar_t eventTime = 1e-8;
   const double tol = 1e-9;
   const auto solution = ocs2::solveWithEventTime(eventTime);
-  const auto& primalSolution = solution.first;
-  const auto& performanceLog = solution.second;
+  const auto & primalSolution = solution.first;
+  const auto & performanceLog = solution.second;
 
   /*
    * Assert performance
@@ -220,10 +238,10 @@ TEST(test_switched_problem, event_at_beginning) {
   ocs2::scalar_t t_check = eventTime;
   ocs2::scalar_t dt_check = 1e-5;
   while (t_check < finalTime) {
-    ocs2::vector_t xNominal =
-        ocs2::LinearInterpolation::interpolate(t_check, primalSolution.timeTrajectory_, primalSolution.stateTrajectory_);
-    ocs2::vector_t uNominal =
-        ocs2::LinearInterpolation::interpolate(t_check, primalSolution.timeTrajectory_, primalSolution.inputTrajectory_);
+    ocs2::vector_t xNominal = ocs2::LinearInterpolation::interpolate(
+      t_check, primalSolution.timeTrajectory_, primalSolution.stateTrajectory_);
+    ocs2::vector_t uNominal = ocs2::LinearInterpolation::interpolate(
+      t_check, primalSolution.timeTrajectory_, primalSolution.inputTrajectory_);
     ocs2::vector_t uControl = primalSolution.controllerPtr_->computeInput(t_check, xNominal);
     ASSERT_LT(std::abs(uNominal[1]), tol);
     ASSERT_LT(std::abs(uControl[1]), tol);
@@ -231,15 +249,16 @@ TEST(test_switched_problem, event_at_beginning) {
   }
 }
 
-TEST(test_switched_problem, event_at_end) {
+TEST(test_switched_problem, event_at_end)
+{
   // The event should be ignored because its too close to the final time, all inputs should be before the event.
   const ocs2::scalar_t startTime = 0.0;
   const ocs2::scalar_t finalTime = 1.0;
   const ocs2::scalar_t eventTime = 1.0 - 1e-8;
   const double tol = 1e-9;
   const auto solution = ocs2::solveWithEventTime(eventTime);
-  const auto& primalSolution = solution.first;
-  const auto& performanceLog = solution.second;
+  const auto & primalSolution = solution.first;
+  const auto & performanceLog = solution.second;
 
   /*
    * Assert performance
@@ -250,17 +269,18 @@ TEST(test_switched_problem, event_at_end) {
   ASSERT_LT(performanceLog.back().dynamicsViolationSSE, tol);
 
   // Should have correct node pre and post event time
-  ASSERT_TRUE(std::none_of(primalSolution.timeTrajectory_.begin(), primalSolution.timeTrajectory_.end(),
-                           [=](ocs2::scalar_t t) { return t == eventTime; }));
+  ASSERT_TRUE(std::none_of(
+    primalSolution.timeTrajectory_.begin(), primalSolution.timeTrajectory_.end(),
+    [=](ocs2::scalar_t t) { return t == eventTime; }));
 
   // Inspect solution, check at a dt smaller than solution to check interpolation around the switch.
   ocs2::scalar_t t_check = startTime;
   ocs2::scalar_t dt_check = 1e-5;
   while (t_check < finalTime) {
-    ocs2::vector_t xNominal =
-        ocs2::LinearInterpolation::interpolate(t_check, primalSolution.timeTrajectory_, primalSolution.stateTrajectory_);
-    ocs2::vector_t uNominal =
-        ocs2::LinearInterpolation::interpolate(t_check, primalSolution.timeTrajectory_, primalSolution.inputTrajectory_);
+    ocs2::vector_t xNominal = ocs2::LinearInterpolation::interpolate(
+      t_check, primalSolution.timeTrajectory_, primalSolution.stateTrajectory_);
+    ocs2::vector_t uNominal = ocs2::LinearInterpolation::interpolate(
+      t_check, primalSolution.timeTrajectory_, primalSolution.inputTrajectory_);
     ocs2::vector_t uControl = primalSolution.controllerPtr_->computeInput(t_check, xNominal);
     ASSERT_LT(std::abs(uNominal[0]), tol);
     ASSERT_LT(std::abs(uControl[0]), tol);

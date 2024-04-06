@@ -27,17 +27,20 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
+#include "ocs2_ddp/riccati_equations/RiccatiModification.hpp"
+
 #include <iostream>
 
-#include "ocs2_ddp/riccati_equations/RiccatiModification.h"
-
-namespace ocs2 {
-namespace riccati_modification {
+namespace ocs2
+{
+namespace riccati_modification
+{
 
 /**
  * Displays all variables
  */
-void display(const Data& data) {
+void display(const Data & data)
+{
   std::cerr << std::endl;
   std::cerr << "time: " << data.time_ << "\n";
   std::cerr << "deltaQm:\n" << data.deltaQm_ << "\n";

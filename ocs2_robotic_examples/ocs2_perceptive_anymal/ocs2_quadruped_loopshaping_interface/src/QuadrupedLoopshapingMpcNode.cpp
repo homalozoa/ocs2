@@ -16,7 +16,7 @@
 namespace switched_model_loopshaping {
 
 void quadrupedLoopshapingMpcNode(ros::NodeHandle& nodeHandle, const QuadrupedLoopshapingInterface& quadrupedInterface,
-                                 std::unique_ptr<ocs2::MPC_BASE> mpcPtr) {
+                                 std::unique_ptr<ocs2::MpcBase> mpcPtr) {
   const std::string robotName = "anymal";
 
   auto loopshapingSolverModule = quadrupedInterface.getLoopshapingSynchronizedModule();

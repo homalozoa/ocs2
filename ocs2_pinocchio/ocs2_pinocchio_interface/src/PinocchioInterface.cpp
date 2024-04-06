@@ -26,19 +26,22 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
+#include "ocs2_pinocchio_interface/PinocchioInterface.hpp"
+
 #include <iomanip>
 
-#include <ocs2_pinocchio_interface/PinocchioInterface.h>
-#include <ocs2_pinocchio_interface/implementation/PinocchioInterface.h>
+#include "ocs2_pinocchio_interface/implementation/PinocchioInterface.hpp"
 
-namespace ocs2 {
+namespace ocs2
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
 template <>
 template <>
-PinocchioInterfaceCppAd PinocchioInterface::toCppAd() const {
+PinocchioInterfaceCppAd PinocchioInterface::toCppAd() const
+{
   auto cppAdModel = getModel().cast<ad_scalar_t>();
 
   // TODO (rgrandia) : remove after bug fix. The cast function forgets to copy this member.
@@ -56,8 +59,9 @@ template class PinocchioInterfaceTpl<scalar_t>;
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-std::ostream& operator<<(std::ostream& os, const PinocchioInterface& p) {
-  const auto& model = p.getModel();
+std::ostream & operator<<(std::ostream & os, const PinocchioInterface & p)
+{
+  const auto & model = p.getModel();
   os << "model.nv = " << model.nv << '\n';
   os << "model.nq = " << model.nq << '\n';
   os << "model.njoints = " << model.njoints << '\n';

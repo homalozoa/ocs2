@@ -8,15 +8,15 @@
 
 namespace switched_model {
 
-EndEffectorVelocityConstraint::EndEffectorVelocityConstraint(int legNumber, const SwitchedModelModeScheduleManager& modeScheduleManager)
-    : StateInputConstraint(ocs2::ConstraintOrder::Linear), legNumber_(legNumber), modeScheduleManager_(&modeScheduleManager) {}
+EndEffectorVelocityConstraint::EndEffectorVelocityConstraint(int legNumber, const SwitchedModelModeScheduleManager& mode_scheduleManager)
+    : StateInputConstraint(ocs2::ConstraintOrder::Linear), legNumber_(legNumber), mode_scheduleManager_(&mode_scheduleManager) {}
 
 EndEffectorVelocityConstraint* EndEffectorVelocityConstraint::clone() const {
   return new EndEffectorVelocityConstraint(*this);
 };
 
 bool EndEffectorVelocityConstraint::isActive(scalar_t time) const {
-  return modeScheduleManager_->getContactFlags(time)[legNumber_];
+  return mode_scheduleManager_->getContactFlags(time)[legNumber_];
 }
 
 size_t EndEffectorVelocityConstraint::getNumConstraints(scalar_t time) const {

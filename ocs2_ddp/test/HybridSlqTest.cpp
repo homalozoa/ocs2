@@ -27,24 +27,22 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
 
-#include <ocs2_oc/rollout/StateTriggeredRollout.h>
-#include <ocs2_oc/synchronized_module/ReferenceManager.h>
-#include <ocs2_oc/synchronized_module/SolverObserver.h>
-#include <ocs2_oc/test/dynamics_hybrid_slq_test.h>
-
-#include <ocs2_core/augmented_lagrangian/AugmentedLagrangian.h>
-#include <ocs2_core/cost/QuadraticStateCost.h>
-#include <ocs2_core/cost/QuadraticStateInputCost.h>
-#include <ocs2_core/initialization/OperatingPoints.h>
-#include <ocs2_core/penalties/Penalties.h>
-#include <ocs2_core/soft_constraint/StateInputSoftConstraint.h>
-
-#include <ocs2_ddp/SLQ.h>
+#include "gtest/gtest.h"
+#include "ocs2_core/augmented_lagrangian/AugmentedLagrangian.hpp"
+#include "ocs2_core/cost/QuadraticStateCost.hpp"
+#include "ocs2_core/cost/QuadraticStateInputCost.hpp"
+#include "ocs2_core/initialization/OperatingPoints.hpp"
+#include "ocs2_core/penalties/Penalties.hpp"
+#include "ocs2_core/soft_constraint/StateInputSoftConstraint.hpp"
+#include "ocs2_ddp/SLQ.hpp"
+#include "ocs2_oc/rollout/StateTriggeredRollout.hpp"
+#include "ocs2_oc/synchronized_module/ReferenceManager.hpp"
+#include "ocs2_oc/synchronized_module/SolverObserver.hpp"
+#include "ocs2_oc/test/dynamics_hybrid_slq_test.hpp"
 
 /*
  * Test for StateTriggeredRollout in combination with SLQ
@@ -67,7 +65,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * (2) Constraint compliance
  * (3) Check of cost function compared against cost calculated during trusted run of SLQ
  */
-TEST(HybridSlqTest, state_rollout_slq) {
+TEST(HybridSlqTest, state_rollout_slq)
+{
   using namespace ocs2;
 
   constexpr scalar_t minRelCost = 1e-6;  // to avoid early termination
@@ -121,8 +120,10 @@ TEST(HybridSlqTest, state_rollout_slq) {
   problem.costPtr->add("cost", std::make_unique<QuadraticStateInputCost>(Q, R));
   problem.preJumpCostPtr->add("preJumpCost", std::make_unique<QuadraticStateCost>(Q));
   problem.finalCostPtr->add("finalCost", std::make_unique<QuadraticStateCost>(Q));
-  problem.inequalityLagrangianPtr->add("bounds",
-                                       create(std::move(boundsConstraints), augmented::SlacknessSquaredHingePenalty::create({200.0, 0.1})));
+  problem.inequalityLagrangianPtr->add(
+    "bounds",
+    create(
+      std::move(boundsConstraints), augmented::SlacknessSquaredHingePenalty::create({200.0, 0.1})));
 
   const vector_t xNominal = vector_t::Zero(STATE_DIM);
   const vector_t uNominal = vector_t::Zero(INPUT_DIM);
@@ -136,32 +137,44 @@ TEST(HybridSlqTest, state_rollout_slq) {
 
   // Test 1: Check constraint compliance. It uses a solver observer to get metrics for the bounds constraints
   auto boundsConstraintsObserverPtr = SolverObserver::LagrangianTermObserver(
-      SolverObserver::Type::Intermediate, "bounds",
-      [&](const scalar_array_t& timeTraj, const std::vector<LagrangianMetricsConstRef>& metricsTraj) {
-        constexpr scalar_t constraintViolationTolerance = 1e-1;
-        for (size_t i = 0; i < metricsTraj.size(); i++) {
-          const vector_t constraintViolation = metricsTraj[i].constraint.cwiseMin(0.0);
-          EXPECT_NEAR(constraintViolation(0), 0.0, constraintViolationTolerance) << "At time " << timeTraj[i] << "\n";
-          EXPECT_NEAR(constraintViolation(1), 0.0, constraintViolationTolerance) << "At time " << timeTraj[i] << "\n";
-          EXPECT_NEAR(constraintViolation(2), 0.0, constraintViolationTolerance) << "At time " << timeTraj[i] << "\n";
-          EXPECT_NEAR(constraintViolation(3), 0.0, constraintViolationTolerance) << "At time " << timeTraj[i] << "\n";
-        }
-      });
+    SolverObserver::Type::Intermediate, "bounds",
+    [&](
+      const scalar_array_t & timeTraj, const std::vector<LagrangianMetricsConstRef> & metricsTraj) {
+      constexpr scalar_t constraintViolationTolerance = 1e-1;
+      std::cout << "matrix size: " << metricsTraj.size() << std::endl;
+      for (size_t i = 0; i < metricsTraj.size(); i++) {
+        const vector_t constraintViolation = metricsTraj[i].constraint.cwiseMin(0.0);
+        std::cout << "============================" << std::endl;
+        std::cout << constraintViolation(1) << std::endl;
+        std::cout << "----------------------------" << std::endl;
+        EXPECT_NEAR(constraintViolation(0), 0.0, constraintViolationTolerance)
+          << "At time " << timeTraj[i] << "\n";
+        EXPECT_NEAR(constraintViolation(1), 0.0, constraintViolationTolerance)
+          << "At time " << timeTraj[i] << "\n";
+        EXPECT_NEAR(constraintViolation(2), 0.0, constraintViolationTolerance)
+          << "At time " << timeTraj[i] << "\n";
+        EXPECT_NEAR(constraintViolation(3), 0.0, constraintViolationTolerance)
+          << "At time " << timeTraj[i] << "\n";
+      }
+    });
 
   // setup SLQ
   SLQ slq(ddpSettings, stateTriggeredRollout, problem, operatingTrajectories);
   slq.setReferenceManager(referenceManager);
   slq.addSolverObserver(std::move(boundsConstraintsObserverPtr));
 
-  // run SLQ
+  // // run SLQ
   slq.run(startTime, initState, finalTime);
   const auto solution = slq.primalSolution(finalTime);
 
   // Test 2: No penetration of guard surfaces
   for (int i = 0; i < solution.timeTrajectory_.size(); i++) {
-    const vector_t guardSurfaces = systemDynamics.computeGuardSurfaces(solution.timeTrajectory_[i], solution.stateTrajectory_[i]);
-    EXPECT_GT(guardSurfaces(0), -1e-10) << solution.timeTrajectory_[i] << ": " << guardSurfaces(0) << ", " << guardSurfaces(1) << "\n";
-    EXPECT_GT(guardSurfaces(1), -1e-10) << solution.timeTrajectory_[i] << ": " << guardSurfaces(0) << ", " << guardSurfaces(1) << "\n";
+    const vector_t guardSurfaces = systemDynamics.computeGuardSurfaces(
+      solution.timeTrajectory_[i], solution.stateTrajectory_[i]);
+    EXPECT_GT(guardSurfaces(0), -1e-10) << solution.timeTrajectory_[i] << ": " << guardSurfaces(0)
+                                        << ", " << guardSurfaces(1) << "\n";
+    EXPECT_GT(guardSurfaces(1), -1e-10) << solution.timeTrajectory_[i] << ": " << guardSurfaces(0)
+                                        << ", " << guardSurfaces(1) << "\n";
   }
 
   // Test 3: Check of cost

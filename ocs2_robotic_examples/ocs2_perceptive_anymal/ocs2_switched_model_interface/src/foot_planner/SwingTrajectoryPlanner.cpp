@@ -39,7 +39,7 @@ const SignedDistanceField* SwingTrajectoryPlanner::getSignedDistanceField() cons
 
 void SwingTrajectoryPlanner::updateSwingMotions(scalar_t initTime, scalar_t finalTime, const comkino_state_t& currentState,
                                                 const ocs2::TargetTrajectories& targetTrajectories,
-                                                const ocs2::ModeSchedule& modeSchedule) {
+                                                const ocs2::ModeSchedule& mode_schedule) {
   if (!terrainModel_) {
     throw std::runtime_error("[SwingTrajectoryPlanner] terrain cannot be null. Update the terrain before planning swing motions");
   }
@@ -50,7 +50,7 @@ void SwingTrajectoryPlanner::updateSwingMotions(scalar_t initTime, scalar_t fina
   // 3. unsure we have samples at start and end of the MPC horizon.
   subsampleReferenceTrajectory(targetTrajectories, initTime, finalTime);
 
-  const feet_array_t<std::vector<ContactTiming>> contactTimingsPerLeg = extractContactTimingsPerLeg(modeSchedule);
+  const feet_array_t<std::vector<ContactTiming>> contactTimingsPerLeg = extractContactTimingsPerLeg(mode_schedule);
 
   const auto basePose = getBasePose(currentState);
   const auto feetPositions = kinematicsModel_->feetPositionsInOriginFrame(basePose, getJointPositions(currentState));
@@ -104,7 +104,7 @@ const FootPhase& SwingTrajectoryPlanner::getFootPhase(size_t leg, scalar_t time)
 
 auto SwingTrajectoryPlanner::generateSwingTrajectories(int leg, const std::vector<ContactTiming>& contactTimings, scalar_t finalTime) const
     -> std::pair<std::vector<scalar_t>, std::vector<std::unique_ptr<FootPhase>>> {
-  std::vector<scalar_t> eventTimes;
+  std::vector<scalar_t> event_times;
   std::vector<std::unique_ptr<FootPhase>> footPhases;
 
   // First swing phase
@@ -137,7 +137,7 @@ auto SwingTrajectoryPlanner::generateSwingTrajectories(int leg, const std::vecto
 
     // generate contact phase
     if (hasStartTime(currentContactTiming)) {
-      eventTimes.push_back(currentContactTiming.start);
+      event_times.push_back(currentContactTiming.start);
     }
     footPhases.emplace_back(new StancePhase(nominalFoothold, settings_.terrainMargin));
 
@@ -160,16 +160,16 @@ auto SwingTrajectoryPlanner::generateSwingTrajectories(int leg, const std::vecto
     SwingPhase::SwingProfile swingProfile = getDefaultSwingProfile();
     applySwingMotionScaling(liftOff, touchDown, swingProfile);
 
-    eventTimes.push_back(currentContactTiming.end);
+    event_times.push_back(currentContactTiming.end);
     footPhases.emplace_back(new SwingPhase(liftOff, touchDown, swingProfile, terrainModel_.get()));
   }
 
-  return std::make_pair(eventTimes, std::move(footPhases));
+  return std::make_pair(event_times, std::move(footPhases));
 }
 
 std::pair<std::vector<scalar_t>, std::vector<std::unique_ptr<FootPhase>>> SwingTrajectoryPlanner::extractSwingTrajectoriesFromReference(
     int leg, const std::vector<ContactTiming>& contactTimings, scalar_t finalTime) const {
-  std::vector<scalar_t> eventTimes;
+  std::vector<scalar_t> event_times;
   std::vector<std::unique_ptr<FootPhase>> footPhases;
 
   // First swing phase
@@ -198,7 +198,7 @@ std::pair<std::vector<scalar_t>, std::vector<std::unique_ptr<FootPhase>>> SwingT
 
     // generate contact phase
     if (hasStartTime(currentContactTiming)) {
-      eventTimes.push_back(currentContactTiming.start);
+      event_times.push_back(currentContactTiming.start);
     }
     footPhases.emplace_back(new StancePhase(nominalFoothold, settings_.terrainMargin));
 
@@ -218,11 +218,11 @@ std::pair<std::vector<scalar_t>, std::vector<std::unique_ptr<FootPhase>>> SwingT
       }
     }();
 
-    eventTimes.push_back(currentContactTiming.end);
+    event_times.push_back(currentContactTiming.end);
     footPhases.push_back(extractExternalSwingPhase(leg, liftOffTime, touchDownTime));
   }
 
-  return std::make_pair(eventTimes, std::move(footPhases));
+  return std::make_pair(event_times, std::move(footPhases));
 }
 
 void SwingTrajectoryPlanner::applySwingMotionScaling(SwingPhase::SwingEvent& liftOff, SwingPhase::SwingEvent& touchDown,

@@ -16,13 +16,14 @@ find_package(Boost REQUIRED COMPONENTS
 ament_auto_add_library(
   ${PROJECT_NAME} SHARED
   src/LoopshapingSystemObservation.cpp
-  src/MPC_BASE.cpp
+  src/mpc_base.cpp
   src/MPC_Settings.cpp
   src/SystemObservation.cpp
-  src/MRT_BASE.cpp
+  src/mrt_base.cpp
   src/MPC_MRT_Interface.cpp
 )
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(
+  ${PROJECT_NAME}
   ${Boost_LIBRARIES}
   -lm -ldl
 )

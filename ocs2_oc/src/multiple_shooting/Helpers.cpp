@@ -65,7 +65,7 @@ void remapProjectedGain(
 }
 
 PrimalSolution toPrimalSolution(
-  const std::vector<AnnotatedTime> & time, ModeSchedule && modeSchedule, vector_array_t && x,
+  const std::vector<AnnotatedTime> & time, ModeSchedule && mode_schedule, vector_array_t && x,
   vector_array_t && u)
 {
   // Correct for missing inputs at PreEvents and the terminal time
@@ -83,14 +83,14 @@ PrimalSolution toPrimalSolution(
   primalSolution.postEventIndices_ = toPostEventIndices(time);
   primalSolution.stateTrajectory_ = std::move(x);
   primalSolution.inputTrajectory_ = std::move(u);
-  primalSolution.modeSchedule_ = std::move(modeSchedule);
+  primalSolution.mode_schedule_ = std::move(mode_schedule);
   primalSolution.controllerPtr_.reset(
     new FeedforwardController(primalSolution.timeTrajectory_, primalSolution.inputTrajectory_));
   return primalSolution;
 }
 
 PrimalSolution toPrimalSolution(
-  const std::vector<AnnotatedTime> & time, ModeSchedule && modeSchedule, vector_array_t && x,
+  const std::vector<AnnotatedTime> & time, ModeSchedule && mode_schedule, vector_array_t && x,
   vector_array_t && u, matrix_array_t && KMatrices)
 {
   // Compute feedback, before x and u are moved to primal solution
@@ -126,7 +126,7 @@ PrimalSolution toPrimalSolution(
   primalSolution.postEventIndices_ = toPostEventIndices(time);
   primalSolution.stateTrajectory_ = std::move(x);
   primalSolution.inputTrajectory_ = std::move(u);
-  primalSolution.modeSchedule_ = std::move(modeSchedule);
+  primalSolution.mode_schedule_ = std::move(mode_schedule);
   primalSolution.controllerPtr_.reset(
     new LinearController(primalSolution.timeTrajectory_, std::move(uff), std::move(KMatrices)));
   return primalSolution;

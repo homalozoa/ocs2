@@ -12,7 +12,7 @@ const Gait singleModeGait = [] {
   Gait gait;
   gait.duration = 0.8;
   gait.eventPhases = {};
-  gait.modeSequence = {1};
+  gait.mode_sequence = {1};
   return gait;
 }();
 
@@ -20,7 +20,7 @@ const Gait multiModeGait = [] {
   Gait gait;
   gait.duration = 0.6;
   gait.eventPhases = {0.33, 0.66};
-  gait.modeSequence = {0, 1, 2};
+  gait.mode_sequence = {0, 1, 2};
   return gait;
 }();
 

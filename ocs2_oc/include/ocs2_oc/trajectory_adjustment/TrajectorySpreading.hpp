@@ -129,19 +129,19 @@ private:
   /**
    * Finds post event indices of an array of event time for the given time trajectory.
    *
-   * @param eventTimes: An array of event time.
+   * @param event_times: An array of event time.
    * @param timeTrajectory: Time trajectory.
    * @return An array containing post event indices of the given event time.
    */
   size_array_t findPostEventIndices(
-    const scalar_array_t & eventTimes, const scalar_array_t & timeTrajectory) const
+    const scalar_array_t & event_times, const scalar_array_t & timeTrajectory) const
   {
-    size_array_t postEventIndices(eventTimes.size());
-    for (std::size_t i = 0; i < eventTimes.size(); i++) {
-      if (i == eventTimes.size() - 1 && eventTimes[i] == timeTrajectory.back()) {
+    size_array_t postEventIndices(event_times.size());
+    for (std::size_t i = 0; i < event_times.size(); i++) {
+      if (i == event_times.size() - 1 && event_times[i] == timeTrajectory.back()) {
         postEventIndices[i] = timeTrajectory.size() - 1;
       } else {
-        postEventIndices[i] = upperBoundIndex(timeTrajectory, eventTimes[i]);
+        postEventIndices[i] = upperBoundIndex(timeTrajectory, event_times[i]);
       }
     }
     return postEventIndices;

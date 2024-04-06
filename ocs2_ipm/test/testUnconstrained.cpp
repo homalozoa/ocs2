@@ -27,21 +27,21 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "ocs2_core/initialization/DefaultInitializer.hpp"
+#include "ocs2_ipm/IpmSolver.hpp"
+#include "ocs2_oc/synchronized_module/ReferenceManager.hpp"
+#include "ocs2_oc/test/testProblemsGeneration.hpp"
 
-#include "ocs2_ipm/IpmSolver.h"
-
-#include <ocs2_core/initialization/DefaultInitializer.h>
-
-#include <ocs2_oc/synchronized_module/ReferenceManager.h>
-#include <ocs2_oc/test/testProblemsGeneration.h>
-
-namespace ocs2 {
-namespace {
+namespace ocs2
+{
+namespace
+{
 
 std::pair<PrimalSolution, std::vector<PerformanceIndex>> solveWithFeedbackSetting(
-    bool feedback, bool emptyConstraint, const VectorFunctionLinearApproximation& dynamicsMatrices,
-    const ScalarFunctionQuadraticApproximation& costMatrices) {
+  bool feedback, bool emptyConstraint, const VectorFunctionLinearApproximation & dynamicsMatrices,
+  const ScalarFunctionQuadraticApproximation & costMatrices)
+{
   int n = dynamicsMatrices.dfdu.rows();
   int m = dynamicsMatrices.dfdu.cols();
 
@@ -55,13 +55,15 @@ std::pair<PrimalSolution, std::vector<PerformanceIndex>> solveWithFeedbackSettin
   problem.finalCostPtr->add("finalCost", ocs2::getOcs2StateCost(costMatrices));
 
   // Reference Managaer
-  ocs2::TargetTrajectories targetTrajectories({0.0}, {ocs2::vector_t::Ones(n)}, {ocs2::vector_t::Ones(m)});
+  ocs2::TargetTrajectories targetTrajectories(
+    {0.0}, {ocs2::vector_t::Ones(n)}, {ocs2::vector_t::Ones(m)});
   auto referenceManagerPtr = std::make_shared<ReferenceManager>(targetTrajectories);
 
   problem.targetTrajectoriesPtr = &referenceManagerPtr->getTargetTrajectories();
 
   if (emptyConstraint) {
-    problem.equalityConstraintPtr->add("intermediateCost", ocs2::getOcs2Constraints(getRandomConstraints(n, m, 0)));
+    problem.equalityConstraintPtr->add(
+      "intermediateCost", ocs2::getOcs2Constraints(getRandomConstraints(n, m, 0)));
   }
 
   ocs2::DefaultInitializer zeroInitializer(m);
@@ -93,7 +95,8 @@ std::pair<PrimalSolution, std::vector<PerformanceIndex>> solveWithFeedbackSettin
 }  // namespace
 }  // namespace ocs2
 
-TEST(test_unconstrained, withFeedback) {
+TEST(test_unconstrained, withFeedback)
+{
   int n = 3;
   int m = 2;
   const double tol = 1e-9;
@@ -113,20 +116,23 @@ TEST(test_unconstrained, withFeedback) {
   ASSERT_LT(solWithNullConstraint.second.back().dynamicsViolationSSE, tol);
 
   // Compare
-  const auto& withEmptyConstraint = solWithEmptyConstraint.first;
-  const auto& withNullConstraint = solWithNullConstraint.first;
+  const auto & withEmptyConstraint = solWithEmptyConstraint.first;
+  const auto & withNullConstraint = solWithNullConstraint.first;
   for (int i = 0; i < withEmptyConstraint.timeTrajectory_.size(); i++) {
     ASSERT_DOUBLE_EQ(withEmptyConstraint.timeTrajectory_[i], withNullConstraint.timeTrajectory_[i]);
-    ASSERT_TRUE(withEmptyConstraint.stateTrajectory_[i].isApprox(withNullConstraint.stateTrajectory_[i], tol));
-    ASSERT_TRUE(withEmptyConstraint.inputTrajectory_[i].isApprox(withNullConstraint.inputTrajectory_[i], tol));
+    ASSERT_TRUE(withEmptyConstraint.stateTrajectory_[i].isApprox(
+      withNullConstraint.stateTrajectory_[i], tol));
+    ASSERT_TRUE(withEmptyConstraint.inputTrajectory_[i].isApprox(
+      withNullConstraint.inputTrajectory_[i], tol));
     const auto t = withEmptyConstraint.timeTrajectory_[i];
-    const auto& x = withEmptyConstraint.stateTrajectory_[i];
-    ASSERT_TRUE(
-        withEmptyConstraint.controllerPtr_->computeInput(t, x).isApprox(withNullConstraint.controllerPtr_->computeInput(t, x), tol));
+    const auto & x = withEmptyConstraint.stateTrajectory_[i];
+    ASSERT_TRUE(withEmptyConstraint.controllerPtr_->computeInput(t, x).isApprox(
+      withNullConstraint.controllerPtr_->computeInput(t, x), tol));
   }
 }
 
-TEST(test_unconstrained, noFeedback) {
+TEST(test_unconstrained, noFeedback)
+{
   int n = 3;
   int m = 2;
   const double tol = 1e-9;
@@ -146,16 +152,18 @@ TEST(test_unconstrained, noFeedback) {
   ASSERT_LT(solWithNullConstraint.second.back().dynamicsViolationSSE, tol);
 
   // Compare
-  const auto& withEmptyConstraint = solWithEmptyConstraint.first;
-  const auto& withNullConstraint = solWithNullConstraint.first;
+  const auto & withEmptyConstraint = solWithEmptyConstraint.first;
+  const auto & withNullConstraint = solWithNullConstraint.first;
   for (int i = 0; i < withEmptyConstraint.timeTrajectory_.size(); i++) {
     ASSERT_DOUBLE_EQ(withEmptyConstraint.timeTrajectory_[i], withNullConstraint.timeTrajectory_[i]);
-    ASSERT_TRUE(withEmptyConstraint.stateTrajectory_[i].isApprox(withNullConstraint.stateTrajectory_[i], tol));
-    ASSERT_TRUE(withEmptyConstraint.inputTrajectory_[i].isApprox(withNullConstraint.inputTrajectory_[i], tol));
+    ASSERT_TRUE(withEmptyConstraint.stateTrajectory_[i].isApprox(
+      withNullConstraint.stateTrajectory_[i], tol));
+    ASSERT_TRUE(withEmptyConstraint.inputTrajectory_[i].isApprox(
+      withNullConstraint.inputTrajectory_[i], tol));
 
     const auto t = withEmptyConstraint.timeTrajectory_[i];
-    const auto& x = withEmptyConstraint.stateTrajectory_[i];
-    ASSERT_TRUE(
-        withEmptyConstraint.controllerPtr_->computeInput(t, x).isApprox(withNullConstraint.controllerPtr_->computeInput(t, x), tol));
+    const auto & x = withEmptyConstraint.stateTrajectory_[i];
+    ASSERT_TRUE(withEmptyConstraint.controllerPtr_->computeInput(t, x).isApprox(
+      withNullConstraint.controllerPtr_->computeInput(t, x), tol));
   }
 }

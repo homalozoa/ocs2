@@ -133,7 +133,7 @@ $nospell
 $head Start Class Definition$$
 $srccode%cpp% */
 # include <cppad/cppad.hpp>
-# include <Eigen/Core>
+# include "eigen3/Eigen/Core"
 # include <Eigen/LU>
 
 

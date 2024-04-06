@@ -27,15 +27,14 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "ocs2_oc/oc_problem/OcpToKkt.hpp"
+#include "ocs2_oc/test/testProblemsGeneration.hpp"
+#include "ocs2_slp/Helpers.hpp"
 
-#include <ocs2_oc/oc_problem/OcpToKkt.h>
-#include <ocs2_oc/test/testProblemsGeneration.h>
-
-#include "ocs2_slp/Helpers.h"
-
-class HelperFunctionTest : public testing::Test {
- protected:
+class HelperFunctionTest : public testing::Test
+{
+protected:
   // x_0, x_1, ... x_{N - 1}, X_{N}
   static constexpr size_t N_ = 10;  // numStages
   static constexpr size_t nx_ = 4;
@@ -45,7 +44,8 @@ class HelperFunctionTest : public testing::Test {
   static constexpr size_t numConstraints = N_ * (nx_ + nc_);
   static constexpr bool verbose = true;
 
-  HelperFunctionTest() : threadPool_(5, 99) {
+  HelperFunctionTest() : threadPool_(5, 99)
+  {
     srand(10);
 
     // Construct OCP problem
@@ -74,20 +74,26 @@ class HelperFunctionTest : public testing::Test {
   ocs2::ThreadPool threadPool_;
 };
 
-TEST_F(HelperFunctionTest, hessianAbsRowSum) {
+TEST_F(HelperFunctionTest, hessianAbsRowSum)
+{
   ocs2::vector_t rowwiseSum = ocs2::slp::hessianAbsRowSum(ocpSize_, costArray);
-  EXPECT_TRUE(rowwiseSum.isApprox(costApproximation.dfdxx.cwiseAbs().rowwise().sum())) << "rowSum:\n" << rowwiseSum.transpose();
+  EXPECT_TRUE(rowwiseSum.isApprox(costApproximation.dfdxx.cwiseAbs().rowwise().sum()))
+    << "rowSum:\n"
+    << rowwiseSum.transpose();
 }
 
-TEST_F(HelperFunctionTest, GGTAbsRowSumInParallel) {
+TEST_F(HelperFunctionTest, GGTAbsRowSumInParallel)
+{
   ocs2::VectorFunctionLinearApproximation constraintsApproximation;
   ocs2::vector_array_t scalingVectors(N_);
-  for (auto& v : scalingVectors) {
+  for (auto & v : scalingVectors) {
     v = ocs2::vector_t::Random(nx_);
   }
 
-  ocs2::getConstraintMatrix(ocpSize_, x0, dynamicsArray, nullptr, &scalingVectors, constraintsApproximation);
-  ocs2::vector_t rowwiseSum = ocs2::slp::GGTAbsRowSumInParallel(threadPool_, ocpSize_, dynamicsArray, nullptr, &scalingVectors);
+  ocs2::getConstraintMatrix(
+    ocpSize_, x0, dynamicsArray, nullptr, &scalingVectors, constraintsApproximation);
+  ocs2::vector_t rowwiseSum = ocs2::slp::GGTAbsRowSumInParallel(
+    threadPool_, ocpSize_, dynamicsArray, nullptr, &scalingVectors);
   ocs2::matrix_t GGT = constraintsApproximation.dfdx * constraintsApproximation.dfdx.transpose();
   EXPECT_TRUE(rowwiseSum.isApprox(GGT.cwiseAbs().rowwise().sum()));
 }

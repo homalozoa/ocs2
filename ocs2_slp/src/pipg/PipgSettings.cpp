@@ -27,19 +27,21 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_slp/pipg/PipgSettings.h"
-
-#include <iostream>
+#include "ocs2_slp/pipg/PipgSettings.hpp"
 
 #include <boost/property_tree/info_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
+#include <iostream>
 
-#include <ocs2_core/misc/LoadData.h>
+#include "ocs2_core/misc/LoadData.hpp"
 
-namespace ocs2 {
-namespace pipg {
+namespace ocs2
+{
+namespace pipg
+{
 
-Settings loadSettings(const std::string& filename, const std::string& fieldName, bool verbose) {
+Settings loadSettings(const std::string & filename, const std::string & fieldName, bool verbose)
+{
   boost::property_tree::ptree pt;
   boost::property_tree::read_info(filename, pt);
 
@@ -50,13 +52,17 @@ Settings loadSettings(const std::string& filename, const std::string& fieldName,
   }
 
   loadData::loadPtreeValue(pt, settings.maxNumIterations, fieldName + ".maxNumIterations", verbose);
-  loadData::loadPtreeValue(pt, settings.absoluteTolerance, fieldName + ".absoluteTolerance", verbose);
-  loadData::loadPtreeValue(pt, settings.relativeTolerance, fieldName + ".relativeTolerance", verbose);
+  loadData::loadPtreeValue(
+    pt, settings.absoluteTolerance, fieldName + ".absoluteTolerance", verbose);
+  loadData::loadPtreeValue(
+    pt, settings.relativeTolerance, fieldName + ".relativeTolerance", verbose);
 
   loadData::loadPtreeValue(pt, settings.lowerBoundH, fieldName + ".lowerBoundH", verbose);
 
-  loadData::loadPtreeValue(pt, settings.checkTerminationInterval, fieldName + ".checkTerminationInterval", verbose);
-  loadData::loadPtreeValue(pt, settings.displayShortSummary, fieldName + ".displayShortSummary", verbose);
+  loadData::loadPtreeValue(
+    pt, settings.checkTerminationInterval, fieldName + ".checkTerminationInterval", verbose);
+  loadData::loadPtreeValue(
+    pt, settings.displayShortSummary, fieldName + ".displayShortSummary", verbose);
 
   if (verbose) {
     std::cerr << " #### }\n";

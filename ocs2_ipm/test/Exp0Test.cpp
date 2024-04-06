@@ -27,22 +27,22 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
 #include <memory>
 
-#include "ocs2_ipm/IpmSolver.h"
-
-#include <ocs2_core/constraint/LinearStateConstraint.h>
-#include <ocs2_core/constraint/LinearStateInputConstraint.h>
-#include <ocs2_core/initialization/DefaultInitializer.h>
-#include <ocs2_oc/test/EXP0.h>
+#include "gtest/gtest.h"
+#include "ocs2_core/constraint/LinearStateConstraint.hpp"
+#include "ocs2_core/constraint/LinearStateInputConstraint.hpp"
+#include "ocs2_core/initialization/DefaultInitializer.hpp"
+#include "ocs2_ipm/IpmSolver.hpp"
+#include "ocs2_oc/test/EXP0.hpp"
 
 using namespace ocs2;
 
-TEST(Exp0Test, Unconstrained) {
+TEST(Exp0Test, Unconstrained)
+{
   constexpr size_t STATE_DIM = 2;
   constexpr size_t INPUT_DIM = 1;
 
@@ -68,8 +68,8 @@ TEST(Exp0Test, Unconstrained) {
   }();
 
   const scalar_array_t initEventTimes{0.1897};
-  const size_array_t modeSequence{0, 1};
-  auto referenceManagerPtr = getExp0ReferenceManager(initEventTimes, modeSequence);
+  const size_array_t mode_sequence{0, 1};
+  auto referenceManagerPtr = getExp0ReferenceManager(initEventTimes, mode_sequence);
   auto problem = createExp0Problem(referenceManagerPtr);
 
   const scalar_t startTime = 0.0;
@@ -84,16 +84,18 @@ TEST(Exp0Test, Unconstrained) {
   solver.run(startTime, initState, finalTime);
 }
 
-TEST(Exp0Test, Constrained) {
+TEST(Exp0Test, Constrained)
+{
   constexpr size_t STATE_DIM = 2;
   constexpr size_t INPUT_DIM = 1;
 
-  auto getStateBoxConstraint = [&](const vector_t& minState, const vector_t& maxState) {
+  auto getStateBoxConstraint = [&](const vector_t & minState, const vector_t & maxState) {
     constexpr size_t numIneqConstraint = 2 * STATE_DIM;
     const vector_t e = (vector_t(numIneqConstraint) << -minState, maxState).finished();
     const matrix_t C =
-        (matrix_t(numIneqConstraint, STATE_DIM) << matrix_t::Identity(STATE_DIM, STATE_DIM), -matrix_t::Identity(STATE_DIM, STATE_DIM))
-            .finished();
+      (matrix_t(numIneqConstraint, STATE_DIM) << matrix_t::Identity(STATE_DIM, STATE_DIM),
+       -matrix_t::Identity(STATE_DIM, STATE_DIM))
+        .finished();
     return std::make_unique<LinearStateConstraint>(std::move(e), std::move(C));
   };
 
@@ -102,8 +104,9 @@ TEST(Exp0Test, Constrained) {
     const vector_t e = (vector_t(numIneqConstraint) << -minInput, maxInput).finished();
     const matrix_t C = matrix_t::Zero(numIneqConstraint, STATE_DIM);
     const matrix_t D =
-        (matrix_t(numIneqConstraint, INPUT_DIM) << matrix_t::Identity(INPUT_DIM, INPUT_DIM), -matrix_t::Identity(INPUT_DIM, INPUT_DIM))
-            .finished();
+      (matrix_t(numIneqConstraint, INPUT_DIM) << matrix_t::Identity(INPUT_DIM, INPUT_DIM),
+       -matrix_t::Identity(INPUT_DIM, INPUT_DIM))
+        .finished();
     return std::make_unique<LinearStateInputConstraint>(std::move(e), std::move(C), std::move(D));
   };
 
@@ -129,8 +132,8 @@ TEST(Exp0Test, Constrained) {
   }();
 
   const scalar_array_t initEventTimes{0.1897};
-  const size_array_t modeSequence{0, 1};
-  auto referenceManagerPtr = getExp0ReferenceManager(initEventTimes, modeSequence);
+  const size_array_t mode_sequence{0, 1};
+  auto referenceManagerPtr = getExp0ReferenceManager(initEventTimes, mode_sequence);
   auto problem = createExp0Problem(referenceManagerPtr);
 
   // add inequality constraints
@@ -156,13 +159,13 @@ TEST(Exp0Test, Constrained) {
   const auto primalSolution = solver.primalSolution(finalTime);
 
   // check constraint satisfaction
-  for (const auto& x : primalSolution.stateTrajectory_) {
+  for (const auto & x : primalSolution.stateTrajectory_) {
     if (x.size() > 0) {
       ASSERT_TRUE((x - xmin).minCoeff() >= 0);
       ASSERT_TRUE((xmax - x).minCoeff() >= 0);
     }
   }
-  for (const auto& u : primalSolution.inputTrajectory_) {
+  for (const auto & u : primalSolution.inputTrajectory_) {
     if (u.size() > 0) {
       ASSERT_TRUE(u(0) - umin >= 0);
       ASSERT_TRUE(umax - u(0) >= 0);

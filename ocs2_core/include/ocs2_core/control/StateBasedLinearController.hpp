@@ -1,3 +1,4 @@
+// Copyright 2024 Homalozoa. All rights reserved.
 // Copyright 2020 Farbod Farshidian. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -56,7 +57,7 @@ public:
    *
    * @param [in] t: current time at which input is requested
    * @param [in] x: current state at which input is requested
-   * @param [in] ctrlEventTimes: array containing eventTimes around which the controller was designed
+   * @param [in] ctrlEventTimes: array containing event_times around which the controller was designed
    * @param [in] ctrlPtr: Pointer to the actual controller
    * @retrun control input vector
    */

@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>cppad_vendor</name>
-  <version>2019.02.5</version>
+  <version>0.0.0</version>
   <description>Vendor package of cppad.</description>
 
   <maintainer email="nx.tardis@gmail.com">Homalozoa</maintainer>

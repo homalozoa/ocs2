@@ -1,3 +1,4 @@
+// Copyright 2024 Homalozoa. All rights reserved.
 // Copyright 2020 Farbod Farshidian. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -49,10 +50,10 @@ struct ModeSchedule
 
   /**
    * Constructor for a ModeSchedule. The number of modes must be greater than zero (N > 0)
-   * @param [in] eventTimesInput : event times of size N - 1
-   * @param [in] modeSequenceInput : mode sequence of size N
+   * @param [in] event_times_input : event times of size N - 1
+   * @param [in] mode_sequence_input : mode sequence of size N
    */
-  ModeSchedule(std::vector<scalar_t> eventTimesInput, std::vector<size_t> modeSequenceInput);
+  ModeSchedule(std::vector<scalar_t> event_times_input, std::vector<size_t> mode_sequence_input);
 
   /**
    *  Returns the mode based on the query time.
@@ -68,22 +69,22 @@ struct ModeSchedule
    */
   size_t modeAtTime(scalar_t time) const;
 
-  /** Clears modeSchedule */
+  /** Clears mode_schedule */
   void clear()
   {
-    eventTimes.clear();
-    modeSequence.clear();
+    event_times.clear();
+    mode_sequence.clear();
   }
 
-  std::vector<scalar_t> eventTimes;  // event times of size N - 1
-  std::vector<size_t> modeSequence;  // mode sequence of size N
+  std::vector<scalar_t> event_times;  // event times of size N - 1
+  std::vector<size_t> mode_sequence;  // mode sequence of size N
 };
 
 /** Exchanges the given values. */
 void swap(ModeSchedule & lh, ModeSchedule & rh);
 
-/** Inserts modeSchedule into the output stream. */
-std::ostream & operator<<(std::ostream & stream, const ModeSchedule & modeSchedule);
+/** Inserts mode_schedule into the output stream. */
+std::ostream & operator<<(std::ostream & stream, const ModeSchedule & mode_schedule);
 
 /**
  * Gets the number of events that have preceded the given event time.
@@ -102,7 +103,7 @@ size_t getNumberOfPrecedingEvents(
  * covers, i.e., extendable interval.
  *
  * Case 1: non-empty interval
- * eventTimes       s0             s2         s2          s3
+ * event_times       s0             s2         s2          s3
  * ------------------------|--------------|----------|-----------|-------
  * timeTrajectory ---------------****************------------------------
  * Extendable interval ----+++++++++++++++++++++++++++-------------------
@@ -110,7 +111,7 @@ size_t getNumberOfPrecedingEvents(
  * Output ------------------------------------[******]-------------------
  *
  * Case 2: empty interval
- * eventTimes       s0             s2         s2          s3
+ * event_times       s0             s2         s2          s3
  * ------------------------|--------------|----------|-----------|-------
  * timeTrajectory ---------------******************----------------------
  * Extendable interval ----+++++++++++++++++++++++++++-------------------
@@ -118,14 +119,14 @@ size_t getNumberOfPrecedingEvents(
  * Output ------------------------------------------------][-------------
  *
  * @param [in] timeTrajectory: Timestamp of the data to be interpolated.
- * @param [in] eventTimes: The event times array.
+ * @param [in] event_times: The event times array.
  * @param [in] timePeriod: The requested time period for possible interpolation.
  * @return The truncated time interval in which the interpolation
  *         is valid. In the case that the interpolation is not allowed it
  * returns and interval of negative length i.e., (timePeriod.first, timePeriod.first - 1e-4).
  */
 std::pair<scalar_t, scalar_t> findIntersectionToExtendableInterval(
-  const scalar_array_t & timeTrajectory, const scalar_array_t & eventTimes,
+  const scalar_array_t & timeTrajectory, const scalar_array_t & event_times,
   const std::pair<scalar_t, scalar_t> & timePeriod);
 
 }  // namespace ocs2

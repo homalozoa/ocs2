@@ -27,17 +27,15 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "ocs2_core/initialization/DefaultInitializer.hpp"
+#include "ocs2_oc/oc_data/TimeDiscretization.hpp"
+#include "ocs2_oc/synchronized_module/ReferenceManager.hpp"
+#include "ocs2_oc/test/testProblemsGeneration.hpp"
+#include "ocs2_sqp/SqpSolver.hpp"
 
-#include "ocs2_sqp/SqpSolver.h"
-
-#include <ocs2_core/initialization/DefaultInitializer.h>
-
-#include <ocs2_oc/oc_data/TimeDiscretization.h>
-#include <ocs2_oc/synchronized_module/ReferenceManager.h>
-#include <ocs2_oc/test/testProblemsGeneration.h>
-
-TEST(test_valuefunction, linear_quadratic_problem) {
+TEST(test_valuefunction, linear_quadratic_problem)
+{
   constexpr int n = 3;
   constexpr int m = 2;
   constexpr int nc = 1;
@@ -60,14 +58,17 @@ TEST(test_valuefunction, linear_quadratic_problem) {
   problem.finalCostPtr->add("finalCost", ocs2::getOcs2StateCost(ocs2::getRandomCost(n, 0)));
 
   // Reference Manager
-  const ocs2::ModeSchedule modeSchedule({eventTime}, {0, 1});
-  const ocs2::TargetTrajectories targetTrajectories({0.0}, {ocs2::vector_t::Random(n)}, {ocs2::vector_t::Random(m)});
-  auto referenceManagerPtr = std::make_shared<ocs2::ReferenceManager>(targetTrajectories, modeSchedule);
+  const ocs2::ModeSchedule mode_schedule({eventTime}, {0, 1});
+  const ocs2::TargetTrajectories targetTrajectories(
+    {0.0}, {ocs2::vector_t::Random(n)}, {ocs2::vector_t::Random(m)});
+  auto referenceManagerPtr =
+    std::make_shared<ocs2::ReferenceManager>(targetTrajectories, mode_schedule);
 
   problem.targetTrajectoriesPtr = &targetTrajectories;
 
   // Constraint
-  problem.equalityConstraintPtr->add("constraint", ocs2::getOcs2Constraints(ocs2::getRandomConstraints(n, m, nc)));
+  problem.equalityConstraintPtr->add(
+    "constraint", ocs2::getOcs2Constraints(ocs2::getRandomConstraints(n, m, nc)));
 
   ocs2::DefaultInitializer zeroInitializer(m);
 
@@ -101,6 +102,7 @@ TEST(test_valuefunction, linear_quadratic_problem) {
     const ocs2::scalar_t sampleCost = solver.getPerformanceIndeces().cost;
     const ocs2::vector_t dx = sampleState - zeroState;
 
-    EXPECT_NEAR(sampleCost, zeroCost + costToGo.dfdx.dot(dx) + 0.5 * dx.dot(costToGo.dfdxx * dx), tol);
+    EXPECT_NEAR(
+      sampleCost, zeroCost + costToGo.dfdx.dot(dx) + 0.5 * dx.dot(costToGo.dfdxx * dx), tol);
   }
 }

@@ -1,3 +1,4 @@
+// Copyright 2024 Homalozoa. All rights reserved.
 // Copyright 2020 Farbod Farshidian. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -98,8 +99,8 @@ std::ostream & operator<<(std::ostream & out, const TargetTrajectories & targetT
 {
   for (size_t i = 0; i < targetTrajectories.size(); i++) {
     out << "time: " << targetTrajectories.timeTrajectory[i] << "\n";
-    out << "state: [" << toDelimitedString(targetTrajectories.stateTrajectory[i]) << "]\n";
-    out << "input: [" << toDelimitedString(targetTrajectories.inputTrajectory[i]) << "]\n";
+    out << "state: [" << to_delimited_str(targetTrajectories.stateTrajectory[i]) << "]\n";
+    out << "input: [" << to_delimited_str(targetTrajectories.inputTrajectory[i]) << "]\n";
   }  // end of i loop
 
   return out;

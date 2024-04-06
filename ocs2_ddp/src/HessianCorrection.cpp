@@ -27,30 +27,37 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_ddp/HessianCorrection.h"
+#include "ocs2_ddp/HessianCorrection.hpp"
 
 #include <unordered_map>
 
-namespace ocs2 {
-namespace hessian_correction {
+namespace ocs2
+{
+namespace hessian_correction
+{
 
-std::string toString(Strategy strategy) {
-  static const std::unordered_map<Strategy, std::string> strategyMap{{Strategy::DIAGONAL_SHIFT, "DIAGONAL_SHIFT"},
-                                                                     {Strategy::CHOLESKY_MODIFICATION, "CHOLESKY_MODIFICATION"},
-                                                                     {Strategy::EIGENVALUE_MODIFICATION, "EIGENVALUE_MODIFICATION"},
-                                                                     {Strategy::GERSHGORIN_MODIFICATION, "GERSHGORIN_MODIFICATION"}};
+std::string toString(Strategy strategy)
+{
+  static const std::unordered_map<Strategy, std::string> strategyMap{
+    {Strategy::DIAGONAL_SHIFT, "DIAGONAL_SHIFT"},
+    {Strategy::CHOLESKY_MODIFICATION, "CHOLESKY_MODIFICATION"},
+    {Strategy::EIGENVALUE_MODIFICATION, "EIGENVALUE_MODIFICATION"},
+    {Strategy::GERSHGORIN_MODIFICATION, "GERSHGORIN_MODIFICATION"}};
   return strategyMap.at(strategy);
 }
 
-Strategy fromString(const std::string& name) {
-  static const std::unordered_map<std::string, Strategy> strategyMap{{"DIAGONAL_SHIFT", Strategy::DIAGONAL_SHIFT},
-                                                                     {"CHOLESKY_MODIFICATION", Strategy::CHOLESKY_MODIFICATION},
-                                                                     {"EIGENVALUE_MODIFICATION", Strategy::EIGENVALUE_MODIFICATION},
-                                                                     {"GERSHGORIN_MODIFICATION", Strategy::GERSHGORIN_MODIFICATION}};
+Strategy fromString(const std::string & name)
+{
+  static const std::unordered_map<std::string, Strategy> strategyMap{
+    {"DIAGONAL_SHIFT", Strategy::DIAGONAL_SHIFT},
+    {"CHOLESKY_MODIFICATION", Strategy::CHOLESKY_MODIFICATION},
+    {"EIGENVALUE_MODIFICATION", Strategy::EIGENVALUE_MODIFICATION},
+    {"GERSHGORIN_MODIFICATION", Strategy::GERSHGORIN_MODIFICATION}};
   return strategyMap.at(name);
 }
 
-void shiftHessian(Strategy strategy, matrix_t& matrix, scalar_t minEigenvalue) {
+void shiftHessian(Strategy strategy, matrix_t & matrix, scalar_t minEigenvalue)
+{
   assert(matrix.rows() == matrix.cols());
   switch (strategy) {
     case Strategy::DIAGONAL_SHIFT: {

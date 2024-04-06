@@ -57,7 +57,7 @@ void MotionCommandDummy::publishMotion(const std::pair<ocs2::TargetTrajectories,
 
   Gait stance;
   stance.duration = 1.0;
-  stance.modeSequence = {15};
+  stance.mode_sequence = {15};
 
   const auto gaitMessage = switched_model::ros_msg_conversions::toMessage(startTime, {motion.second, stance});
   auto mpcTargetTrajectoriesMsg = ocs2::ros_msg_conversions::createTargetTrajectoriesMsg(motion.first);

@@ -8,8 +8,8 @@ macro(ocs2_package)
     set(CMAKE_CXX_STANDARD 20)
   endif()
 
-    execute_process(COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE)
-    message(STATUS "Architecture: ${ARCHITECTURE}")
+  execute_process(COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE)
+  message(STATUS "Architecture: ${ARCHITECTURE}")
 
   if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(
@@ -17,8 +17,8 @@ macro(ocs2_package)
         # -Wall -Wextra -Wpedantic
         -Wfatal-errors
         -Wl,--no-as-needed
-        -fomit-frame-pointer -g0 -finline-functions -floop-unroll-and-jam
-        -O2 -Werror
+        -fomit-frame-pointer -g -finline-functions -floop-unroll-and-jam
+        -O3 -Werror
         -DBOOST_ALL_DYN_LINK
     )
   endif()

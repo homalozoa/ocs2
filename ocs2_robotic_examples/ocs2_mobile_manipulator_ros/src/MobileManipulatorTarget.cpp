@@ -27,7 +27,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include <ocs2_ros_interfaces/command/TargetTrajectoriesInteractiveMarker.h>
+#include "ocs2_ros_interfaces/command/target_trajectories_interactive_marker.hpp"
 
 using namespace ocs2;
 
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
   ::ros::init(argc, argv, robotName + "_target");
   ::ros::NodeHandle nodeHandle;
 
-  TargetTrajectoriesInteractiveMarker targetPoseCommand(nodeHandle, robotName, &goalPoseToTargetTrajectories);
+  TargetTrajInteractiveMarker targetPoseCommand(nodeHandle, robotName, &goalPoseToTargetTrajectories);
   targetPoseCommand.publishInteractiveMarker();
 
   // Successful exit

@@ -68,7 +68,7 @@ void jointStateCallback(sensor_msgs::JointStateConstPtr msg) {
     q(i) = lastMsg.position[i - 3];
   }
 
-  vInterface->publishDistances(q);
+  vInterface->publish_distances(q);
 }
 
 int main(int argc, char** argv) {

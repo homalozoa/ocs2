@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.8)
 project(ocs2_ocs2)
 
 find_package(catkin REQUIRED COMPONENTS
@@ -47,7 +47,8 @@ include_directories(
 add_executable(${PROJECT_NAME}_lintTarget
   src/lintTarget.cpp
 )
-target_link_libraries(${PROJECT_NAME}_lintTarget
+target_link_libraries(
+  ${PROJECT_NAME}_lintTarget
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
 )

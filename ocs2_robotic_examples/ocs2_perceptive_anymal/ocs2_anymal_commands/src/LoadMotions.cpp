@@ -83,15 +83,15 @@ std::pair<ocs2::TargetTrajectories, Gait> readMotion(const CsvData& csvData, sca
 
   Gait gait;
   gait.duration = duration;
-  gait.modeSequence.push_back(getMode(csvData.data.front()));
+  gait.mode_sequence.push_back(getMode(csvData.data.front()));
   for (const auto& dataLine : csvData.data) {
     const scalar_t t = dataLine[0];
 
     // Extend gait if the mode changes
     const size_t mode = getMode(dataLine);
-    if (mode != gait.modeSequence.back()) {
+    if (mode != gait.mode_sequence.back()) {
       gait.eventPhases.push_back((t - t0) / duration);
-      gait.modeSequence.push_back(mode);
+      gait.mode_sequence.push_back(mode);
     } else {
       // Drop a point if dt is smaller than desired
       if (!targetTrajectories.empty() && t < targetTrajectories.timeTrajectory.back() + dt) {
@@ -223,15 +223,15 @@ std::pair<ocs2::TargetTrajectories, Gait> readCartesianMotion(const CsvData& csv
 
   Gait gait;
   gait.duration = duration;
-  gait.modeSequence.push_back(getMode(csvData.data.front()));
+  gait.mode_sequence.push_back(getMode(csvData.data.front()));
   for (const auto& dataLine : csvData.data) {
     const scalar_t t = dataLine[0];
 
     // Extend gait if the mode changes
     const size_t mode = getMode(dataLine);
-    if (mode != gait.modeSequence.back()) {
+    if (mode != gait.mode_sequence.back()) {
       gait.eventPhases.push_back((t - t0) / duration);
-      gait.modeSequence.push_back(mode);
+      gait.mode_sequence.push_back(mode);
     } else {
       // Drop a point if dt is smaller than desired
       if (!targetTrajectories.empty() && t < targetTrajectories.timeTrajectory.back() + dt) {

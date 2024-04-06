@@ -1,0 +1,9 @@
+ament_auto_add_gtest(
+  test_${PROJECT_NAME}
+  Exp0Test.cpp
+  Exp1Test.cpp
+  testCircularKinematics.cpp
+  testSwitchedProblem.cpp
+  testUnconstrained.cpp
+  testValuefunction.cpp
+)

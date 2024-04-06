@@ -27,28 +27,31 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_slp/SlpSolver.h"
+#include "ocs2_slp/SlpSolver.hpp"
 
 #include <iomanip>
 #include <iostream>
 #include <numeric>
 
-#include <ocs2_oc/multiple_shooting/Helpers.h>
-#include <ocs2_oc/multiple_shooting/Initialization.h>
-#include <ocs2_oc/multiple_shooting/MetricsComputation.h>
-#include <ocs2_oc/multiple_shooting/PerformanceIndexComputation.h>
-#include <ocs2_oc/multiple_shooting/Transcription.h>
-#include <ocs2_oc/precondition/Ruzi.h>
-#include <ocs2_oc/trajectory_adjustment/TrajectorySpreadingHelperFunctions.h>
+#include "ocs2_oc/multiple_shooting/Helpers.hpp"
+#include "ocs2_oc/multiple_shooting/Initialization.hpp"
+#include "ocs2_oc/multiple_shooting/MetricsComputation.hpp"
+#include "ocs2_oc/multiple_shooting/PerformanceIndexComputation.hpp"
+#include "ocs2_oc/multiple_shooting/Transcription.hpp"
+#include "ocs2_oc/precondition/Ruzi.hpp"
+#include "ocs2_oc/trajectory_adjustment/TrajectorySpreadingHelperFunctions.hpp"
+#include "ocs2_slp/Helpers.hpp"
 
-#include "ocs2_slp/Helpers.h"
+namespace ocs2
+{
 
-namespace ocs2 {
-
-SlpSolver::SlpSolver(slp::Settings settings, const OptimalControlProblem& optimalControlProblem, const Initializer& initializer)
-    : settings_(std::move(settings)),
-      pipgSolver_(settings_.pipgSettings),
-      threadPool_(std::max(settings_.nThreads - 1, size_t(1)) - 1, settings_.threadPriority) {
+SlpSolver::SlpSolver(
+  slp::Settings settings, const OptimalControlProblem & optimalControlProblem,
+  const Initializer & initializer)
+: settings_(std::move(settings)),
+  pipgSolver_(settings_.pipgSettings),
+  threadPool_(std::max(settings_.nThreads - 1, size_t(1)) - 1, settings_.threadPriority)
+{
   Eigen::setNbThreads(1);  // No multithreading within Eigen.
   Eigen::initParallel();
 
@@ -71,13 +74,16 @@ SlpSolver::SlpSolver(slp::Settings settings, const OptimalControlProblem& optima
   filterLinesearch_.armijoFactor = settings_.armijoFactor;
 }
 
-SlpSolver::~SlpSolver() {
+SlpSolver::~SlpSolver()
+{
   if (settings_.printSolverStatistics) {
-    std::cerr << getBenchmarkingInformationPIPG() << "\n" << getBenchmarkingInformation() << std::endl;
+    std::cerr << getBenchmarkingInformationPIPG() << "\n"
+              << getBenchmarkingInformation() << std::endl;
   }
 }
 
-void SlpSolver::reset() {
+void SlpSolver::reset()
+{
   // Clear solution
   primalSolution_ = PrimalSolution();
   performanceIndeces_.clear();
@@ -96,7 +102,8 @@ void SlpSolver::reset() {
   pipgSolverTimer_.reset();
 }
 
-std::string SlpSolver::getBenchmarkingInformationPIPG() const {
+std::string SlpSolver::getBenchmarkingInformationPIPG() const
+{
   const auto lambdaEstimation = lambdaEstimation_.getTotalInMilliseconds();
   const auto sigmaEstimation = sigmaEstimation_.getTotalInMilliseconds();
   const auto preConditioning = preConditioning_.getTotalInMilliseconds();
@@ -108,27 +115,35 @@ std::string SlpSolver::getBenchmarkingInformationPIPG() const {
   if (benchmarkTotal > 0.0) {
     const scalar_t inPercent = 100.0;
     infoStream << "\n########################################################################\n";
-    infoStream << "The benchmarking is computed over " << preConditioning_.getNumTimedIntervals() << " iterations. \n";
+    infoStream << "The benchmarking is computed over " << preConditioning_.getNumTimedIntervals()
+               << " iterations. \n";
     infoStream << "PIPG Benchmarking\t       :\tAverage time [ms]   (% of total runtime)\n";
-    infoStream << "\tpreConditioning        :\t" << std::setw(10) << preConditioning_.getAverageInMilliseconds() << " [ms] \t("
+    infoStream << "\tpreConditioning        :\t" << std::setw(10)
+               << preConditioning_.getAverageInMilliseconds() << " [ms] \t("
                << preConditioning / benchmarkTotal * inPercent << "%)\n";
-    infoStream << "\tlambdaEstimation       :\t" << std::setw(10) << lambdaEstimation_.getAverageInMilliseconds() << " [ms] \t("
+    infoStream << "\tlambdaEstimation       :\t" << std::setw(10)
+               << lambdaEstimation_.getAverageInMilliseconds() << " [ms] \t("
                << lambdaEstimation / benchmarkTotal * inPercent << "%)\n";
-    infoStream << "\tsigmaEstimation        :\t" << std::setw(10) << sigmaEstimation_.getAverageInMilliseconds() << " [ms] \t("
+    infoStream << "\tsigmaEstimation        :\t" << std::setw(10)
+               << sigmaEstimation_.getAverageInMilliseconds() << " [ms] \t("
                << sigmaEstimation / benchmarkTotal * inPercent << "%)\n";
-    infoStream << "\tPIPG runTime           :\t" << std::setw(10) << pipgSolverTimer_.getAverageInMilliseconds() << " [ms] \t("
+    infoStream << "\tPIPG runTime           :\t" << std::setw(10)
+               << pipgSolverTimer_.getAverageInMilliseconds() << " [ms] \t("
                << pipgRuntime / benchmarkTotal * inPercent << "%)\n";
   }
   return infoStream.str();
 }
 
-std::string SlpSolver::getBenchmarkingInformation() const {
-  const auto linearQuadraticApproximationTotal = linearQuadraticApproximationTimer_.getTotalInMilliseconds();
+std::string SlpSolver::getBenchmarkingInformation() const
+{
+  const auto linearQuadraticApproximationTotal =
+    linearQuadraticApproximationTimer_.getTotalInMilliseconds();
   const auto solveQpTotal = solveQpTimer_.getTotalInMilliseconds();
   const auto linesearchTotal = linesearchTimer_.getTotalInMilliseconds();
   const auto computeControllerTotal = computeControllerTimer_.getTotalInMilliseconds();
 
-  const auto benchmarkTotal = linearQuadraticApproximationTotal + solveQpTotal + linesearchTotal + computeControllerTotal;
+  const auto benchmarkTotal =
+    linearQuadraticApproximationTotal + solveQpTotal + linesearchTotal + computeControllerTotal;
 
   std::stringstream infoStream;
   if (benchmarkTotal > 0.0) {
@@ -136,19 +151,24 @@ std::string SlpSolver::getBenchmarkingInformation() const {
     infoStream << "\n########################################################################\n";
     infoStream << "The benchmarking is computed over " << totalNumIterations_ << " iterations. \n";
     infoStream << "SLP Benchmarking\t   :\tAverage time [ms]   (% of total runtime)\n";
-    infoStream << "\tLQ Approximation   :\t" << std::setw(10) << linearQuadraticApproximationTimer_.getAverageInMilliseconds()
-               << " [ms] \t(" << linearQuadraticApproximationTotal / benchmarkTotal * inPercent << "%)\n";
-    infoStream << "\tSolve LP           :\t" << std::setw(10) << solveQpTimer_.getAverageInMilliseconds() << " [ms] \t("
+    infoStream << "\tLQ Approximation   :\t" << std::setw(10)
+               << linearQuadraticApproximationTimer_.getAverageInMilliseconds() << " [ms] \t("
+               << linearQuadraticApproximationTotal / benchmarkTotal * inPercent << "%)\n";
+    infoStream << "\tSolve LP           :\t" << std::setw(10)
+               << solveQpTimer_.getAverageInMilliseconds() << " [ms] \t("
                << solveQpTotal / benchmarkTotal * inPercent << "%)\n";
-    infoStream << "\tLinesearch         :\t" << std::setw(10) << linesearchTimer_.getAverageInMilliseconds() << " [ms] \t("
+    infoStream << "\tLinesearch         :\t" << std::setw(10)
+               << linesearchTimer_.getAverageInMilliseconds() << " [ms] \t("
                << linesearchTotal / benchmarkTotal * inPercent << "%)\n";
-    infoStream << "\tCompute Controller :\t" << std::setw(10) << computeControllerTimer_.getAverageInMilliseconds() << " [ms] \t("
+    infoStream << "\tCompute Controller :\t" << std::setw(10)
+               << computeControllerTimer_.getAverageInMilliseconds() << " [ms] \t("
                << computeControllerTotal / benchmarkTotal * inPercent << "%)\n";
   }
   return infoStream.str();
 }
 
-const std::vector<PerformanceIndex>& SlpSolver::getIterationsLog() const {
+const std::vector<PerformanceIndex> & SlpSolver::getIterationsLog() const
+{
   if (performanceIndeces_.empty()) {
     throw std::runtime_error("[SlpSolver]: No performance log yet, no problem solved yet?");
   } else {
@@ -156,7 +176,8 @@ const std::vector<PerformanceIndex>& SlpSolver::getIterationsLog() const {
   }
 }
 
-void SlpSolver::runImpl(scalar_t initTime, const vector_t& initState, scalar_t finalTime) {
+void SlpSolver::runImpl(scalar_t initTime, const vector_t & initState, scalar_t finalTime)
+{
   if (settings_.printSolverStatus || settings_.printLinesearch) {
     std::cerr << "\n++++++++++++++++++++++++++++++++++++++++++++++++++++++";
     std::cerr << "\n+++++++++++++ SLP solver is initialized ++++++++++++++";
@@ -164,23 +185,27 @@ void SlpSolver::runImpl(scalar_t initTime, const vector_t& initState, scalar_t f
   }
 
   // Determine time discretization, taking into account event times.
-  const auto& eventTimes = this->getReferenceManager().getModeSchedule().eventTimes;
-  const auto timeDiscretization = timeDiscretizationWithEvents(initTime, finalTime, settings_.dt, eventTimes);
+  const auto & event_times = this->getReferenceManager().getModeSchedule().event_times;
+  const auto timeDiscretization =
+    timeDiscretizationWithEvents(initTime, finalTime, settings_.dt, event_times);
 
   // Initialize references
-  for (auto& ocpDefinition : ocpDefinitions_) {
-    const auto& targetTrajectories = this->getReferenceManager().getTargetTrajectories();
+  for (auto & ocpDefinition : ocpDefinitions_) {
+    const auto & targetTrajectories = this->getReferenceManager().getTargetTrajectories();
     ocpDefinition.targetTrajectoriesPtr = &targetTrajectories;
   }
 
   // Trajectory spread of primalSolution_
   if (!primalSolution_.timeTrajectory_.empty()) {
-    std::ignore = trajectorySpread(primalSolution_.modeSchedule_, this->getReferenceManager().getModeSchedule(), primalSolution_);
+    std::ignore = trajectorySpread(
+      primalSolution_.mode_schedule_, this->getReferenceManager().getModeSchedule(),
+      primalSolution_);
   }
 
   // Initialize the state and input
   vector_array_t x, u;
-  multiple_shooting::initializeStateInputTrajectories(initState, timeDiscretization, primalSolution_, *initializerPtr_, x, u);
+  multiple_shooting::initializeStateInputTrajectories(
+    initState, timeDiscretization, primalSolution_, *initializerPtr_, x, u);
 
   // Bookkeeping
   performanceIndeces_.clear();
@@ -194,7 +219,8 @@ void SlpSolver::runImpl(scalar_t initTime, const vector_t& initState, scalar_t f
     }
     // Make QP approximation
     linearQuadraticApproximationTimer_.startTimer();
-    const auto baselinePerformance = setupQuadraticSubproblem(timeDiscretization, initState, x, u, metrics);
+    const auto baselinePerformance =
+      setupQuadraticSubproblem(timeDiscretization, initState, x, u, metrics);
     linearQuadraticApproximationTimer_.endTimer();
 
     // Solve LP
@@ -205,7 +231,8 @@ void SlpSolver::runImpl(scalar_t initTime, const vector_t& initState, scalar_t f
 
     // Apply step
     linesearchTimer_.startTimer();
-    const auto stepInfo = takeStep(baselinePerformance, timeDiscretization, initState, deltaSolution, x, u, metrics);
+    const auto stepInfo =
+      takeStep(baselinePerformance, timeDiscretization, initState, deltaSolution, x, u, metrics);
     performanceIndeces_.push_back(stepInfo.performanceAfterStep);
     linesearchTimer_.endTimer();
 
@@ -232,15 +259,17 @@ void SlpSolver::runImpl(scalar_t initTime, const vector_t& initState, scalar_t f
   }
 }
 
-void SlpSolver::runParallel(std::function<void(int)> taskFunction) {
+void SlpSolver::runParallel(std::function<void(int)> taskFunction)
+{
   threadPool_.runParallel(std::move(taskFunction), settings_.nThreads);
 }
 
-SlpSolver::OcpSubproblemSolution SlpSolver::getOCPSolution(const vector_t& delta_x0) {
+SlpSolver::OcpSubproblemSolution SlpSolver::getOCPSolution(const vector_t & delta_x0)
+{
   // Solve the QP
   OcpSubproblemSolution solution;
-  auto& deltaXSol = solution.deltaXSol;
-  auto& deltaUSol = solution.deltaUSol;
+  auto & deltaXSol = solution.deltaXSol;
+  auto & deltaUSol = solution.deltaUSol;
 
   // without constraints, or when using projection, we have an unconstrained QP.
   pipgSolver_.resize(extractSizesFromProblem(dynamics_, cost_, nullptr));
@@ -250,14 +279,15 @@ SlpSolver::OcpSubproblemSolution SlpSolver::getOCPSolution(const vector_t& delta
   scalar_t c;
   vector_array_t D, E;
   vector_array_t scalingVectors;
-  precondition::ocpDataInPlaceInParallel(threadPool_, delta_x0, pipgSolver_.size(), settings_.scalingIteration, dynamics_, cost_, D, E,
-                                         scalingVectors, c);
+  precondition::ocpDataInPlaceInParallel(
+    threadPool_, delta_x0, pipgSolver_.size(), settings_.scalingIteration, dynamics_, cost_, D, E,
+    scalingVectors, c);
   preConditioning_.endTimer();
 
   // estimate mu and lambda: mu I < H < lambda I
   const auto muEstimated = [&]() {
     scalar_t maxScalingFactor = -1;
-    for (auto& v : D) {
+    for (auto & v : D) {
       if (v.size() != 0) {
         maxScalingFactor = std::max(maxScalingFactor, v.maxCoeff());
       }
@@ -271,15 +301,18 @@ SlpSolver::OcpSubproblemSolution SlpSolver::getOCPSolution(const vector_t& delta
   // estimate sigma: G' G < sigma I
   // However, since the G'G and GG' have exactly the same set of eigenvalues value: G G' < sigma I
   sigmaEstimation_.startTimer();
-  const auto sigmaScaled = slp::GGTEigenvaluesUpperBound(threadPool_, pipgSolver_.size(), dynamics_, nullptr, &scalingVectors);
+  const auto sigmaScaled = slp::GGTEigenvaluesUpperBound(
+    threadPool_, pipgSolver_.size(), dynamics_, nullptr, &scalingVectors);
   sigmaEstimation_.endTimer();
 
   pipgSolverTimer_.startTimer();
   vector_array_t EInv(E.size());
-  std::transform(E.begin(), E.end(), EInv.begin(), [](const vector_t& v) { return v.cwiseInverse(); });
+  std::transform(
+    E.begin(), E.end(), EInv.begin(), [](const vector_t & v) { return v.cwiseInverse(); });
   const pipg::PipgBounds pipgBounds{muEstimated, lambdaScaled, sigmaScaled};
-  const auto pipgStatus =
-      pipgSolver_.solve(threadPool_, delta_x0, dynamics_, cost_, nullptr, scalingVectors, &EInv, pipgBounds, deltaXSol, deltaUSol);
+  const auto pipgStatus = pipgSolver_.solve(
+    threadPool_, delta_x0, dynamics_, cost_, nullptr, scalingVectors, &EInv, pipgBounds, deltaXSol,
+    deltaUSol);
   pipgSolverTimer_.endTimer();
 
   // to determine if the solution is a descent direction for the cost: compute gradient(cost)' * [dx; du]
@@ -293,13 +326,18 @@ SlpSolver::OcpSubproblemSolution SlpSolver::getOCPSolution(const vector_t& delta
   return solution;
 }
 
-PrimalSolution SlpSolver::toPrimalSolution(const std::vector<AnnotatedTime>& time, vector_array_t&& x, vector_array_t&& u) {
-  ModeSchedule modeSchedule = this->getReferenceManager().getModeSchedule();
-  return multiple_shooting::toPrimalSolution(time, std::move(modeSchedule), std::move(x), std::move(u));
+PrimalSolution SlpSolver::toPrimalSolution(
+  const std::vector<AnnotatedTime> & time, vector_array_t && x, vector_array_t && u)
+{
+  ModeSchedule mode_schedule = this->getReferenceManager().getModeSchedule();
+  return multiple_shooting::toPrimalSolution(
+    time, std::move(mode_schedule), std::move(x), std::move(u));
 }
 
-PerformanceIndex SlpSolver::setupQuadraticSubproblem(const std::vector<AnnotatedTime>& time, const vector_t& initState,
-                                                     const vector_array_t& x, const vector_array_t& u, std::vector<Metrics>& metrics) {
+PerformanceIndex SlpSolver::setupQuadraticSubproblem(
+  const std::vector<AnnotatedTime> & time, const vector_t & initState, const vector_array_t & x,
+  const vector_array_t & u, std::vector<Metrics> & metrics)
+{
   // Problem horizon
   const int N = static_cast<int>(time.size()) - 1;
 
@@ -316,14 +354,15 @@ PerformanceIndex SlpSolver::setupQuadraticSubproblem(const std::vector<Annotated
   std::atomic_int timeIndex{0};
   auto parallelTask = [&](int workerId) {
     // Get worker specific resources
-    OptimalControlProblem& ocpDefinition = ocpDefinitions_[workerId];
+    OptimalControlProblem & ocpDefinition = ocpDefinitions_[workerId];
     PerformanceIndex workerPerformance;  // Accumulate performance in local variable
 
     int i = timeIndex++;
     while (i < N) {
       if (time[i].event == AnnotatedTime::Event::PreEvent) {
         // Event node
-        auto result = multiple_shooting::setupEventNode(ocpDefinition, time[i].time, x[i], x[i + 1]);
+        auto result =
+          multiple_shooting::setupEventNode(ocpDefinition, time[i].time, x[i], x[i + 1]);
         metrics[i] = multiple_shooting::computeMetrics(result);
         workerPerformance += multiple_shooting::computePerformanceIndex(result);
         cost_[i] = std::move(result.cost);
@@ -332,12 +371,14 @@ PerformanceIndex SlpSolver::setupQuadraticSubproblem(const std::vector<Annotated
         stateIneqConstraints_[i] = std::move(result.ineqConstraints);
         stateInputIneqConstraints_[i].resize(0, x[i].size());
         constraintsProjection_[i].resize(0, x[i].size());
-        projectionMultiplierCoefficients_[i] = multiple_shooting::ProjectionMultiplierCoefficients();
+        projectionMultiplierCoefficients_[i] =
+          multiple_shooting::ProjectionMultiplierCoefficients();
       } else {
         // Normal, intermediate node
         const scalar_t ti = getIntervalStart(time[i]);
         const scalar_t dt = getIntervalDuration(time[i], time[i + 1]);
-        auto result = multiple_shooting::setupIntermediateNode(ocpDefinition, sensitivityDiscretizer_, ti, dt, x[i], x[i + 1], u[i]);
+        auto result = multiple_shooting::setupIntermediateNode(
+          ocpDefinition, sensitivityDiscretizer_, ti, dt, x[i], x[i + 1], u[i]);
         metrics[i] = multiple_shooting::computeMetrics(result);
         workerPerformance += multiple_shooting::computePerformanceIndex(result, dt);
         multiple_shooting::projectTranscription(result, settings_.extractProjectionMultiplier);
@@ -371,14 +412,18 @@ PerformanceIndex SlpSolver::setupQuadraticSubproblem(const std::vector<Annotated
   performance.front().dynamicsViolationSSE += (initState - x.front()).squaredNorm();
 
   // Sum performance of the threads
-  PerformanceIndex totalPerformance = std::accumulate(std::next(performance.begin()), performance.end(), performance.front());
-  totalPerformance.merit = totalPerformance.cost + totalPerformance.equalityLagrangian + totalPerformance.inequalityLagrangian;
+  PerformanceIndex totalPerformance =
+    std::accumulate(std::next(performance.begin()), performance.end(), performance.front());
+  totalPerformance.merit = totalPerformance.cost + totalPerformance.equalityLagrangian +
+                           totalPerformance.inequalityLagrangian;
 
   return totalPerformance;
 }
 
-PerformanceIndex SlpSolver::computePerformance(const std::vector<AnnotatedTime>& time, const vector_t& initState, const vector_array_t& x,
-                                               const vector_array_t& u, std::vector<Metrics>& metrics) {
+PerformanceIndex SlpSolver::computePerformance(
+  const std::vector<AnnotatedTime> & time, const vector_t & initState, const vector_array_t & x,
+  const vector_array_t & u, std::vector<Metrics> & metrics)
+{
   // Problem size
   const int N = static_cast<int>(time.size()) - 1;
   metrics.resize(N + 1);
@@ -387,19 +432,21 @@ PerformanceIndex SlpSolver::computePerformance(const std::vector<AnnotatedTime>&
   std::atomic_int timeIndex{0};
   auto parallelTask = [&](int workerId) {
     // Get worker specific resources
-    OptimalControlProblem& ocpDefinition = ocpDefinitions_[workerId];
+    OptimalControlProblem & ocpDefinition = ocpDefinitions_[workerId];
 
     int i = timeIndex++;
     while (i < N) {
       if (time[i].event == AnnotatedTime::Event::PreEvent) {
         // Event node
-        metrics[i] = multiple_shooting::computeEventMetrics(ocpDefinition, time[i].time, x[i], x[i + 1]);
+        metrics[i] =
+          multiple_shooting::computeEventMetrics(ocpDefinition, time[i].time, x[i], x[i + 1]);
         performance[workerId] += toPerformanceIndex(metrics[i]);
       } else {
         // Normal, intermediate node
         const scalar_t ti = getIntervalStart(time[i]);
         const scalar_t dt = getIntervalDuration(time[i], time[i + 1]);
-        metrics[i] = multiple_shooting::computeIntermediateMetrics(ocpDefinition, discretizer_, ti, dt, x[i], x[i + 1], u[i]);
+        metrics[i] = multiple_shooting::computeIntermediateMetrics(
+          ocpDefinition, discretizer_, ti, dt, x[i], x[i + 1], u[i]);
         performance[workerId] += toPerformanceIndex(metrics[i], dt);
       }
 
@@ -420,14 +467,18 @@ PerformanceIndex SlpSolver::computePerformance(const std::vector<AnnotatedTime>&
   performance.front().dynamicsViolationSSE += initDynamicsViolation.squaredNorm();
 
   // Sum performance of the threads
-  PerformanceIndex totalPerformance = std::accumulate(std::next(performance.begin()), performance.end(), performance.front());
-  totalPerformance.merit = totalPerformance.cost + totalPerformance.equalityLagrangian + totalPerformance.inequalityLagrangian;
+  PerformanceIndex totalPerformance =
+    std::accumulate(std::next(performance.begin()), performance.end(), performance.front());
+  totalPerformance.merit = totalPerformance.cost + totalPerformance.equalityLagrangian +
+                           totalPerformance.inequalityLagrangian;
   return totalPerformance;
 }
 
-slp::StepInfo SlpSolver::takeStep(const PerformanceIndex& baseline, const std::vector<AnnotatedTime>& timeDiscretization,
-                                  const vector_t& initState, const OcpSubproblemSolution& subproblemSolution, vector_array_t& x,
-                                  vector_array_t& u, std::vector<Metrics>& metrics) {
+slp::StepInfo SlpSolver::takeStep(
+  const PerformanceIndex & baseline, const std::vector<AnnotatedTime> & timeDiscretization,
+  const vector_t & initState, const OcpSubproblemSolution & subproblemSolution, vector_array_t & x,
+  vector_array_t & u, std::vector<Metrics> & metrics)
+{
   using StepType = FilterLinesearch::StepType;
 
   /*
@@ -445,8 +496,8 @@ slp::StepInfo SlpSolver::takeStep(const PerformanceIndex& baseline, const std::v
   const scalar_t baselineConstraintViolation = FilterLinesearch::totalConstraintViolation(baseline);
 
   // Update norm
-  const auto& dx = subproblemSolution.deltaXSol;
-  const auto& du = subproblemSolution.deltaUSol;
+  const auto & dx = subproblemSolution.deltaXSol;
+  const auto & du = subproblemSolution.deltaUSol;
   const auto deltaUnorm = multiple_shooting::trajectoryNorm(du);
   const auto deltaXnorm = multiple_shooting::trajectoryNorm(dx);
 
@@ -460,13 +511,14 @@ slp::StepInfo SlpSolver::takeStep(const PerformanceIndex& baseline, const std::v
     multiple_shooting::incrementTrajectory(x, dx, alpha, xNew);
 
     // Compute cost and constraints
-    const PerformanceIndex performanceNew = computePerformance(timeDiscretization, initState, xNew, uNew, metricsNew);
+    const PerformanceIndex performanceNew =
+      computePerformance(timeDiscretization, initState, xNew, uNew, metricsNew);
 
     // Step acceptance and record step type
     bool stepAccepted;
     StepType stepType;
-    std::tie(stepAccepted, stepType) =
-        filterLinesearch_.acceptStep(baseline, performanceNew, alpha * subproblemSolution.armijoDescentMetric);
+    std::tie(stepAccepted, stepType) = filterLinesearch_.acceptStep(
+      baseline, performanceNew, alpha * subproblemSolution.armijoDescentMetric);
 
     if (settings_.printLinesearch) {
       std::cerr << "Step size: " << alpha << ", Step Type: " << toString(stepType)
@@ -487,7 +539,8 @@ slp::StepInfo SlpSolver::takeStep(const PerformanceIndex& baseline, const std::v
       stepInfo.dx_norm = alpha * deltaXnorm;
       stepInfo.du_norm = alpha * deltaUnorm;
       stepInfo.performanceAfterStep = performanceNew;
-      stepInfo.totalConstraintViolationAfterStep = FilterLinesearch::totalConstraintViolation(performanceNew);
+      stepInfo.totalConstraintViolationAfterStep =
+        FilterLinesearch::totalConstraintViolation(performanceNew);
       return stepInfo;
 
     } else {  // Try smaller step
@@ -496,8 +549,9 @@ slp::StepInfo SlpSolver::takeStep(const PerformanceIndex& baseline, const std::v
       // Detect too small step size during back-tracking to escape early. Prevents going all the way to alpha_min
       if (alpha * deltaXnorm < settings_.deltaTol && alpha * deltaUnorm < settings_.deltaTol) {
         if (settings_.printLinesearch) {
-          std::cerr << "Exiting linesearch early due to too small primal steps |dx|: " << alpha * deltaXnorm
-                    << ", and or |du|: " << alpha * deltaUnorm << " are below deltaTol: " << settings_.deltaTol << "\n";
+          std::cerr << "Exiting linesearch early due to too small primal steps |dx|: "
+                    << alpha * deltaXnorm << ", and or |du|: " << alpha * deltaUnorm
+                    << " are below deltaTol: " << settings_.deltaTol << "\n";
         }
         break;
       }
@@ -514,13 +568,16 @@ slp::StepInfo SlpSolver::takeStep(const PerformanceIndex& baseline, const std::v
   stepInfo.totalConstraintViolationAfterStep = FilterLinesearch::totalConstraintViolation(baseline);
 
   if (settings_.printLinesearch) {
-    std::cerr << "[Linesearch terminated] Step size: " << stepInfo.stepSize << ", Step Type: " << toString(stepInfo.stepType) << "\n";
+    std::cerr << "[Linesearch terminated] Step size: " << stepInfo.stepSize
+              << ", Step Type: " << toString(stepInfo.stepType) << "\n";
   }
 
   return stepInfo;
 }
 
-slp::Convergence SlpSolver::checkConvergence(int iteration, const PerformanceIndex& baseline, const slp::StepInfo& stepInfo) const {
+slp::Convergence SlpSolver::checkConvergence(
+  int iteration, const PerformanceIndex & baseline, const slp::StepInfo & stepInfo) const
+{
   using Convergence = slp::Convergence;
   if ((iteration + 1) >= settings_.slpIteration) {
     // Converged because the next iteration would exceed the specified number of iterations
@@ -528,8 +585,9 @@ slp::Convergence SlpSolver::checkConvergence(int iteration, const PerformanceInd
   } else if (stepInfo.stepSize < settings_.alpha_min) {
     // Converged because step size is below the specified minimum
     return Convergence::STEPSIZE;
-  } else if (std::abs(stepInfo.performanceAfterStep.merit - baseline.merit) < settings_.costTol &&
-             FilterLinesearch::totalConstraintViolation(stepInfo.performanceAfterStep) < settings_.g_min) {
+  } else if (
+    std::abs(stepInfo.performanceAfterStep.merit - baseline.merit) < settings_.costTol &&
+    FilterLinesearch::totalConstraintViolation(stepInfo.performanceAfterStep) < settings_.g_min) {
     // Converged because the change in merit is below the specified tolerance while the constraint violation is below the minimum
     return Convergence::METRICS;
   } else if (stepInfo.dx_norm < settings_.deltaTol && stepInfo.du_norm < settings_.deltaTol) {

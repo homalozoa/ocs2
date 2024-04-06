@@ -27,7 +27,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include "ocs2_raisim_core/RaisimRollout.h"
+#include "ocs2_raisim_core/RaisimRollout.hpp"
 
 namespace ocs2 {
 
@@ -116,7 +116,7 @@ void RaisimRollout::setPdGains(const Eigen::VectorXd& pGain, const Eigen::Vector
 /******************************************************************************************************/
 /******************************************************************************************************/
 vector_t RaisimRollout::run(scalar_t initTime, const vector_t& initState, scalar_t finalTime, ControllerBase* controller,
-                            ModeSchedule& modeSchedule, scalar_array_t& timeTrajectory, size_array_t& postEventIndices,
+                            ModeSchedule& mode_schedule, scalar_array_t& timeTrajectory, size_array_t& postEventIndices,
                             vector_array_t& stateTrajectory, vector_array_t& inputTrajectory) {
   if (initTime > finalTime) {
     throw std::runtime_error("[RaisimRollout::run] The initial time should be less-equal to the final time!");
@@ -128,7 +128,7 @@ vector_t RaisimRollout::run(scalar_t initTime, const vector_t& initState, scalar
   world_.setTimeStep(this->settings().timeStep);
 
   // extract sub-systems
-  const auto timeIntervalArray = findActiveModesTimeInterval(initTime, finalTime, modeSchedule.eventTimes);
+  const auto timeIntervalArray = findActiveModesTimeInterval(initTime, finalTime, mode_schedule.event_times);
   const int numSubsystems = timeIntervalArray.size();
   const auto maxNumSteps = static_cast<int>(std::round((finalTime - initTime) / this->settings().timeStep));
 

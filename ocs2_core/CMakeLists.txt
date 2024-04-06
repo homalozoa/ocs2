@@ -101,7 +101,8 @@ ament_auto_add_library(
   src/penalties/penalties/SquaredHingePenalty.cpp
   src/thread_support/ThreadPool.cpp
 )
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(
+  ${PROJECT_NAME}
   ${Boost_LIBRARIES}
   -lm -ldl
 )

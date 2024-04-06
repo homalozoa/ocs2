@@ -89,27 +89,27 @@ void remapProjectedGain(
  * Constructs a primal solution (with a feedforward controller) based the LQ subproblem solution.
  *
  * @param [in] time : The annotated time trajectory
- * @param [in] modeSchedule: The mode schedule.
+ * @param [in] mode_schedule: The mode schedule.
  * @param [in] x: The state trajectory of the QP subproblem solution.
  * @param [in] u: The input trajectory of the QP subproblem solution.
  * @return The primal solution.
  */
 PrimalSolution toPrimalSolution(
-  const std::vector<AnnotatedTime> & time, ModeSchedule && modeSchedule, vector_array_t && x,
+  const std::vector<AnnotatedTime> & time, ModeSchedule && mode_schedule, vector_array_t && x,
   vector_array_t && u);
 
 /**
  * Constructs a primal solution (with a linear controller) based the LQ subproblem solution.
  *
  * @param [in] time : The annotated time trajectory
- * @param [in] modeSchedule: The mode schedule.
+ * @param [in] mode_schedule: The mode schedule.
  * @param [in] x: The state trajectory of the QP subproblem solution.
  * @param [in] u: The input trajectory of the QP subproblem solution.
  * @param [in] KMatrices: The LQR gain trajectory of the QP subproblem solution.
  * @return The primal solution.
  */
 PrimalSolution toPrimalSolution(
-  const std::vector<AnnotatedTime> & time, ModeSchedule && modeSchedule, vector_array_t && x,
+  const std::vector<AnnotatedTime> & time, ModeSchedule && mode_schedule, vector_array_t && x,
   vector_array_t && u, matrix_array_t && KMatrices);
 
 /**

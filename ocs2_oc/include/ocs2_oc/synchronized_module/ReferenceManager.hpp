@@ -50,14 +50,14 @@ public:
 
   void preSolverRun(scalar_t initTime, scalar_t finalTime, const vector_t & initState) override;
 
-  const ModeSchedule & getModeSchedule() const override { return modeSchedule_.get(); }
-  void setModeSchedule(const ModeSchedule & modeSchedule) override
+  const ModeSchedule & getModeSchedule() const override { return mode_schedule_.get(); }
+  void setModeSchedule(const ModeSchedule & mode_schedule) override
   {
-    modeSchedule_.setBuffer(modeSchedule);
+    mode_schedule_.setBuffer(mode_schedule);
   }
-  void setModeSchedule(ModeSchedule && modeSchedule) override
+  void setModeSchedule(ModeSchedule && mode_schedule) override
   {
-    modeSchedule_.setBuffer(std::move(modeSchedule));
+    mode_schedule_.setBuffer(std::move(mode_schedule));
   }
 
   const TargetTrajectories & getTargetTrajectories() const override
@@ -82,17 +82,17 @@ protected:
    * @param [in] initState : State at the start of the optimization horizon.
    * @param [in, out] targetTrajectories : The updated TargetTrajectories. If setTargetTrajectories() has been called before,
    * TargetTrajectories is already updated by the set value.
-   * @param [in, out] modeSchedule : The updated ModeSchedule. If setModeSchedule() has been called before, modeSchedule is
+   * @param [in, out] mode_schedule : The updated ModeSchedule. If setModeSchedule() has been called before, mode_schedule is
    * already updated by the set value.
    */
   virtual void modifyReferences(
     scalar_t initTime, scalar_t finalTime, const vector_t & initState,
-    TargetTrajectories & targetTrajectories, ModeSchedule & modeSchedule)
+    TargetTrajectories & targetTrajectories, ModeSchedule & mode_schedule)
   {
   }
 
 private:
-  BufferedValue<ModeSchedule> modeSchedule_;
+  BufferedValue<ModeSchedule> mode_schedule_;
   BufferedValue<TargetTrajectories> targetTrajectories_;
 };
 

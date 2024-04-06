@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.8)
 project(ocs2_legged_robot)
 
 # Generate compile_commands.json for clang tools
@@ -103,7 +103,8 @@ add_library(${PROJECT_NAME}
 add_dependencies(${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}
 )
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(
+  ${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
   ${pinocchio_LIBRARIES}
@@ -156,7 +157,8 @@ target_include_directories(${PROJECT_NAME}_test PRIVATE
   test/include
   ${PROJECT_BINARY_DIR}/include
 )
-target_link_libraries(${PROJECT_NAME}_test
+target_link_libraries(
+  ${PROJECT_NAME}_test
   gtest_main
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}

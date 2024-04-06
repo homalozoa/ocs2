@@ -6,18 +6,18 @@
 
 namespace switched_model {
 
-ZeroForceConstraint::ZeroForceConstraint(int legNumber, const SwitchedModelModeScheduleManager& modeScheduleManager)
+ZeroForceConstraint::ZeroForceConstraint(int legNumber, const SwitchedModelModeScheduleManager& mode_scheduleManager)
     : ocs2::StateInputConstraint(ocs2::ConstraintOrder::Linear),
       legStartIdx_(3 * legNumber),
       legNumber_(legNumber),
-      modeScheduleManager_(&modeScheduleManager) {}
+      mode_scheduleManager_(&mode_scheduleManager) {}
 
 ZeroForceConstraint* ZeroForceConstraint::clone() const {
   return new ZeroForceConstraint(*this);
 }
 
 bool ZeroForceConstraint::isActive(scalar_t time) const {
-  return !modeScheduleManager_->getContactFlags(time)[legNumber_];
+  return !mode_scheduleManager_->getContactFlags(time)[legNumber_];
 }
 
 size_t ZeroForceConstraint::getNumConstraints(scalar_t time) const {

@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
 
   // MRT
   ocs2::MRT_ROS_Interface mrt(robotName);
-  mrt.initRollout(&quadrotorInterface.getRollout());
+  mrt.init_rollout(&quadrotorInterface.getRollout());
   mrt.launchNodes(nodeHandle);
 
   // Visualization
@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
   // Dummy loop
   ocs2::MRT_ROS_Dummy_Loop dummyQuadrotor(mrt, quadrotorInterface.mpcSettings().mrtDesiredFrequency_,
                                           quadrotorInterface.mpcSettings().mpcDesiredFrequency_);
-  dummyQuadrotor.subscribeObservers({quadrotorDummyVisualization});
+  dummyQuadrotor.subscribe_observers({quadrotorDummyVisualization});
 
   // initial state
   ocs2::SystemObservation initObservation;

@@ -27,17 +27,16 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "ocs2_core/initialization/DefaultInitializer.hpp"
+#include "ocs2_oc/test/circular_kinematics.hpp"
+#include "ocs2_sqp/SqpSolver.hpp"
 
-#include "ocs2_sqp/SqpSolver.h"
-
-#include <ocs2_core/initialization/DefaultInitializer.h>
-
-#include <ocs2_oc/test/circular_kinematics.h>
-
-TEST(test_circular_kinematics, solve_projected_EqConstraints) {
+TEST(test_circular_kinematics, solve_projected_EqConstraints)
+{
   // optimal control problem
-  ocs2::OptimalControlProblem problem = ocs2::createCircularKinematicsProblem("/tmp/ocs2/sqp_test_generated");
+  ocs2::OptimalControlProblem problem =
+    ocs2::createCircularKinematicsProblem("/tmp/ocs2/sqp_test_generated");
 
   // Initializer
   ocs2::DefaultInitializer zeroInitializer(2);
@@ -65,7 +64,8 @@ TEST(test_circular_kinematics, solve_projected_EqConstraints) {
   // Inspect solution
   const auto primalSolution = solver.primalSolution(finalTime);
   for (int i = 0; i < primalSolution.timeTrajectory_.size(); i++) {
-    std::cout << "time: " << primalSolution.timeTrajectory_[i] << "\t state: " << primalSolution.stateTrajectory_[i].transpose()
+    std::cout << "time: " << primalSolution.timeTrajectory_[i]
+              << "\t state: " << primalSolution.stateTrajectory_[i].transpose()
               << "\t input: " << primalSolution.inputTrajectory_[i].transpose() << std::endl;
   }
 
@@ -82,16 +82,18 @@ TEST(test_circular_kinematics, solve_projected_EqConstraints) {
   // Check feedback controller
   for (int i = 0; i < primalSolution.timeTrajectory_.size() - 1; i++) {
     const auto t = primalSolution.timeTrajectory_[i];
-    const auto& x = primalSolution.stateTrajectory_[i];
-    const auto& u = primalSolution.inputTrajectory_[i];
+    const auto & x = primalSolution.stateTrajectory_[i];
+    const auto & u = primalSolution.inputTrajectory_[i];
     // Feed forward part
     ASSERT_TRUE(u.isApprox(primalSolution.controllerPtr_->computeInput(t, x)));
   }
 }
 
-TEST(test_circular_kinematics, solve_EqConstraints_inQPSubproblem) {
+TEST(test_circular_kinematics, solve_EqConstraints_inQPSubproblem)
+{
   // optimal control problem
-  ocs2::OptimalControlProblem problem = ocs2::createCircularKinematicsProblem("/tmp/sqp_test_generated");
+  ocs2::OptimalControlProblem problem =
+    ocs2::createCircularKinematicsProblem("/tmp/sqp_test_generated");
 
   // Initializer
   ocs2::DefaultInitializer zeroInitializer(2);
@@ -100,7 +102,8 @@ TEST(test_circular_kinematics, solve_EqConstraints_inQPSubproblem) {
   ocs2::sqp::Settings settings;
   settings.dt = 0.01;
   settings.sqpIteration = 20;
-  settings.projectStateInputEqualityConstraints = false;  // <- false to turn off projection of state-input equalities
+  settings.projectStateInputEqualityConstraints =
+    false;  // <- false to turn off projection of state-input equalities
   settings.useFeedbackPolicy = true;
   settings.printSolverStatistics = true;
   settings.printSolverStatus = true;
@@ -118,7 +121,8 @@ TEST(test_circular_kinematics, solve_EqConstraints_inQPSubproblem) {
   // Inspect solution
   const auto primalSolution = solver.primalSolution(finalTime);
   for (int i = 0; i < primalSolution.timeTrajectory_.size(); i++) {
-    std::cout << "time: " << primalSolution.timeTrajectory_[i] << "\t state: " << primalSolution.stateTrajectory_[i].transpose()
+    std::cout << "time: " << primalSolution.timeTrajectory_[i]
+              << "\t state: " << primalSolution.stateTrajectory_[i].transpose()
               << "\t input: " << primalSolution.inputTrajectory_[i].transpose() << std::endl;
   }
 
@@ -135,8 +139,8 @@ TEST(test_circular_kinematics, solve_EqConstraints_inQPSubproblem) {
   // Check feedback controller
   for (int i = 0; i < primalSolution.timeTrajectory_.size() - 1; i++) {
     const auto t = primalSolution.timeTrajectory_[i];
-    const auto& x = primalSolution.stateTrajectory_[i];
-    const auto& u = primalSolution.inputTrajectory_[i];
+    const auto & x = primalSolution.stateTrajectory_[i];
+    const auto & u = primalSolution.inputTrajectory_[i];
     // Feed forward part
     ASSERT_TRUE(u.isApprox(primalSolution.controllerPtr_->computeInput(t, x)));
   }

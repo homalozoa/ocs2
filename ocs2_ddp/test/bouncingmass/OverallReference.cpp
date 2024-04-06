@@ -27,11 +27,13 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_ddp/test/bouncingmass/OverallReference.h"
+#include "ocs2_ddp/test/bouncingmass/OverallReference.hpp"
 
-#include <ocs2_core/misc/Lookup.h>
+#include "ocs2_core/misc/Lookup.hpp"
 
-OverallReference::OverallReference(const scalar_array_t& trajTimes, const vector_array_t& trajStates) {
+OverallReference::OverallReference(
+  const scalar_array_t & trajTimes, const vector_array_t & trajStates)
+{
   switchtimes_ = trajTimes;
 
   References_.reserve(trajTimes.size() - 1);
@@ -39,22 +41,28 @@ OverallReference::OverallReference(const scalar_array_t& trajTimes, const vector
     if (i == 0) {
       References_.emplace_back(trajTimes[i], trajTimes[i + 1], trajStates[i], trajStates[i + 1]);
     } else {
-      References_.emplace_back(trajTimes[i], trajTimes[i + 1], jumpMap(trajStates[i]), trajStates[i + 1]);
+      References_.emplace_back(
+        trajTimes[i], trajTimes[i + 1], jumpMap(trajStates[i]), trajStates[i + 1]);
     }
   }
 }
 
-vector_t OverallReference::getInput(scalar_t time) const {
+vector_t OverallReference::getInput(scalar_t time) const
+{
   const int idx = ocs2::lookup::findIntervalInTimeArray(switchtimes_, time);
-  return (idx >= 0 && idx < References_.size()) ? References_[idx].getInput(time) : vector_t::Zero(INPUT_DIM);
+  return (idx >= 0 && idx < References_.size()) ? References_[idx].getInput(time)
+                                                : vector_t::Zero(INPUT_DIM);
 }
 
-vector_t OverallReference::getState(scalar_t time) const {
+vector_t OverallReference::getState(scalar_t time) const
+{
   const int idx = ocs2::lookup::findIntervalInTimeArray(switchtimes_, time);
-  return (idx >= 0 && idx < References_.size()) ? References_[idx].getState(time) : References_[0].getState(0);
+  return (idx >= 0 && idx < References_.size()) ? References_[idx].getState(time)
+                                                : References_[0].getState(0);
 }
 
-vector_t OverallReference::getState(int idx, scalar_t time) const {
+vector_t OverallReference::getState(int idx, scalar_t time) const
+{
   vector_t state;
   if (idx >= 0 && idx < References_.size()) {
     if (time < 2) {
@@ -68,19 +76,19 @@ vector_t OverallReference::getState(int idx, scalar_t time) const {
   return state;
 }
 
-void OverallReference::extendref(scalar_t delta) {
+void OverallReference::extendref(scalar_t delta)
+{
   for (int i = 0; i < References_.size(); i++) {
-    Reference* pre = i > 0 ? &References_[i - 1] : nullptr;
-    Reference* post = i < References_.size() - 1 ? &References_[i + 1] : nullptr;
+    Reference * pre = i > 0 ? &References_[i - 1] : nullptr;
+    Reference * post = i < References_.size() - 1 ? &References_[i + 1] : nullptr;
     References_[i].extendref(delta, pre, post);
   }
 }
 
-void OverallReference::display(int i) {
-  References_[i].display();
-}
+void OverallReference::display(int i) { References_[i].display(); }
 
-vector_t OverallReference::jumpMap(const vector_t& x) const {
+vector_t OverallReference::jumpMap(const vector_t & x) const
+{
   constexpr scalar_t e = 0.95;
   vector_t y(x.size());
   y << x(0), -e * x(1), x(2) + 1.0;

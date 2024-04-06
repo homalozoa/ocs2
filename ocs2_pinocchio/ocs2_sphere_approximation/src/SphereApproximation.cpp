@@ -27,36 +27,40 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_sphere_approximation/SphereApproximation.h"
+#include "ocs2_sphere_approximation/SphereApproximation.hpp"
 
 #include <algorithm>
 #include <cmath>
 
-namespace ocs2 {
+namespace ocs2
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-SphereApproximation::SphereApproximation(const hpp::fcl::CollisionGeometry& geometry, size_t geomObjId, scalar_t maxExcess,
-                                         scalar_t shrinkRatio)
-    : geomObjId_(geomObjId), maxExcess_(maxExcess), shrinkRatio_(shrinkRatio) {
+SphereApproximation::SphereApproximation(
+  const hpp::fcl::CollisionGeometry & geometry, size_t geomObjId, scalar_t maxExcess,
+  scalar_t shrinkRatio)
+: geomObjId_(geomObjId), maxExcess_(maxExcess), shrinkRatio_(shrinkRatio)
+{
   if (shrinkRatio <= 0.0 || shrinkRatio >= 1.0) {
-    throw std::runtime_error("[SphereApproximation] shrinkRation must be larger than 0.0 and smaller than 1.0!");
+    throw std::runtime_error(
+      "[SphereApproximation] shrinkRation must be larger than 0.0 and smaller than 1.0!");
   }
-  const auto& nodeType = geometry.getNodeType();
+  const auto & nodeType = geometry.getNodeType();
   switch (nodeType) {
     case hpp::fcl::NODE_TYPE::GEOM_BOX: {
-      const auto* boxPtr = dynamic_cast<const hpp::fcl::Box*>(&geometry);
+      const auto * boxPtr = dynamic_cast<const hpp::fcl::Box *>(&geometry);
       approximateBox(boxPtr->halfSide * 2);
       break;
     }
     case hpp::fcl::NODE_TYPE::GEOM_CYLINDER: {
-      const auto* cylinderPtr = dynamic_cast<const hpp::fcl::Cylinder*>(&geometry);
+      const auto * cylinderPtr = dynamic_cast<const hpp::fcl::Cylinder *>(&geometry);
       approximateCylinder(cylinderPtr->radius, cylinderPtr->halfLength * 2);
       break;
     }
     case hpp::fcl::NODE_TYPE::GEOM_SPHERE: {
-      const auto* spherePtr = dynamic_cast<const hpp::fcl::Sphere*>(&geometry);
+      const auto * spherePtr = dynamic_cast<const hpp::fcl::Sphere *>(&geometry);
       numSpheres_ = 1;
       sphereRadius_ = spherePtr->radius;
       sphereCentersToObjectCenter_.resize(1);
@@ -64,22 +68,26 @@ SphereApproximation::SphereApproximation(const hpp::fcl::CollisionGeometry& geom
       break;
     }
     default:
-      throw std::runtime_error("[SphereApproximation] Undefined shape primitive for sphere approximation");
+      throw std::runtime_error(
+        "[SphereApproximation] Undefined shape primitive for sphere approximation");
   }
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void SphereApproximation::approximateBox(const vector_t& sides) {
+void SphereApproximation::approximateBox(const vector_t & sides)
+{
   // indices of the shortest, medium, and longest side
   size_array_t idxSorted = {0, 1, 2};
-  std::stable_sort(idxSorted.begin(), idxSorted.end(),
-                   [&sides](const size_t& idx1, const size_t& idx2) { return sides[idx1] < sides[idx2]; });
+  std::stable_sort(
+    idxSorted.begin(), idxSorted.end(),
+    [&sides](const size_t & idx1, const size_t & idx2) { return sides[idx1] < sides[idx2]; });
 
   vector_t initSphereRadii(3);
   size_t caseIdx;
-  initSphereRadii << sides.norm() / 2, sides[idxSorted[0]] / 2 + maxExcess_, std::sqrt(3) * maxExcess_ / (std::sqrt(3) - 1);
+  initSphereRadii << sides.norm() / 2, sides[idxSorted[0]] / 2 + maxExcess_,
+    std::sqrt(3) * maxExcess_ / (std::sqrt(3) - 1);
   sphereRadius_ = initSphereRadii.minCoeff(&caseIdx);
 
   // Distance between the first sphere center and the corner along x, y, z
@@ -95,19 +103,22 @@ void SphereApproximation::approximateBox(const vector_t& sides) {
       // No re-calculation of the distances is required
       break;
     case 1: {
-      scalar_t dist = std::sqrt(std::pow(sphereRadius_, 2) - std::pow(sides[idxSorted[0]] / 2, 2)) / std::sqrt(2);
+      scalar_t dist =
+        std::sqrt(std::pow(sphereRadius_, 2) - std::pow(sides[idxSorted[0]] / 2, 2)) / std::sqrt(2);
 
       if (dist >= sides[idxSorted[1]] / 2) {
         distances[idxSorted[0]] = sides[idxSorted[0]] / 2;
         distances[idxSorted[1]] = sides[idxSorted[1]] / 2;
-        distances[idxSorted[2]] =
-            std::sqrt(std::pow(sphereRadius_, 2) - std::pow(distances[idxSorted[0]], 2) - std::pow(distances[idxSorted[1]], 2));
+        distances[idxSorted[2]] = std::sqrt(
+          std::pow(sphereRadius_, 2) - std::pow(distances[idxSorted[0]], 2) -
+          std::pow(distances[idxSorted[1]], 2));
 
         numSpheres[idxSorted[0]] = numSpheres[idxSorted[1]] = 1;
         numSpheres[idxSorted[2]] = std::ceil(sides[idxSorted[2]] / (2 * distances[idxSorted[2]]));
 
         // Re-calculate the distances
-        distances[idxSorted[2]] = std::max(sides[idxSorted[2]] / (2 * numSpheres[idxSorted[2]]), sphereRadius_ - maxExcess_);
+        distances[idxSorted[2]] = std::max(
+          sides[idxSorted[2]] / (2 * numSpheres[idxSorted[2]]), sphereRadius_ - maxExcess_);
 
       } else {
         distances[idxSorted[0]] = sides[idxSorted[0]] / 2;
@@ -118,8 +129,9 @@ void SphereApproximation::approximateBox(const vector_t& sides) {
         numSpheres[idxSorted[2]] = std::ceil(sides[idxSorted[2]] / (2 * distances[idxSorted[2]]));
 
         // Re-calculate the distances
-        distances[idxSorted[1]] = distances[idxSorted[2]] =
-            std::max(sides[idxSorted[1]] / (2 * numSpheres[idxSorted[1]]), sides[idxSorted[2]] / (2 * numSpheres[idxSorted[2]]));
+        distances[idxSorted[1]] = distances[idxSorted[2]] = std::max(
+          sides[idxSorted[1]] / (2 * numSpheres[idxSorted[1]]),
+          sides[idxSorted[2]] / (2 * numSpheres[idxSorted[2]]));
       }
       break;
     }
@@ -131,8 +143,10 @@ void SphereApproximation::approximateBox(const vector_t& sides) {
       numSpheres[idxSorted[2]] = std::ceil(sides[idxSorted[2]] / (2 * distances[idxSorted[2]]));
 
       // Re-calculate the distances
-      distances = std::max({sides[idxSorted[0]] / (2 * numSpheres[idxSorted[0]]), sides[idxSorted[1]] / (2 * numSpheres[idxSorted[1]]),
-                            sides[idxSorted[2]] / (2 * numSpheres[idxSorted[2]])}) *
+      distances = std::max(
+                    {sides[idxSorted[0]] / (2 * numSpheres[idxSorted[0]]),
+                     sides[idxSorted[1]] / (2 * numSpheres[idxSorted[1]]),
+                     sides[idxSorted[2]] / (2 * numSpheres[idxSorted[2]])}) *
                   vector_t::Ones(3);
       break;
   }
@@ -155,8 +169,9 @@ void SphereApproximation::approximateBox(const vector_t& sides) {
   for (size_t i = 0; i < numSpheres[0]; i++) {
     for (size_t j = 0; j < numSpheres[1]; j++) {
       for (size_t k = 0; k < numSpheres[2]; k++) {
-        sphereCentersToObjectCenter_[count] << distances[0] + i * spacings[0] - sides[0] / 2, distances[1] + j * spacings[1] - sides[1] / 2,
-            distances[2] + k * spacings[2] - sides[2] / 2;
+        sphereCentersToObjectCenter_[count] << distances[0] + i * spacings[0] - sides[0] / 2,
+          distances[1] + j * spacings[1] - sides[1] / 2,
+          distances[2] + k * spacings[2] - sides[2] / 2;
         count++;
       }
     }
@@ -166,7 +181,8 @@ void SphereApproximation::approximateBox(const vector_t& sides) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void SphereApproximation::approximateCylinder(const scalar_t radius, const scalar_t length) {
+void SphereApproximation::approximateCylinder(const scalar_t radius, const scalar_t length)
+{
   // First, approximate the rectangle cross-section of the cylinder
   vector_t sides(2);
   sides << 2 * radius, length;
@@ -180,12 +196,15 @@ void SphereApproximation::approximateCylinder(const scalar_t radius, const scala
   vector_t distances(2);
   vector_t numSpheres(2);
 
-  approximateRectanglularCrossSection(sides, idxSorted, maxExcess_, sphereRadius_, numSpheres, distances);
-  bool recursiveApproximation = false;  // If recursive approximation of the cylinder base is necessary.
+  approximateRectanglularCrossSection(
+    sides, idxSorted, maxExcess_, sphereRadius_, numSpheres, distances);
+  bool recursiveApproximation =
+    false;  // If recursive approximation of the cylinder base is necessary.
   if (numSpheres[0] > 1) {
     // More than one sphere is required along radial direction with maxExcess. Re-approximate the rectangular cross-section using the
     // reduced threshold in favor of the later approximation of the circular base.
-    approximateRectanglularCrossSection(sides, idxSorted, maxExcessL, sphereRadius_, numSpheres, distances);
+    approximateRectanglularCrossSection(
+      sides, idxSorted, maxExcessL, sphereRadius_, numSpheres, distances);
     recursiveApproximation = true;
   }
 
@@ -205,7 +224,8 @@ void SphereApproximation::approximateCylinder(const scalar_t radius, const scala
 
     while (recursiveApproximation) {
       scalar_t shift, alpha, numCircles;
-      recursiveApproximation = approximateCircleBase(radiusBase, radiusCircle, maxExcessR, shift, alpha, numCircles);
+      recursiveApproximation =
+        approximateCircleBase(radiusBase, radiusCircle, maxExcessR, shift, alpha, numCircles);
 
       for (size_t i = 0; i < numCircles; i++) {
         vector_t circleCenter(2);
@@ -225,7 +245,8 @@ void SphereApproximation::approximateCylinder(const scalar_t radius, const scala
   size_t count = 0;
   for (size_t i = 0; i < numSpheres[1]; i++) {
     for (size_t j = 0; j < numSpheres[0]; j++) {
-      sphereCentersToObjectCenter_[count] << circleCentersToBaseCenter[j], distances[1] + i * spacingLength - sides[1] / 2;
+      sphereCentersToObjectCenter_[count] << circleCentersToBaseCenter[j],
+        distances[1] + i * spacingLength - sides[1] / 2;
       count++;
     }
   }
@@ -234,12 +255,14 @@ void SphereApproximation::approximateCylinder(const scalar_t radius, const scala
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-void SphereApproximation::approximateRectanglularCrossSection(const vector_t& sides, const size_array_t& idxSorted,
-                                                              const scalar_t maxExcess, scalar_t& sphereRadius, vector_t& numSpheres,
-                                                              vector_t& distances) {
+void SphereApproximation::approximateRectanglularCrossSection(
+  const vector_t & sides, const size_array_t & idxSorted, const scalar_t maxExcess,
+  scalar_t & sphereRadius, vector_t & numSpheres, vector_t & distances)
+{
   vector_t initSphereRadii(3);
   size_t caseIdx;
-  initSphereRadii << sides.norm() / 2, sides[idxSorted[0]] / 2 + maxExcess, std::sqrt(2) * maxExcess / (std::sqrt(2) - 1);
+  initSphereRadii << sides.norm() / 2, sides[idxSorted[0]] / 2 + maxExcess,
+    std::sqrt(2) * maxExcess / (std::sqrt(2) - 1);
   sphereRadius = initSphereRadii.minCoeff(&caseIdx);
 
   switch (caseIdx) {
@@ -249,7 +272,8 @@ void SphereApproximation::approximateRectanglularCrossSection(const vector_t& si
       break;
     case 1:
       distances[idxSorted[0]] = sides[idxSorted[0]] / 2;
-      distances[idxSorted[1]] = std::sqrt(std::pow(sphereRadius, 2) - std::pow(distances[idxSorted[0]], 2));
+      distances[idxSorted[1]] =
+        std::sqrt(std::pow(sphereRadius, 2) - std::pow(distances[idxSorted[0]], 2));
 
       numSpheres[idxSorted[0]] = 1;
       numSpheres[idxSorted[1]] = std::ceil(sides[idxSorted[1]] / (2 * distances[idxSorted[1]]));
@@ -264,7 +288,9 @@ void SphereApproximation::approximateRectanglularCrossSection(const vector_t& si
       numSpheres[idxSorted[1]] = std::ceil(sides[idxSorted[1]] / (2 * distances[idxSorted[1]]));
 
       // Re-calculate the distances
-      distances = std::max(sides[idxSorted[0]] / (2 * numSpheres[idxSorted[0]]), sides[idxSorted[1]] / (2 * numSpheres[idxSorted[1]])) *
+      distances = std::max(
+                    sides[idxSorted[0]] / (2 * numSpheres[idxSorted[0]]),
+                    sides[idxSorted[1]] / (2 * numSpheres[idxSorted[1]])) *
                   vector_t::Ones(2);
       break;
   }
@@ -274,12 +300,16 @@ void SphereApproximation::approximateRectanglularCrossSection(const vector_t& si
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-bool SphereApproximation::approximateCircleBase(const scalar_t radiusBase, const scalar_t radiusSphereCrossSection,
-                                                const scalar_t maxExcessR, scalar_t& shift, scalar_t& alpha, scalar_t& numCircles) {
+bool SphereApproximation::approximateCircleBase(
+  const scalar_t radiusBase, const scalar_t radiusSphereCrossSection, const scalar_t maxExcessR,
+  scalar_t & shift, scalar_t & alpha, scalar_t & numCircles)
+{
   if (radiusSphereCrossSection < radiusBase - std::numeric_limits<scalar_t>::epsilon()) {
     shift = radiusBase + std::min(0.0, maxExcessR - radiusSphereCrossSection);
     alpha =
-        2 * std::acos((std::pow(radiusBase, 2) + std::pow(shift, 2) - std::pow(radiusSphereCrossSection, 2)) / (2 * radiusBase * shift));
+      2 * std::acos(
+            (std::pow(radiusBase, 2) + std::pow(shift, 2) - std::pow(radiusSphereCrossSection, 2)) /
+            (2 * radiusBase * shift));
 
     numCircles = std::ceil(2 * M_PI / alpha);
 
@@ -287,7 +317,8 @@ bool SphereApproximation::approximateCircleBase(const scalar_t radiusBase, const
     alpha = 2 * M_PI / numCircles;
     vector_t intersection(2);
     intersection << radiusBase * std::sin(alpha / 2), radiusBase * std::cos(alpha / 2);
-    shift = intersection[1] - std::sqrt(std::pow(radiusSphereCrossSection, 2) - std::pow(intersection[0], 2));
+    shift = intersection[1] -
+            std::sqrt(std::pow(radiusSphereCrossSection, 2) - std::pow(intersection[0], 2));
 
     return true;
 

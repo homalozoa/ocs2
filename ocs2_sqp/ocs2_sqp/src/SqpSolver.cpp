@@ -27,26 +27,29 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_sqp/SqpSolver.h"
+#include "ocs2_sqp/SqpSolver.hpp"
 
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <numeric>
 
-#include <boost/filesystem.hpp>
+#include "boost/filesystem.hpp"
+#include "ocs2_oc/multiple_shooting/Helpers.hpp"
+#include "ocs2_oc/multiple_shooting/Initialization.hpp"
+#include "ocs2_oc/multiple_shooting/MetricsComputation.hpp"
+#include "ocs2_oc/multiple_shooting/PerformanceIndexComputation.hpp"
+#include "ocs2_oc/multiple_shooting/Transcription.hpp"
+#include "ocs2_oc/oc_problem/OcpSize.hpp"
+#include "ocs2_oc/trajectory_adjustment/TrajectorySpreadingHelperFunctions.hpp"
 
-#include <ocs2_oc/multiple_shooting/Helpers.h>
-#include <ocs2_oc/multiple_shooting/Initialization.h>
-#include <ocs2_oc/multiple_shooting/MetricsComputation.h>
-#include <ocs2_oc/multiple_shooting/PerformanceIndexComputation.h>
-#include <ocs2_oc/multiple_shooting/Transcription.h>
-#include <ocs2_oc/oc_problem/OcpSize.h>
-#include <ocs2_oc/trajectory_adjustment/TrajectorySpreadingHelperFunctions.h>
+namespace ocs2
+{
 
-namespace ocs2 {
-
-namespace {
-sqp::Settings rectifySettings(const OptimalControlProblem& ocp, sqp::Settings&& settings) {
+namespace
+{
+sqp::Settings rectifySettings(const OptimalControlProblem & ocp, sqp::Settings && settings)
+{
   // True does not make sense if there are no constraints.
   if (ocp.equalityConstraintPtr->empty()) {
     settings.projectStateInputEqualityConstraints = false;
@@ -55,11 +58,14 @@ sqp::Settings rectifySettings(const OptimalControlProblem& ocp, sqp::Settings&& 
 }
 }  // anonymous namespace
 
-SqpSolver::SqpSolver(sqp::Settings settings, const OptimalControlProblem& optimalControlProblem, const Initializer& initializer)
-    : settings_(rectifySettings(optimalControlProblem, std::move(settings))),
-      hpipmInterface_(OcpSize(), settings_.hpipmSettings),
-      threadPool_(std::max(settings_.nThreads, size_t(1)) - 1, settings_.threadPriority),
-      logger_(settings_.logSize) {
+SqpSolver::SqpSolver(
+  sqp::Settings settings, const OptimalControlProblem & optimalControlProblem,
+  const Initializer & initializer)
+: settings_(rectifySettings(optimalControlProblem, std::move(settings))),
+  hpipmInterface_(OcpSize(), settings_.hpipmSettings),
+  threadPool_(std::max(settings_.nThreads, size_t(1)) - 1, settings_.threadPriority),
+  logger_(settings_.logSize)
+{
   Eigen::setNbThreads(1);  // No multithreading within Eigen.
   Eigen::initParallel();
 
@@ -82,7 +88,8 @@ SqpSolver::SqpSolver(sqp::Settings settings, const OptimalControlProblem& optima
   filterLinesearch_.armijoFactor = settings_.armijoFactor;
 }
 
-SqpSolver::~SqpSolver() {
+SqpSolver::~SqpSolver()
+{
   if (settings_.printSolverStatistics) {
     std::cerr << getBenchmarkingInformation() << std::endl;
   }
@@ -92,7 +99,8 @@ SqpSolver::~SqpSolver() {
     boost::filesystem::create_directories(settings_.logFilePath);
 
     // Get current time
-    const auto t = std::chrono::high_resolution_clock::to_time_t(std::chrono::high_resolution_clock::now());
+    const auto t =
+      std::chrono::high_resolution_clock::to_time_t(std::chrono::high_resolution_clock::now());
     std::string timeStamp = std::ctime(&t);
     std::replace(timeStamp.begin(), timeStamp.end(), ' ', '_');
     timeStamp.erase(std::remove(timeStamp.begin(), timeStamp.end(), '\n'), timeStamp.end());
@@ -109,7 +117,8 @@ SqpSolver::~SqpSolver() {
   }
 }
 
-void SqpSolver::reset() {
+void SqpSolver::reset()
+{
   // Clear solution
   primalSolution_ = PrimalSolution();
   valueFunction_.clear();
@@ -125,13 +134,16 @@ void SqpSolver::reset() {
   computeControllerTimer_.reset();
 }
 
-std::string SqpSolver::getBenchmarkingInformation() const {
-  const auto linearQuadraticApproximationTotal = linearQuadraticApproximationTimer_.getTotalInMilliseconds();
+std::string SqpSolver::getBenchmarkingInformation() const
+{
+  const auto linearQuadraticApproximationTotal =
+    linearQuadraticApproximationTimer_.getTotalInMilliseconds();
   const auto solveQpTotal = solveQpTimer_.getTotalInMilliseconds();
   const auto linesearchTotal = linesearchTimer_.getTotalInMilliseconds();
   const auto computeControllerTotal = computeControllerTimer_.getTotalInMilliseconds();
 
-  const auto benchmarkTotal = linearQuadraticApproximationTotal + solveQpTotal + linesearchTotal + computeControllerTotal;
+  const auto benchmarkTotal =
+    linearQuadraticApproximationTotal + solveQpTotal + linesearchTotal + computeControllerTotal;
 
   std::stringstream infoStream;
   if (benchmarkTotal > 0.0) {
@@ -139,19 +151,21 @@ std::string SqpSolver::getBenchmarkingInformation() const {
     infoStream << "\n########################################################################\n";
     infoStream << "The benchmarking is computed over " << totalNumIterations_ << " iterations. \n";
     infoStream << "SQP Benchmarking\t   :\tAverage time [ms]   (% of total runtime)\n";
-    infoStream << "\tLQ Approximation   :\t" << linearQuadraticApproximationTimer_.getAverageInMilliseconds() << " [ms] \t\t("
+    infoStream << "\tLQ Approximation   :\t"
+               << linearQuadraticApproximationTimer_.getAverageInMilliseconds() << " [ms] \t\t("
                << linearQuadraticApproximationTotal / benchmarkTotal * inPercent << "%)\n";
-    infoStream << "\tSolve QP           :\t" << solveQpTimer_.getAverageInMilliseconds() << " [ms] \t\t("
-               << solveQpTotal / benchmarkTotal * inPercent << "%)\n";
-    infoStream << "\tLinesearch         :\t" << linesearchTimer_.getAverageInMilliseconds() << " [ms] \t\t("
-               << linesearchTotal / benchmarkTotal * inPercent << "%)\n";
-    infoStream << "\tCompute Controller :\t" << computeControllerTimer_.getAverageInMilliseconds() << " [ms] \t\t("
-               << computeControllerTotal / benchmarkTotal * inPercent << "%)\n";
+    infoStream << "\tSolve QP           :\t" << solveQpTimer_.getAverageInMilliseconds()
+               << " [ms] \t\t(" << solveQpTotal / benchmarkTotal * inPercent << "%)\n";
+    infoStream << "\tLinesearch         :\t" << linesearchTimer_.getAverageInMilliseconds()
+               << " [ms] \t\t(" << linesearchTotal / benchmarkTotal * inPercent << "%)\n";
+    infoStream << "\tCompute Controller :\t" << computeControllerTimer_.getAverageInMilliseconds()
+               << " [ms] \t\t(" << computeControllerTotal / benchmarkTotal * inPercent << "%)\n";
   }
   return infoStream.str();
 }
 
-const std::vector<PerformanceIndex>& SqpSolver::getIterationsLog() const {
+const std::vector<PerformanceIndex> & SqpSolver::getIterationsLog() const
+{
   if (performanceIndeces_.empty()) {
     throw std::runtime_error("[SqpSolver]: No performance log yet, no problem solved yet?");
   } else {
@@ -159,9 +173,12 @@ const std::vector<PerformanceIndex>& SqpSolver::getIterationsLog() const {
   }
 }
 
-ScalarFunctionQuadraticApproximation SqpSolver::getValueFunction(scalar_t time, const vector_t& state) const {
+ScalarFunctionQuadraticApproximation SqpSolver::getValueFunction(
+  scalar_t time, const vector_t & state) const
+{
   if (valueFunction_.empty()) {
-    throw std::runtime_error("[SqpSolver] Value function is empty! Is createValueFunction true and did the solver run?");
+    throw std::runtime_error(
+      "[SqpSolver] Value function is empty! Is createValueFunction true and did the solver run?");
   } else {
     // Interpolation
     const auto indexAlpha = LinearInterpolation::timeSegment(time, primalSolution_.timeTrajectory_);
@@ -170,8 +187,12 @@ ScalarFunctionQuadraticApproximation SqpSolver::getValueFunction(scalar_t time, 
     using T = std::vector<ocs2::ScalarFunctionQuadraticApproximation>;
     using LinearInterpolation::interpolate;
     valueFunction.f = 0.0;
-    valueFunction.dfdx = interpolate(indexAlpha, valueFunction_, [](const T& v, size_t ind) -> const vector_t& { return v[ind].dfdx; });
-    valueFunction.dfdxx = interpolate(indexAlpha, valueFunction_, [](const T& v, size_t ind) -> const matrix_t& { return v[ind].dfdxx; });
+    valueFunction.dfdx = interpolate(
+      indexAlpha, valueFunction_,
+      [](const T & v, size_t ind) -> const vector_t & { return v[ind].dfdx; });
+    valueFunction.dfdxx = interpolate(
+      indexAlpha, valueFunction_,
+      [](const T & v, size_t ind) -> const matrix_t & { return v[ind].dfdxx; });
 
     // Re-center around query state
     valueFunction.dfdx.noalias() += valueFunction.dfdxx * state;
@@ -180,7 +201,8 @@ ScalarFunctionQuadraticApproximation SqpSolver::getValueFunction(scalar_t time, 
   }
 }
 
-void SqpSolver::runImpl(scalar_t initTime, const vector_t& initState, scalar_t finalTime) {
+void SqpSolver::runImpl(scalar_t initTime, const vector_t & initState, scalar_t finalTime)
+{
   if (settings_.printSolverStatus || settings_.printLinesearch) {
     std::cerr << "\n++++++++++++++++++++++++++++++++++++++++++++++++++++++";
     std::cerr << "\n+++++++++++++ SQP solver is initialized ++++++++++++++";
@@ -188,23 +210,27 @@ void SqpSolver::runImpl(scalar_t initTime, const vector_t& initState, scalar_t f
   }
 
   // Determine time discretization, taking into account event times.
-  const auto& eventTimes = this->getReferenceManager().getModeSchedule().eventTimes;
-  const auto timeDiscretization = timeDiscretizationWithEvents(initTime, finalTime, settings_.dt, eventTimes);
+  const auto & event_times = this->getReferenceManager().getModeSchedule().event_times;
+  const auto timeDiscretization =
+    timeDiscretizationWithEvents(initTime, finalTime, settings_.dt, event_times);
 
   // Initialize references
-  for (auto& ocpDefinition : ocpDefinitions_) {
-    const auto& targetTrajectories = this->getReferenceManager().getTargetTrajectories();
+  for (auto & ocpDefinition : ocpDefinitions_) {
+    const auto & targetTrajectories = this->getReferenceManager().getTargetTrajectories();
     ocpDefinition.targetTrajectoriesPtr = &targetTrajectories;
   }
 
   // Trajectory spread of primalSolution_
   if (!primalSolution_.timeTrajectory_.empty()) {
-    std::ignore = trajectorySpread(primalSolution_.modeSchedule_, this->getReferenceManager().getModeSchedule(), primalSolution_);
+    std::ignore = trajectorySpread(
+      primalSolution_.mode_schedule_, this->getReferenceManager().getModeSchedule(),
+      primalSolution_);
   }
 
   // Initialize the state and input
   vector_array_t x, u;
-  multiple_shooting::initializeStateInputTrajectories(initState, timeDiscretization, primalSolution_, *initializerPtr_, x, u);
+  multiple_shooting::initializeStateInputTrajectories(
+    initState, timeDiscretization, primalSolution_, *initializerPtr_, x, u);
 
   // Bookkeeping
   performanceIndeces_.clear();
@@ -218,7 +244,8 @@ void SqpSolver::runImpl(scalar_t initTime, const vector_t& initState, scalar_t f
     }
     // Make QP approximation
     linearQuadraticApproximationTimer_.startTimer();
-    const auto baselinePerformance = setupQuadraticSubproblem(timeDiscretization, initState, x, u, metrics);
+    const auto baselinePerformance =
+      setupQuadraticSubproblem(timeDiscretization, initState, x, u, metrics);
     linearQuadraticApproximationTimer_.endTimer();
 
     // Solve QP
@@ -230,7 +257,8 @@ void SqpSolver::runImpl(scalar_t initTime, const vector_t& initState, scalar_t f
 
     // Apply step
     linesearchTimer_.startTimer();
-    const auto stepInfo = takeStep(baselinePerformance, timeDiscretization, initState, deltaSolution, x, u, metrics);
+    const auto stepInfo =
+      takeStep(baselinePerformance, timeDiscretization, initState, deltaSolution, x, u, metrics);
     performanceIndeces_.push_back(stepInfo.performanceAfterStep);
     linesearchTimer_.endTimer();
 
@@ -239,15 +267,17 @@ void SqpSolver::runImpl(scalar_t initTime, const vector_t& initState, scalar_t f
 
     // Logging
     if (settings_.enableLogging) {
-      auto& logEntry = logger_.currentEntry();
+      auto & logEntry = logger_.currentEntry();
       logEntry.problemNumber = numProblems_;
       logEntry.time = initTime;
       logEntry.iteration = iter;
-      logEntry.linearQuadraticApproximationTime = linearQuadraticApproximationTimer_.getLastIntervalInMilliseconds();
+      logEntry.linearQuadraticApproximationTime =
+        linearQuadraticApproximationTimer_.getLastIntervalInMilliseconds();
       logEntry.solveQpTime = solveQpTimer_.getLastIntervalInMilliseconds();
       logEntry.linesearchTime = linesearchTimer_.getLastIntervalInMilliseconds();
       logEntry.baselinePerformanceIndex = baselinePerformance;
-      logEntry.totalConstraintViolationBaseline = FilterLinesearch::totalConstraintViolation(baselinePerformance);
+      logEntry.totalConstraintViolationBaseline =
+        FilterLinesearch::totalConstraintViolation(baselinePerformance);
       logEntry.stepInfo = stepInfo;
       logEntry.convergence = convergence;
       logger_.advance();
@@ -273,24 +303,28 @@ void SqpSolver::runImpl(scalar_t initTime, const vector_t& initState, scalar_t f
   }
 }
 
-void SqpSolver::runParallel(std::function<void(int)> taskFunction) {
+void SqpSolver::runParallel(std::function<void(int)> taskFunction)
+{
   threadPool_.runParallel(std::move(taskFunction), settings_.nThreads);
 }
 
-SqpSolver::OcpSubproblemSolution SqpSolver::getOCPSolution(const vector_t& delta_x0) {
+SqpSolver::OcpSubproblemSolution SqpSolver::getOCPSolution(const vector_t & delta_x0)
+{
   // Solve the QP
   OcpSubproblemSolution solution;
-  auto& deltaXSol = solution.deltaXSol;
-  auto& deltaUSol = solution.deltaUSol;
+  auto & deltaXSol = solution.deltaXSol;
+  auto & deltaUSol = solution.deltaUSol;
   hpipm_status status;
   const bool hasStateInputConstraints = !ocpDefinitions_.front().equalityConstraintPtr->empty();
   if (hasStateInputConstraints && !settings_.projectStateInputEqualityConstraints) {
     hpipmInterface_.resize(extractSizesFromProblem(dynamics_, cost_, &stateInputEqConstraints_));
-    status =
-        hpipmInterface_.solve(delta_x0, dynamics_, cost_, &stateInputEqConstraints_, deltaXSol, deltaUSol, settings_.printSolverStatus);
+    status = hpipmInterface_.solve(
+      delta_x0, dynamics_, cost_, &stateInputEqConstraints_, deltaXSol, deltaUSol,
+      settings_.printSolverStatus);
   } else {  // without constraints, or when using projection, we have an unconstrained QP.
     hpipmInterface_.resize(extractSizesFromProblem(dynamics_, cost_, nullptr));
-    status = hpipmInterface_.solve(delta_x0, dynamics_, cost_, nullptr, deltaXSol, deltaUSol, settings_.printSolverStatus);
+    status = hpipmInterface_.solve(
+      delta_x0, dynamics_, cost_, nullptr, deltaXSol, deltaUSol, settings_.printSolverStatus);
   }
 
   if (status != hpipm_status::SUCCESS) {
@@ -308,7 +342,9 @@ SqpSolver::OcpSubproblemSolution SqpSolver::getOCPSolution(const vector_t& delta
   return solution;
 }
 
-void SqpSolver::extractValueFunction(const std::vector<AnnotatedTime>& time, const vector_array_t& x) {
+void SqpSolver::extractValueFunction(
+  const std::vector<AnnotatedTime> & time, const vector_array_t & x)
+{
   if (settings_.createValueFunction) {
     valueFunction_ = hpipmInterface_.getRiccatiCostToGo(dynamics_[0], cost_[0]);
     // Correct for linearization state
@@ -318,23 +354,29 @@ void SqpSolver::extractValueFunction(const std::vector<AnnotatedTime>& time, con
   }
 }
 
-PrimalSolution SqpSolver::toPrimalSolution(const std::vector<AnnotatedTime>& time, vector_array_t&& x, vector_array_t&& u) {
+PrimalSolution SqpSolver::toPrimalSolution(
+  const std::vector<AnnotatedTime> & time, vector_array_t && x, vector_array_t && u)
+{
   if (settings_.useFeedbackPolicy) {
-    ModeSchedule modeSchedule = this->getReferenceManager().getModeSchedule();
+    ModeSchedule mode_schedule = this->getReferenceManager().getModeSchedule();
     matrix_array_t KMatrices = hpipmInterface_.getRiccatiFeedback(dynamics_[0], cost_[0]);
     if (settings_.projectStateInputEqualityConstraints) {
       multiple_shooting::remapProjectedGain(constraintsProjection_, KMatrices);
     }
-    return multiple_shooting::toPrimalSolution(time, std::move(modeSchedule), std::move(x), std::move(u), std::move(KMatrices));
+    return multiple_shooting::toPrimalSolution(
+      time, std::move(mode_schedule), std::move(x), std::move(u), std::move(KMatrices));
 
   } else {
-    ModeSchedule modeSchedule = this->getReferenceManager().getModeSchedule();
-    return multiple_shooting::toPrimalSolution(time, std::move(modeSchedule), std::move(x), std::move(u));
+    ModeSchedule mode_schedule = this->getReferenceManager().getModeSchedule();
+    return multiple_shooting::toPrimalSolution(
+      time, std::move(mode_schedule), std::move(x), std::move(u));
   }
 }
 
-PerformanceIndex SqpSolver::setupQuadraticSubproblem(const std::vector<AnnotatedTime>& time, const vector_t& initState,
-                                                     const vector_array_t& x, const vector_array_t& u, std::vector<Metrics>& metrics) {
+PerformanceIndex SqpSolver::setupQuadraticSubproblem(
+  const std::vector<AnnotatedTime> & time, const vector_t & initState, const vector_array_t & x,
+  const vector_array_t & u, std::vector<Metrics> & metrics)
+{
   // Problem horizon
   const int N = static_cast<int>(time.size()) - 1;
 
@@ -351,14 +393,15 @@ PerformanceIndex SqpSolver::setupQuadraticSubproblem(const std::vector<Annotated
   std::atomic_int timeIndex{0};
   auto parallelTask = [&](int workerId) {
     // Get worker specific resources
-    OptimalControlProblem& ocpDefinition = ocpDefinitions_[workerId];
+    OptimalControlProblem & ocpDefinition = ocpDefinitions_[workerId];
     PerformanceIndex workerPerformance;  // Accumulate performance in local variable
 
     int i = timeIndex++;
     while (i < N) {
       if (time[i].event == AnnotatedTime::Event::PreEvent) {
         // Event node
-        auto result = multiple_shooting::setupEventNode(ocpDefinition, time[i].time, x[i], x[i + 1]);
+        auto result =
+          multiple_shooting::setupEventNode(ocpDefinition, time[i].time, x[i], x[i + 1]);
         metrics[i] = multiple_shooting::computeMetrics(result);
         workerPerformance += multiple_shooting::computePerformanceIndex(result);
         cost_[i] = std::move(result.cost);
@@ -367,12 +410,14 @@ PerformanceIndex SqpSolver::setupQuadraticSubproblem(const std::vector<Annotated
         stateIneqConstraints_[i] = std::move(result.ineqConstraints);
         stateInputIneqConstraints_[i].resize(0, x[i].size());
         constraintsProjection_[i].resize(0, x[i].size());
-        projectionMultiplierCoefficients_[i] = multiple_shooting::ProjectionMultiplierCoefficients();
+        projectionMultiplierCoefficients_[i] =
+          multiple_shooting::ProjectionMultiplierCoefficients();
       } else {
         // Normal, intermediate node
         const scalar_t ti = getIntervalStart(time[i]);
         const scalar_t dt = getIntervalDuration(time[i], time[i + 1]);
-        auto result = multiple_shooting::setupIntermediateNode(ocpDefinition, sensitivityDiscretizer_, ti, dt, x[i], x[i + 1], u[i]);
+        auto result = multiple_shooting::setupIntermediateNode(
+          ocpDefinition, sensitivityDiscretizer_, ti, dt, x[i], x[i + 1], u[i]);
         metrics[i] = multiple_shooting::computeMetrics(result);
         workerPerformance += multiple_shooting::computePerformanceIndex(result, dt);
         if (settings_.projectStateInputEqualityConstraints) {
@@ -411,14 +456,18 @@ PerformanceIndex SqpSolver::setupQuadraticSubproblem(const std::vector<Annotated
   performance.front().dynamicsViolationSSE += initDynamicsViolation.squaredNorm();
 
   // Sum performance of the threads
-  PerformanceIndex totalPerformance = std::accumulate(std::next(performance.begin()), performance.end(), performance.front());
-  totalPerformance.merit = totalPerformance.cost + totalPerformance.equalityLagrangian + totalPerformance.inequalityLagrangian;
+  PerformanceIndex totalPerformance =
+    std::accumulate(std::next(performance.begin()), performance.end(), performance.front());
+  totalPerformance.merit = totalPerformance.cost + totalPerformance.equalityLagrangian +
+                           totalPerformance.inequalityLagrangian;
 
   return totalPerformance;
 }
 
-PerformanceIndex SqpSolver::computePerformance(const std::vector<AnnotatedTime>& time, const vector_t& initState, const vector_array_t& x,
-                                               const vector_array_t& u, std::vector<Metrics>& metrics) {
+PerformanceIndex SqpSolver::computePerformance(
+  const std::vector<AnnotatedTime> & time, const vector_t & initState, const vector_array_t & x,
+  const vector_array_t & u, std::vector<Metrics> & metrics)
+{
   // Problem size
   const int N = static_cast<int>(time.size()) - 1;
   metrics.resize(N + 1);
@@ -427,19 +476,21 @@ PerformanceIndex SqpSolver::computePerformance(const std::vector<AnnotatedTime>&
   std::atomic_int timeIndex{0};
   auto parallelTask = [&](int workerId) {
     // Get worker specific resources
-    OptimalControlProblem& ocpDefinition = ocpDefinitions_[workerId];
+    OptimalControlProblem & ocpDefinition = ocpDefinitions_[workerId];
 
     int i = timeIndex++;
     while (i < N) {
       if (time[i].event == AnnotatedTime::Event::PreEvent) {
         // Event node
-        metrics[i] = multiple_shooting::computeEventMetrics(ocpDefinition, time[i].time, x[i], x[i + 1]);
+        metrics[i] =
+          multiple_shooting::computeEventMetrics(ocpDefinition, time[i].time, x[i], x[i + 1]);
         performance[workerId] += toPerformanceIndex(metrics[i]);
       } else {
         // Normal, intermediate node
         const scalar_t ti = getIntervalStart(time[i]);
         const scalar_t dt = getIntervalDuration(time[i], time[i + 1]);
-        metrics[i] = multiple_shooting::computeIntermediateMetrics(ocpDefinition, discretizer_, ti, dt, x[i], x[i + 1], u[i]);
+        metrics[i] = multiple_shooting::computeIntermediateMetrics(
+          ocpDefinition, discretizer_, ti, dt, x[i], x[i + 1], u[i]);
         performance[workerId] += toPerformanceIndex(metrics[i], dt);
       }
 
@@ -460,14 +511,18 @@ PerformanceIndex SqpSolver::computePerformance(const std::vector<AnnotatedTime>&
   performance.front().dynamicsViolationSSE += initDynamicsViolation.squaredNorm();
 
   // Sum performance of the threads
-  PerformanceIndex totalPerformance = std::accumulate(std::next(performance.begin()), performance.end(), performance.front());
-  totalPerformance.merit = totalPerformance.cost + totalPerformance.equalityLagrangian + totalPerformance.inequalityLagrangian;
+  PerformanceIndex totalPerformance =
+    std::accumulate(std::next(performance.begin()), performance.end(), performance.front());
+  totalPerformance.merit = totalPerformance.cost + totalPerformance.equalityLagrangian +
+                           totalPerformance.inequalityLagrangian;
   return totalPerformance;
 }
 
-sqp::StepInfo SqpSolver::takeStep(const PerformanceIndex& baseline, const std::vector<AnnotatedTime>& timeDiscretization,
-                                  const vector_t& initState, const OcpSubproblemSolution& subproblemSolution, vector_array_t& x,
-                                  vector_array_t& u, std::vector<Metrics>& metrics) {
+sqp::StepInfo SqpSolver::takeStep(
+  const PerformanceIndex & baseline, const std::vector<AnnotatedTime> & timeDiscretization,
+  const vector_t & initState, const OcpSubproblemSolution & subproblemSolution, vector_array_t & x,
+  vector_array_t & u, std::vector<Metrics> & metrics)
+{
   using StepType = FilterLinesearch::StepType;
 
   /*
@@ -485,8 +540,8 @@ sqp::StepInfo SqpSolver::takeStep(const PerformanceIndex& baseline, const std::v
   const scalar_t baselineConstraintViolation = FilterLinesearch::totalConstraintViolation(baseline);
 
   // Update norm
-  const auto& dx = subproblemSolution.deltaXSol;
-  const auto& du = subproblemSolution.deltaUSol;
+  const auto & dx = subproblemSolution.deltaXSol;
+  const auto & du = subproblemSolution.deltaUSol;
   const auto deltaUnorm = multiple_shooting::trajectoryNorm(du);
   const auto deltaXnorm = multiple_shooting::trajectoryNorm(dx);
 
@@ -500,13 +555,14 @@ sqp::StepInfo SqpSolver::takeStep(const PerformanceIndex& baseline, const std::v
     multiple_shooting::incrementTrajectory(x, dx, alpha, xNew);
 
     // Compute cost and constraints
-    const PerformanceIndex performanceNew = computePerformance(timeDiscretization, initState, xNew, uNew, metricsNew);
+    const PerformanceIndex performanceNew =
+      computePerformance(timeDiscretization, initState, xNew, uNew, metricsNew);
 
     // Step acceptance and record step type
     bool stepAccepted;
     StepType stepType;
-    std::tie(stepAccepted, stepType) =
-        filterLinesearch_.acceptStep(baseline, performanceNew, alpha * subproblemSolution.armijoDescentMetric);
+    std::tie(stepAccepted, stepType) = filterLinesearch_.acceptStep(
+      baseline, performanceNew, alpha * subproblemSolution.armijoDescentMetric);
 
     if (settings_.printLinesearch) {
       std::cerr << "Step size: " << alpha << ", Step Type: " << toString(stepType)
@@ -527,7 +583,8 @@ sqp::StepInfo SqpSolver::takeStep(const PerformanceIndex& baseline, const std::v
       stepInfo.dx_norm = alpha * deltaXnorm;
       stepInfo.du_norm = alpha * deltaUnorm;
       stepInfo.performanceAfterStep = performanceNew;
-      stepInfo.totalConstraintViolationAfterStep = FilterLinesearch::totalConstraintViolation(performanceNew);
+      stepInfo.totalConstraintViolationAfterStep =
+        FilterLinesearch::totalConstraintViolation(performanceNew);
       return stepInfo;
 
     } else {  // Try smaller step
@@ -536,8 +593,9 @@ sqp::StepInfo SqpSolver::takeStep(const PerformanceIndex& baseline, const std::v
       // Detect too small step size during back-tracking to escape early. Prevents going all the way to alpha_min
       if (alpha * deltaXnorm < settings_.deltaTol && alpha * deltaUnorm < settings_.deltaTol) {
         if (settings_.printLinesearch) {
-          std::cerr << "Exiting linesearch early due to too small primal steps |dx|: " << alpha * deltaXnorm
-                    << ", and or |du|: " << alpha * deltaUnorm << " are below deltaTol: " << settings_.deltaTol << "\n";
+          std::cerr << "Exiting linesearch early due to too small primal steps |dx|: "
+                    << alpha * deltaXnorm << ", and or |du|: " << alpha * deltaUnorm
+                    << " are below deltaTol: " << settings_.deltaTol << "\n";
         }
         break;
       }
@@ -554,13 +612,16 @@ sqp::StepInfo SqpSolver::takeStep(const PerformanceIndex& baseline, const std::v
   stepInfo.totalConstraintViolationAfterStep = FilterLinesearch::totalConstraintViolation(baseline);
 
   if (settings_.printLinesearch) {
-    std::cerr << "[Linesearch terminated] Step size: " << stepInfo.stepSize << ", Step Type: " << toString(stepInfo.stepType) << "\n";
+    std::cerr << "[Linesearch terminated] Step size: " << stepInfo.stepSize
+              << ", Step Type: " << toString(stepInfo.stepType) << "\n";
   }
 
   return stepInfo;
 }
 
-sqp::Convergence SqpSolver::checkConvergence(int iteration, const PerformanceIndex& baseline, const sqp::StepInfo& stepInfo) const {
+sqp::Convergence SqpSolver::checkConvergence(
+  int iteration, const PerformanceIndex & baseline, const sqp::StepInfo & stepInfo) const
+{
   using Convergence = sqp::Convergence;
   if ((iteration + 1) >= settings_.sqpIteration) {
     // Converged because the next iteration would exceed the specified number of iterations
@@ -568,8 +629,9 @@ sqp::Convergence SqpSolver::checkConvergence(int iteration, const PerformanceInd
   } else if (stepInfo.stepSize < settings_.alpha_min) {
     // Converged because step size is below the specified minimum
     return Convergence::STEPSIZE;
-  } else if (std::abs(stepInfo.performanceAfterStep.merit - baseline.merit) < settings_.costTol &&
-             FilterLinesearch::totalConstraintViolation(stepInfo.performanceAfterStep) < settings_.g_min) {
+  } else if (
+    std::abs(stepInfo.performanceAfterStep.merit - baseline.merit) < settings_.costTol &&
+    FilterLinesearch::totalConstraintViolation(stepInfo.performanceAfterStep) < settings_.g_min) {
     // Converged because the change in merit is below the specified tolerance while the constraint violation is below the minimum
     return Convergence::METRICS;
   } else if (stepInfo.dx_norm < settings_.deltaTol && stepInfo.du_norm < settings_.deltaTol) {

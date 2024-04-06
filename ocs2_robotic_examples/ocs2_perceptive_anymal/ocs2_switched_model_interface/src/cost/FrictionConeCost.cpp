@@ -9,19 +9,19 @@
 
 namespace switched_model {
 
-FrictionConeCost::FrictionConeCost(friction_cone::Config config, const SwitchedModelModeScheduleManager& modeScheduleManager,
+FrictionConeCost::FrictionConeCost(friction_cone::Config config, const SwitchedModelModeScheduleManager& mode_scheduleManager,
                                    std::unique_ptr<ocs2::PenaltyBase> penaltyFunction)
-    : config_(config), modeScheduleManager_(&modeScheduleManager), penalty_(std::move(penaltyFunction)) {}
+    : config_(config), mode_scheduleManager_(&mode_scheduleManager), penalty_(std::move(penaltyFunction)) {}
 
 FrictionConeCost::FrictionConeCost(const FrictionConeCost& rhs)
-    : config_(rhs.config_), modeScheduleManager_(rhs.modeScheduleManager_), penalty_(rhs.penalty_->clone()) {}
+    : config_(rhs.config_), mode_scheduleManager_(rhs.mode_scheduleManager_), penalty_(rhs.penalty_->clone()) {}
 
 FrictionConeCost* FrictionConeCost::clone() const {
   return new FrictionConeCost(*this);
 }
 
 bool FrictionConeCost::isActive(scalar_t time) const {
-  return numberOfClosedContacts(modeScheduleManager_->getContactFlags(time)) > 0;
+  return numberOfClosedContacts(mode_scheduleManager_->getContactFlags(time)) > 0;
 }
 
 scalar_t FrictionConeCost::getValue(scalar_t time, const vector_t& state, const vector_t& input,

@@ -13,9 +13,9 @@
 using namespace switched_model;
 
 TEST(TestFrictionConeCost, evaluate) {
-  // Mock the modeScheduleManager
-  SwitchedModelModeScheduleManager modeScheduleManager(nullptr, nullptr, nullptr);
-  modeScheduleManager.setModeSchedule({{}, {ModeNumber::STANCE}});
+  // Mock the mode_scheduleManager
+  SwitchedModelModeScheduleManager mode_scheduleManager(nullptr, nullptr, nullptr);
+  mode_scheduleManager.setModeSchedule({{}, {ModeNumber::STANCE}});
 
   // Mock the precomputation
   SwitchedModelPreComputationMockup preComp;
@@ -27,7 +27,7 @@ TEST(TestFrictionConeCost, evaluate) {
   ocs2::TargetTrajectories targetTrajectories({t}, {x}, {u});
 
   std::unique_ptr<ocs2::PenaltyBase> penalty(new ocs2::RelaxedBarrierPenalty({0.1, 5.0}));
-  FrictionConeCost frictionConeCost(friction_cone::Config(), modeScheduleManager, std::move(penalty));
+  FrictionConeCost frictionConeCost(friction_cone::Config(), mode_scheduleManager, std::move(penalty));
 
   for (int i = 0; i < NUM_CONTACT_POINTS; ++i) {
     preComp.surfaceNormalInOriginFrame(i) = vector3_t::Random();
@@ -44,9 +44,9 @@ TEST(TestFrictionConeCost, evaluate) {
 }
 
 TEST(TestFrictionConeCost, finiteDifference) {
-  // Mock the modeScheduleManager
-  SwitchedModelModeScheduleManager modeScheduleManager(nullptr, nullptr, nullptr);
-  modeScheduleManager.setModeSchedule({{}, {ModeNumber::STANCE}});
+  // Mock the mode_scheduleManager
+  SwitchedModelModeScheduleManager mode_scheduleManager(nullptr, nullptr, nullptr);
+  mode_scheduleManager.setModeSchedule({{}, {ModeNumber::STANCE}});
 
   // Mock the precomputation
   SwitchedModelPreComputationMockup preComp;
@@ -58,7 +58,7 @@ TEST(TestFrictionConeCost, finiteDifference) {
   ocs2::TargetTrajectories targetTrajectories({t}, {x}, {u});
 
   std::unique_ptr<ocs2::PenaltyBase> penalty(new ocs2::RelaxedBarrierPenalty({0.1, 5.0}));
-  FrictionConeCost frictionConeCost(friction_cone::Config(), modeScheduleManager, std::move(penalty));
+  FrictionConeCost frictionConeCost(friction_cone::Config(), mode_scheduleManager, std::move(penalty));
 
   const scalar_t eps = 1e-4;
   const scalar_t tol = 1e-5;

@@ -27,14 +27,17 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_sqp/SqpLogging.h"
+#include "ocs2_sqp/SqpLogging.hpp"
 
 #include <iomanip>
 
-namespace ocs2 {
-namespace sqp {
+namespace ocs2
+{
+namespace sqp
+{
 
-std::ostream& operator<<(std::ostream& stream, const LogEntry& logEntry) {
+std::ostream & operator<<(std::ostream & stream, const LogEntry & logEntry)
+{
   const std::string delim = ", ";
   const std::string lineEnd = "\n";
   // clang-format off
@@ -62,7 +65,8 @@ std::ostream& operator<<(std::ostream& stream, const LogEntry& logEntry) {
   return stream;
 }
 
-std::string logHeader() {
+std::string logHeader()
+{
   const std::string delim = ", ";
   const std::string lineEnd = "\n";
   std::stringstream stream;

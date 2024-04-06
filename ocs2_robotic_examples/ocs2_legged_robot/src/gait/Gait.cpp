@@ -46,7 +46,7 @@ bool isValidGait(const Gait& gait) {
   validGait &= gait.duration > 0.0;
   validGait &= std::all_of(gait.eventPhases.begin(), gait.eventPhases.end(), [](scalar_t phase) { return 0.0 < phase && phase < 1.0; });
   validGait &= std::is_sorted(gait.eventPhases.begin(), gait.eventPhases.end());
-  validGait &= gait.eventPhases.size() + 1 == gait.modeSequence.size();
+  validGait &= gait.eventPhases.size() + 1 == gait.mode_sequence.size();
   return validGait;
 }
 
@@ -84,7 +84,7 @@ int getModeIndexFromPhase(scalar_t phase, const Gait& gait) {
 size_t getModeFromPhase(scalar_t phase, const Gait& gait) {
   assert(isValidPhase(phase));
   assert(isValidGait(gait));
-  return gait.modeSequence[getModeIndexFromPhase(phase, gait)];
+  return gait.mode_sequence[getModeIndexFromPhase(phase, gait)];
 }
 
 /******************************************************************************************************/
@@ -115,8 +115,8 @@ scalar_t timeLeftInMode(scalar_t phase, const Gait& gait) {
 /******************************************************************************************************/
 std::ostream& operator<<(std::ostream& stream, const Gait& gait) {
   stream << "Duration:       " << gait.duration << "\n";
-  stream << "Event phases:  {" << toDelimitedString(gait.eventPhases) << "}\n";
-  stream << "Mode sequence: {" << toDelimitedString(gait.modeSequence) << "}\n";
+  stream << "Event phases:  {" << to_delimited_str(gait.eventPhases) << "}\n";
+  stream << "Mode sequence: {" << to_delimited_str(gait.mode_sequence) << "}\n";
   return stream;
 }
 

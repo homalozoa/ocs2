@@ -27,33 +27,40 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <pinocchio/fwd.hpp>
+#include "ocs2_sphere_approximation/PinocchioSphereKinematics.hpp"
 
 #include <pinocchio/algorithm/frames-derivatives.hpp>
 #include <pinocchio/algorithm/frames.hpp>
 #include <pinocchio/algorithm/kinematics.hpp>
+#include <pinocchio/fwd.hpp>
 #include <pinocchio/multibody/geometry.hpp>
 
-#include <ocs2_robotic_tools/common/AngularVelocityMapping.h>
-#include <ocs2_robotic_tools/common/RotationTransforms.h>
-#include <ocs2_robotic_tools/common/SkewSymmetricMatrix.h>
+#include "ocs2_robotic_tools/common/AngularVelocityMapping.hpp"
+#include "ocs2_robotic_tools/common/RotationTransforms.hpp"
+#include "ocs2_robotic_tools/common/SkewSymmetricMatrix.hpp"
 
-#include "ocs2_sphere_approximation/PinocchioSphereKinematics.h"
-
-namespace ocs2 {
+namespace ocs2
+{
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-PinocchioSphereKinematics::PinocchioSphereKinematics(PinocchioSphereInterface pinocchioSphereInterface,
-                                                     const PinocchioStateInputMapping<scalar_t>& mapping)
-    : pinocchioInterfacePtr_(nullptr), pinocchioSphereInterface_(std::move(pinocchioSphereInterface)), mappingPtr_(mapping.clone()) {
+PinocchioSphereKinematics::PinocchioSphereKinematics(
+  PinocchioSphereInterface pinocchioSphereInterface,
+  const PinocchioStateInputMapping<scalar_t> & mapping)
+: pinocchioInterfacePtr_(nullptr),
+  pinocchioSphereInterface_(std::move(pinocchioSphereInterface)),
+  mappingPtr_(mapping.clone())
+{
   linkIds_.resize(pinocchioSphereInterface_.getNumSpheresInTotal());
-  const std::vector<std::string>& collisionLinkOfEachPrimitiveShape = pinocchioSphereInterface_.getCollisionLinkOfEachPrimitveShape();
+  const std::vector<std::string> & collisionLinkOfEachPrimitiveShape =
+    pinocchioSphereInterface_.getCollisionLinkOfEachPrimitveShape();
   const auto numSpheres = pinocchioSphereInterface_.getNumSpheres();
   size_t count = 0;
   for (size_t i = 0; i < pinocchioSphereInterface.getNumPrimitiveShapes(); i++) {
-    std::fill(linkIds_.begin() + count, linkIds_.begin() + count + numSpheres[i], collisionLinkOfEachPrimitiveShape[i]);
+    std::fill(
+      linkIds_.begin() + count, linkIds_.begin() + count + numSpheres[i],
+      collisionLinkOfEachPrimitiveShape[i]);
     count += numSpheres[i];
   }
 }
@@ -61,26 +68,31 @@ PinocchioSphereKinematics::PinocchioSphereKinematics(PinocchioSphereInterface pi
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-PinocchioSphereKinematics::PinocchioSphereKinematics(const PinocchioSphereKinematics& rhs)
-    : EndEffectorKinematics<scalar_t>(rhs),
-      pinocchioInterfacePtr_(nullptr),
-      mappingPtr_(rhs.mappingPtr_->clone()),
-      pinocchioSphereInterface_(rhs.pinocchioSphereInterface_),
-      linkIds_(rhs.linkIds_) {}
+PinocchioSphereKinematics::PinocchioSphereKinematics(const PinocchioSphereKinematics & rhs)
+: EndEffectorKinematics<scalar_t>(rhs),
+  pinocchioInterfacePtr_(nullptr),
+  mappingPtr_(rhs.mappingPtr_->clone()),
+  pinocchioSphereInterface_(rhs.pinocchioSphereInterface_),
+  linkIds_(rhs.linkIds_)
+{
+}
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-PinocchioSphereKinematics* PinocchioSphereKinematics::clone() const {
+PinocchioSphereKinematics * PinocchioSphereKinematics::clone() const
+{
   return new PinocchioSphereKinematics(*this);
 }
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-auto PinocchioSphereKinematics::getPosition(const vector_t& state) const -> std::vector<vector3_t> {
+auto PinocchioSphereKinematics::getPosition(const vector_t & state) const -> std::vector<vector3_t>
+{
   if (pinocchioInterfacePtr_ == nullptr) {
-    throw std::runtime_error("[PinocchioSphereKinematics] pinocchioInterfacePtr_ is not set. Use setPinocchioInterface()");
+    throw std::runtime_error(
+      "[PinocchioSphereKinematics] pinocchioInterfacePtr_ is not set. Use setPinocchioInterface()");
   }
 
   return pinocchioSphereInterface_.computeSphereCentersInWorldFrame(*pinocchioInterfacePtr_);
@@ -89,30 +101,34 @@ auto PinocchioSphereKinematics::getPosition(const vector_t& state) const -> std:
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-std::vector<VectorFunctionLinearApproximation> PinocchioSphereKinematics::getPositionLinearApproximation(const vector_t& state) const {
+std::vector<VectorFunctionLinearApproximation>
+PinocchioSphereKinematics::getPositionLinearApproximation(const vector_t & state) const
+{
   if (pinocchioInterfacePtr_ == nullptr) {
-    throw std::runtime_error("[PinocchioSphereKinematics] pinocchioInterfacePtr_ is not set. Use setPinocchioInterface()");
+    throw std::runtime_error(
+      "[PinocchioSphereKinematics] pinocchioInterfacePtr_ is not set. Use setPinocchioInterface()");
   }
 
-  std::vector<vector3_t> sphereCentersInWorldFrame = pinocchioSphereInterface_.computeSphereCentersInWorldFrame(*pinocchioInterfacePtr_);
+  std::vector<vector3_t> sphereCentersInWorldFrame =
+    pinocchioSphereInterface_.computeSphereCentersInWorldFrame(*pinocchioInterfacePtr_);
 
   const pinocchio::ReferenceFrame rf = pinocchio::ReferenceFrame::LOCAL_WORLD_ALIGNED;
-  const pinocchio::Model& model = pinocchioInterfacePtr_->getModel();
+  const pinocchio::Model & model = pinocchioInterfacePtr_->getModel();
   // const pinocchio::Data& data = pinocchioInterfacePtr_->getData();
   // TODO(mspieler): Need to copy here because getFrameJacobian() modifies data. Will be fixed in pinocchio version 3.
   pinocchio::Data data = pinocchio::Data(pinocchioInterfacePtr_->getData());
 
   std::vector<VectorFunctionLinearApproximation> positions;
 
-  const auto& geometryModel = pinocchioSphereInterface_.getGeometryModel();
+  const auto & geometryModel = pinocchioSphereInterface_.getGeometryModel();
   const size_t numPrimitiveShapes = pinocchioSphereInterface_.getNumPrimitiveShapes();
   const auto geomObjIds = pinocchioSphereInterface_.getGeomObjIds();
   const auto numSpheres = pinocchioSphereInterface_.getNumSpheres();
 
   size_t count = 0;
   for (size_t i = 0; i < numPrimitiveShapes; i++) {
-    const auto& parentJointId = geometryModel.geometryObjects[geomObjIds[i]].parentJoint;
-    const vector3_t& jointPosition = data.oMi[parentJointId].translation();
+    const auto & parentJointId = geometryModel.geometryObjects[geomObjIds[i]].parentJoint;
+    const vector3_t & jointPosition = data.oMi[parentJointId].translation();
     matrix_t jointJacobian = matrix_t::Zero(6, model.nv);
     pinocchio::getJointJacobian(model, data, parentJointId, rf, jointJacobian);
 
@@ -121,8 +137,10 @@ std::vector<VectorFunctionLinearApproximation> PinocchioSphereKinematics::getPos
       pos.f = sphereCentersInWorldFrame[count + j];
       const vector3_t sphereCenterOffset = sphereCentersInWorldFrame[count + j] - jointPosition;
       const matrix_t sphereCenterJacobian =
-          jointJacobian.topRows<3>() - skewSymmetricMatrix(sphereCenterOffset) * jointJacobian.bottomRows<3>();
-      std::tie(pos.dfdx, std::ignore) = mappingPtr_->getOcs2Jacobian(state, sphereCenterJacobian.topRows<3>(), matrix_t::Zero(0, model.nq));
+        jointJacobian.topRows<3>() -
+        skewSymmetricMatrix(sphereCenterOffset) * jointJacobian.bottomRows<3>();
+      std::tie(pos.dfdx, std::ignore) = mappingPtr_->getOcs2Jacobian(
+        state, sphereCenterJacobian.topRows<3>(), matrix_t::Zero(0, model.nq));
       positions.emplace_back(std::move(pos));
     }
     count += numSpheres[i];
